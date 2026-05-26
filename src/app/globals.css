@@ -50,10 +50,14 @@ body {
   color: rgb(var(--ink));
 }
 
-:focus-visible {
-  outline: 2px solid rgb(var(--clay));
-  outline-offset: 3px;
-  border-radius: 4px;
+/* Keyboard focus ring. In @layer base so components can opt out via an
+   `outline-none` utility (e.g. controls that supply their own focus style). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid rgb(var(--clay));
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
 }
 
 /* Paper grain. */

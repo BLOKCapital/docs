@@ -41,8 +41,8 @@ export function Footer() {
         </div>
 
         <div aria-hidden className="rule-hand mt-10" />
-        <p className="mt-5 text-[12.5px] text-ink-subtle">
-          © {YEAR} BLOK Capital DAO LLC · Marshall Islands · Reg. no. 10050-23
+        <p className="mt-5 text-center text-[12.5px] text-ink-subtle">
+          © {YEAR} BLOK Capital DAO LLC
         </p>
       </div>
     </footer>

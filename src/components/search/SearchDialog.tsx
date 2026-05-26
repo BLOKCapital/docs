@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import FlexSearch from "flexsearch";
 import { UI, type Locale, type SectionSlug } from "@/lib/config";
@@ -92,7 +93,12 @@ export function SearchDialog({
     }
   }
 
-  return (
+  // The navbar header uses `backdrop-blur`, which makes it the containing block
+  // for any `position: fixed` descendant. Portal to <body> so the overlay is
+  // sized to the viewport instead of the header.
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
       role="dialog"
@@ -100,7 +106,7 @@ export function SearchDialog({
       aria-label={t.search}
     >
       <div
-        className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
         aria-hidden
         onClick={onClose}
       />
@@ -161,6 +167,7 @@ export function SearchDialog({
           </ul>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
