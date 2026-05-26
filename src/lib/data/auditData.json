@@ -1,0 +1,153 @@
+{
+  "BLOKCaudits": [
+    {
+      "name": "BLOKC v1.0",
+      "auditor": "CredShields",
+      "auditorlink": "https://credshields.com/",
+      "link": "https://github.com/BLOKCapital/audits/blob/main/audits/Blok%20Capital%20Final%20Report.pdf",
+      "date": "December 1st, 2024",
+      "status": "Passed",
+      "findings": {
+        "critical": 0,
+        "high": 2,
+        "major": 12,
+        "minor": 5,
+        "informational": 2
+      }
+    }
+  ],
+  "zerodevAudits": [
+    {
+      "name": "Zerodev Smart Wallet Audit",
+      "auditor": "Multiple Auditors",
+      "description": "The BLOK Capital protocol uses a Zerodev Smart Wallet Account Kernel v3 to ensure your self-custody wallet is secure.",
+      "reports": [
+        {
+          "name": "Chainlight v3.0",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/chainlight_v3_0.pdf",
+          "date": "5 Apr 2024",
+          "auditor": "Chainlight",
+          "findings": {
+            "critical": "-",
+            "high": "-",
+            "midium": "-",
+            "low": "-",
+            "tips": "-"
+          }
+        },
+        {
+          "name": "Kalos v3 Plugins",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_v3_plugins.pdf",
+          "date": "12 Apr 2024",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": "-",
+            "high": "-",
+            "midium": "-",
+            "low": "-",
+            "tips": "-"
+          }
+        },
+        {
+          "name": "Kalos WebAuthn v1",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_webauthn_v1.pdf",
+          "date": "22 Feb 2024",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": "-",
+            "high": "-",
+            "midium": "-",
+            "low": 2,
+            "tips": "-"
+          }
+        },
+        {
+          "name": "Kalos Recovery v2",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_recovery_v2.pdf",
+          "date": "6 Feb 2024",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": 2,
+            "high": "-",
+            "midium": "-",
+            "low": 1,
+            "tips": "-"
+          }
+        },
+        {
+          "name": "Kalos Recovery v1",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_recovery_v1.pdf",
+          "date": "12 Dec 2023",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": 1,
+            "high": "-",
+            "midium": "-",
+            "low": "-",
+            "tips": "-"
+          }
+        },
+        {
+          "name": "Kalos v2.2 Lite",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_v2_2_lite.pdf",
+          "date": "20 Sep 2023",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": 1,
+            "high": "-",
+            "midium": "-",
+            "low": "-",
+            "tips": "-"
+          }
+        },
+        {
+          "name": "Kalos v2.2",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_v2_2.pdf",
+          "date": "9 Aug 2023",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": 1,
+            "high": 2,
+            "midium": 4,
+            "low": "-",
+            "tips": 1
+          }
+        },
+        {
+          "name": "Kalos v2.1",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_v2_1.pdf",
+          "date": "9 Aug 2023",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": 1,
+            "high": 2,
+            "midium": 4,
+            "low": "-",
+            "tips": 1
+          }
+        },
+        {
+          "name": "Kalos v1",
+          "link": "https://github.com/zerodevapp/kernel/blob/main/audits/kalos_v1.pdf",
+          "date": "13 Jul 2023",
+          "auditor": "Kalos",
+          "auditorlink": "https://kalos.xyz/",
+          "findings": {
+            "critical": "-",
+            "high": "-",
+            "midium": "-",
+            "low": "-",
+            "tips": 5
+          }
+        }
+      ]
+    }
+  ]
+}

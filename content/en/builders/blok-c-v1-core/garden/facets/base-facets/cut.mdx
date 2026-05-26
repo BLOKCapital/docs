@@ -1,0 +1,54 @@
+---
+title: Cut
+position: 1
+---
+This module manages state upgrades within the Diamond but enforces Blok Capital's strict "Registry-First" security model.
+
+## `DiamondCutBase.sol`
+
+This is the internal engine for all upgrades. Unlike standard Diamonds that accept arbitrary facet addresses, Blok Capital's `DiamondCutBase` forces every upgrade to be validated against the global `FacetRegistry`.
+
+**Key Builder Takeaway:** A Garden cannot add a facet unless it is globally whitelisted and its module is explicitly allowed for that specific Garden Type.
+
+**Crucial Snippet: Registry Security Check**
+
+```solidity
+// From addFunctions() in DiamondCutBase.sol
+// Ensure facet's module is allowed for this garden's type
+bytes32 gardenType = ld.gardenType;
+if (gardenType != bytes32(0)) {
+    bytes32 moduleId = IFacetRegistry(facetRegistry).getFacetModule(_facetAddress);
+    if (!IFacetRegistry(facetRegistry).isModuleAllowedForGardenType(gardenType, moduleId)) {
+        revert DiamondCut_ModuleNotAllowedForGardenType(gardenType, moduleId);
+    }
+}
+```
+
+## `DiamondCutFacet.sol` (The Shield)
+
+In a standard EIP-2535 implementation, the `diamondCut` function is callable by the owner to upgrade the contract. **In Blok Capital, this function is intentionally blocked.** This facet is included to satisfy the interface requirements of EIP-2535, but it forces all actual upgrades to go through a custom, highly controlled upgrade flow (likely via an `UpgradeFacet` not shown here) to prevent ambiguity and human error.
+
+**Crucial Snippet: The Intentional Revert**
+
+```solidity
+/// @inheritdoc IDiamondCut
+function diamondCut(
+    FacetCut[] memory _diamondCut,
+    address _init,
+    bytes calldata _calldata
+)
+    external
+    override
+    onlyGardenOwner
+    ifIndexNotConnected
+{
+    // Blocked intentionally to force controlled upgrade paths
+    revert DiamondCutFacet_DiamondCutNotAllowed();
+}
+```
+
+## `DiamondCutStorage.sol`
+
+Defines the standard EIP-2535 storage layout required to track facet addresses and their associated function selectors.
+
+- **Storage Pattern:** Uses `LibStorageSlot.deriveStorageSlot(type(DiamondCutStorage).name)` to guarantee the storage layout never collides with other facets.

@@ -1,0 +1,110 @@
+---
+title: Arquitectura de Facetas
+position: 3
+---
+## **3. Arquitectura de Facetas (Agrupadas por Responsabilidad)**
+
+Las facetas se dividen en dos grupos principales:
+
+1. **Facetas base**: el núcleo del Diamond.
+2. **Facetas de funciones**: funciones de índice e integración.
+
+### **3.1 Facetas base (Núcleo)**
+
+Estas residen en:
+
+`src/garden/facets/baseFacets/`
+
+Existen para mantener los **intereses que no son de lógica de negocio** modulares y actualizables.
+
+### **Faceta de Propiedad (Ownership Facet)**
+
+**Componentes clave:**
+
+- `OwnershipFacet.sol` - Contrato de faceta principal que implementa la interfaz de propiedad ERC-173.
+- `OwnershipBase.sol` - Contrato base que contiene la lógica central de propiedad.
+- `OwnershipStorage.sol` - Diseño de almacenamiento para el estado de propiedad.
+
+**Qué controla:**
+
+- **Quién es el dueño del Jardín** (el contrato Diamond).
+- Quién está autorizado para realizar cortes de diamante y cambiar la configuración del protocolo.
+- **Funcionalidad de transferencia de propietario**: El propietario actual puede transferir la propiedad a una nueva dirección o renunciar a ella.
+
+### **Faceta de Corte (Cut Facet / Upgrade Facet)**
+
+**Componentes clave:**
+
+- `IDiamondCut.sol` - Interfaz que define la función diamondCut.
+- `DiamondCutFacet.sol` - Contrato de faceta principal.
+- `DiamondCutBase.sol` - Lógica central del corte de diamante.
+- `DiamondCutStorage.sol` - Diseño de almacenamiento para mapeos de facetas.
+
+**Qué controla:**
+
+- **Qué facetas están registradas** en el Diamond.
+- **Qué selectores de funciones** expone cada faceta.
+- Cómo se **autorizan y ejecutan** las actualizaciones.
+
+### **Faceta de Actualización (Upgrade Facet)**
+
+**Componentes clave:**
+
+- `IUpgrade.sol` - Interfaz para operaciones de actualización de alto nivel.
+- `UpgradeFacet.sol` - Contrato de faceta principal.
+- `UpgradeBase.sol` - Lógica central de actualización.
+- `UpgradeStorage.sol` - Seguimiento de versiones.
+
+**Qué controla:**
+
+- **Sincronización con el FacetRegistry externo** para obtener las actualizaciones aprobadas.
+- **Seguimiento de versiones** para asegurar que los Diamonds estén actualizados.
+- **Verificación de hash** para la integridad de los datos de actualización.
+
+### **Faceta de Introspección (Loupe Facet)**
+
+**Componentes clave:**
+
+- `IDiamondLoupe.sol` - Interfaz para introspección.
+- `DiamondLoupeFacet.sol` - Implementación.
+- `DiamondLoupeBase.sol` - Lógica central.
+- `DiamondLoupeStorage.sol` - Interfaces compatibles (ERC-165).
+
+**Qué controla:**
+
+- **Reflexión / introspección**:
+  - Qué facetas existen y qué selectores de funciones implementan.
+  - Qué interfaces admite el Diamond.
+
+### **3.2 Facetas de Funciones / Dominio**
+
+Estas implementan el **comportamiento a nivel de protocolo** que realmente interesa a los usuarios.
+
+### **Facetas de Índice (Función de Índice)**
+
+**Componentes clave:**
+
+- `IIndex.sol`, `IndexFacet.sol`, `IndexBase.sol`, `IndexStorage.sol`
+
+**Qué problema resuelven:**
+
+- Proporcionan **capacidades relacionadas con el índice** directamente en el Jardín:
+  - `connectToIndex(address indexAddress)`
+  - `disconnectFromIndex()`
+  - `rebalance()`
+  - `isConnectedToIndex()`
+
+### **Facetas de Utilidad / Integración de Protocolos (Integraciones DeFi)**
+
+**Componentes clave:**
+
+- **Uniswap V3**: `UniswapV3Base.sol`, `IUniswapV3.sol`
+- **Camelot V3**: `CamelotV3Base.sol`, `ICamelotV3.sol`
+- **GMX V2**: `GmxV2Base.sol`, `IGmxV2.sol`, `GmxV2Storage.sol`
+- **Aave V3**: `AaveV3Base.sol`, `IAaveV3.sol`
+- **Pendle V2**: `PendleV2Base.sol`, `IPendleV2.sol`
+
+**Qué problema resuelven:**
+
+- Convierten **operaciones abstractas** como el reequilibrio en intercambios concretos o gestión de posiciones.
+- Proporcionan adaptadores reutilizables alrededor de protocolos externos.

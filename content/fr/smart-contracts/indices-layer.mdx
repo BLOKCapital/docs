@@ -1,0 +1,43 @@
+---
+title: Couche des Indices
+position: 5
+---
+## **Couche des Indices (Domaine & Logique Métier)**
+
+**Emplacement :** `src/indices/`
+
+**Composants clés :**
+
+- `Index.sol` : Contrat d'indice central gérant les composants et les poids.
+- `IndexFactory.sol` : Usine pour le déploiement d'instances d'Index.
+- `IndexComponentRegistry.sol` : Liste blanche des jetons approuvés.
+- `IndexCalculationRegistry.sol` : Liste blanche des stratégies de calcul approuvées.
+- `CirculatingSupply.sol` : Oracle de données hors-chaîne pour l'offre de jetons.
+- `IndexMath.sol` : Bibliothèque pour les calculs de poids et de valeur.
+
+### **Entité d'Indice**
+
+Un `Index` est la **représentation on-chain de la composition d'un portefeuille**. Il n'exécute intentionnellement pas de transactions ; il définit simplement le **quoi** (composition). Le **comment** (exécution) est géré par l'IndexFacet du Garden.
+
+### **Usine d'Indices (Index Factory)**
+
+- **Crée de nouveaux indices** avec des composants validés.
+- **Applique des contraintes** : Maximum 250 composants par indice.
+- **Suit les métadonnées** : Nom, ID, date de déploiement, stratégie de calcul utilisée.
+
+### **Registres de Gouvernance**
+
+- **Registre des Composants** : La gouvernance contrôle quels jetons et flux de prix sont « sûrs » à utiliser.
+- **Registre des Calculs** : La DAO contrôle quelles implémentations mathématiques (ex. pondération par capitalisation boursière, pondération égale) sont approuvées.
+
+### **Bibliothèque Mathématique d'Indice**
+
+Fournit une logique pure pour :
+
+- **Le calcul du poids** : À partir des prix et des offres, calcule les poids cibles.
+- **La valeur du portefeuille** : Calcule la valeur totale en USD.
+- **Les montants de rééquilibrage** : Détermine la quantité de chaque jeton à acheter/vendre.
+
+### **Oracle d'Offre Circulante**
+
+Un pont hors-chaîne pour les données d'offre de jetons. Des agents autorisés poussent les dernières données d'offre on-chain, que les facettes consultent pour les calculs basés sur la capitalisation boursière.

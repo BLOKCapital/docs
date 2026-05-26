@@ -1,0 +1,63 @@
+---
+title: Diamond
+position: 1
+---
+## Aperçu de l'Architecture Diamond
+
+![Diamond Proxy](/img/Diamond_proxy.png)
+
+L'architecture Diamond est un système de contrats intelligents modulaire conçu pour des protocoles à longue durée de vie et en constante évolution.
+
+À la base, un Diamond est une adresse de contrat unique qui représente le protocole. Cette adresse ne change jamais. Seule la fonctionnalité est modifiée.
+
+Au lieu de considérer les mises à jour comme le « remplacement d'un contrat », les Diamonds les considèrent comme la **restructuration d'un système** : ajout de nouvelles capacités, suppression de celles qui sont obsolètes ou affinement du comportement existant, le tout sans perturber l'état ou les utilisateurs.
+
+Cette architecture est intentionnellement conçue pour les protocoles qui se développent, se diversifient et évoluent après leur lancement.
+
+---
+
+## Comment le Diamond conçoit la Logique
+
+Un Diamond ne contient pas directement de logique d'application.
+
+Au lieu de cela, il maintient un registre qui associe des **sélecteurs de fonctions** à des modules de logique externe appelés _facettes_ (facets). Comme nous l'avons vu avec les contrats proxy, chaque facette est responsable d'un domaine de comportement spécifique : gouvernance, exécution de stratégie, comptabilité, contrôles des risques ou extensions du protocole.
+
+Lorsqu'une fonction est appelée sur le Diamond, celui-ci détermine _quelle facette possède cette fonction_ et l'exécute dans le contexte du Diamond. Tout l'état réside en un seul endroit. Tout le comportement est composé autour de lui.
+
+## Modèle de Mise à Jour
+
+Les mises à jour dans un Diamond sont explicites, granulaires et auditables.
+
+Plutôt que de redéployer ou d'échanger une implémentation entière, les mises à jour opèrent au **niveau des fonctions** :
+
+→ De nouvelles fonctions peuvent être ajoutées
+
+→ Les fonctions existantes peuvent être remplacées
+
+→ Les fonctions inutilisées peuvent être supprimées
+
+Chaque changement est enregistré on-chain, créant un historique clair de l'évolution du protocole au fil du temps.
+
+Les mises à jour ne sont pas des réécritures cachées. Ce sont des changements architecturaux délibérés.
+
+---
+
+## Pourquoi c'est Important
+
+L'architecture Diamond est conçue pour les protocoles qui :
+
+- Ne peuvent pas tenir dans un seul contrat
+- Prévoient plusieurs domaines de fonctionnalités indépendants
+- Nécessitent des mises à jour transparentes et contrôlées
+
+Au lieu de construire « un seul gros contrat », le protocole devient un **système composable** dont la structure peut s'adapter au fur et à mesure que les exigences évoluent.
+
+## Comment BLOK Capital utilise les Diamonds
+
+BLOK Capital utilise l'architecture Diamond pour modéliser le protocole comme une collection de capacités financières indépendantes unifiées sous une seule adresse.
+
+L'exécution des indices, les stratégies d'actifs, les règles comptables et la logique de gouvernance sont implémentées sous forme de facettes distinctes. Chacune peut évoluer indépendamment sans affecter les soldes des utilisateurs ou les intégrations.
+
+Cela permet à BLOK Capital d'introduire de nouvelles stratégies, d'affiner la logique d'exécution ou de mettre à jour les contrôles des risques tout en préservant la continuité du protocole et la confiance des utilisateurs.
+
+Le Diamond devient non seulement un contrat, mais l'**identité stable du système lui-même**.

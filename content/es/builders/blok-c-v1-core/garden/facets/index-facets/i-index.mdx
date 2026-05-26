@@ -1,0 +1,27 @@
+---
+title: IIndex.sol
+position: 2
+---
+Esta interfaz define las estructuras de datos esenciales que se intercambian entre el Centralized Relayer Engine (CRE) off-chain y el protocolo on-chain.
+
+## Concepto Central: Instrucciones de Swap e Intents
+
+Para ejecutar un rebalanceo, el CRE debe proporcionar un array de instrucciones `SwapStep`. El protocolo compara el resultado de estos pasos con el `PendingIntent` previamente bloqueado.
+
+## Fragmento crucial para Builders: Los Tipos de Ejecución
+
+```solidity
+/// @notice A single swap step provided by the CRE to rebalance the garden.
+struct SwapStep {
+    bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
+    SwapInstruction instruction; // Contains tokens, pools, and amounts
+}
+
+/// @notice Pending rebalance intent data (slimmed for gas efficiency)
+struct PendingIntent {
+    bool active;
+    uint256 totalValueUsd; // Portfolio value at intent creation
+    bytes32[] symbols;
+    uint256[] targetValues; // Desired USD value per token
+}
+```

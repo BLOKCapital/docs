@@ -1,0 +1,43 @@
+---
+title: Indices Layer
+position: 5
+---
+## **Indices Layer (Domain & Business Logic)**
+
+**Location:** `src/indices/`
+
+**Key components:**
+
+- `Index.sol`: Core index contract managing components and weights.
+- `IndexFactory.sol`: Factory for deploying Index instances.
+- `IndexComponentRegistry.sol`: Whitelist of approved tokens.
+- `IndexCalculationRegistry.sol`: Whitelist of approved calculation strategies.
+- `CirculatingSupply.sol`: Off-chain data oracle for token supply.
+- `IndexMath.sol`: Library for weight and value calculations.
+
+### **Index Entity**
+
+An `Index` is the **on-chain representation of a portfolio composition**. It intentionally doesn't execute trades; it just defines the **what** (composition). The **how** (execution) is handled by the Garden's IndexFacet.
+
+### **Index Factory**
+
+- **Creates new indices** with validated components.
+- **Enforces constraints**: Max 250 components per index.
+- **Tracks metadata**: Name, ID, deployment time, calculation strategy used.
+
+### **Governance Registries**
+
+- **Component Registry**: Governance controls which tokens and price feeds are "safe" to use.
+- **Calculation Registry**: DAO controls which math implementations (e.g., market cap weighted, equal weighted) are approved.
+
+### **Index Math Library**
+
+Provides pure logic for:
+
+- **Weight calculation**: Given prices and supplies, compute target weights.
+- **Portfolio value**: Calculate total value in USD.
+- **Rebalance amounts**: Determine how much of each token to buy/sell.
+
+### **Circulating Supply Oracle**
+
+An off-chain bridge for token supply data. Authorized updaters push latest supply data on-chain, which facets query for market-cap-based calculations.

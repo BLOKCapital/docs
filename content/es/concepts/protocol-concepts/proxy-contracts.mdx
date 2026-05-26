@@ -1,0 +1,27 @@
+---
+title: Contratos Proxy
+position: 2
+---
+![Contratos Proxy](/img/Frame%2025.jpg)
+
+## Explicación de los Contratos Proxy
+
+Un contrato proxy es una forma de actualizar un sistema de contratos inteligentes sin cambiar la dirección con la que interactúan los usuarios.
+
+En lugar de llamar directamente a la lógica de la aplicación, los usuarios interactúan con un contrato proxy permanente. Ese proxy reenvía cada llamada a un contrato de implementación independiente que contiene la lógica real. La dirección en la que confían los usuarios sigue siendo la misma, incluso cuando la lógica detrás de ella evoluciona.
+
+Este patrón existe porque los contratos inteligentes son inmutables. Una vez desplegados, su código no se puede cambiar. Sin proxies, corregir errores o añadir funciones requeriría desplegar nuevos contratos, cambiar el estado y pedir a los usuarios que se muevan a una nueva dirección, un enfoque que no escala para protocolos reales.
+
+## Cómo funciona
+
+El contrato proxy almacena todos los datos persistentes, como los saldos y la configuración. El contrato de implementación contiene únicamente la lógica.
+
+Cuando un usuario llama al proxy, este reenvía la llamada utilizando `delegatecall`. Esto ejecuta el código de la implementación en el contexto del proxy. Las actualizaciones de estado afectan al proxy, el llamador original permanece sin cambios y los activos nunca salen del proxy.
+
+En términos sencillos, el proxy es el dueño de los datos. La implementación suministra el comportamiento.
+
+## Cómo utiliza BLOK Capital los Contratos Proxy
+
+BLOK Capital utiliza contratos proxy para garantizar que el protocolo pueda evolucionar sin interrumpir a los usuarios ni poner en riesgo los activos. Todas las interacciones de los usuarios pasan por direcciones de proxy estables, mientras que las actualizaciones de la lógica se gestionan desplegando nuevas implementaciones y actualizando la referencia del proxy.
+
+Esto permite a BLOK Capital mejorar la lógica de los índices, corregir problemas e introducir nuevas funciones, manteniendo intacto el estado del usuario y consistentes las direcciones de los contratos. La autoridad de actualización está gobernada por la DAO de BLOK Capital, lo que garantiza que los cambios sean transparentes y no estén controlados por una sola parte.

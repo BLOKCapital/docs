@@ -1,0 +1,46 @@
+---
+title: Base.sol & Facet.sol
+position: 3
+---
+Estos archivos contienen la lógica de negocio principal para el rebalanceo de carteras. El proceso se divide en dos transacciones distintas para garantizar la seguridad.
+
+## Concepto Central: La canalización en dos pasos
+
+1. **`_rebalanceIntent()`:** Bloquea los precios de mercado actuales y calcula las asignaciones objetivo según los pesos del Índice. Almacena el número de bloque.
+2. **`_rebalance(SwapStep[])`:** Ejecuta las operaciones reales según las instrucciones del CRE.
+
+## Fragmento crucial para Builders: Protección frente a Flash Loans y Slippage
+
+La función `_rebalance` contiene las comprobaciones de seguridad más críticas del protocolo. Previene los ataques de flash loan exigiendo retardos por bloque y comprueba estrictamente el valor de la cartera tras la ejecución de los swaps.
+
+```solidity
+function _rebalance(SwapStep[] calldata steps) internal {
+    IndexStorage.Layout storage s = IndexStorage.layout();
+
+    // Flash loan protection: intent and rebalance must be in different blocks
+    if (block.number <= s.lastIntentBlock) {
+        revert IndexFacet_IntentBlockDelayNotPassed();
+    }
+
+    // Capture portfolio value BEFORE swaps
+    uint256 valueBefore = _calculateTotalValue(componentRegistry);
+
+    // Execute internal DEX swaps via self-calls
+    _executeSwapSteps(steps);
+
+    // Verify individual token balances match targets within 2% threshold
+    uint256 valueAfter = _verifyBalancesMatchTargets(componentRegistry);
+
+    // Guardrail: Ensure total portfolio value did not drop beyond 0.5%
+    uint256 minAcceptableValue = Math.mulDiv(
+        valueBefore,
+        10_000 - IndexStorage.MAX_VALUE_LOSS_BPS,
+        10_000,
+        Math.Rounding.Floor
+    );
+
+    if (valueAfter < minAcceptableValue) {
+        revert IndexFacet_ExcessiveValueLoss(valueBefore, valueAfter);
+    }
+}
+```

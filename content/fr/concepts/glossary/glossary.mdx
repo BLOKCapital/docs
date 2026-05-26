@@ -1,0 +1,94 @@
+---
+title: Glossaire
+position: 1
+---
+## Architecture Centrale (Patron Diamond / EIP-2535)
+
+| Terme | Definition |
+|-------|-----------|
+| Diamond | Le contrat proxy principal evolvable (Garden) qui achemine les appels de fonctions vers les facettes en fonction des selecteurs. Central pour EIP-2535. |
+| Facet (Facette) | Un contrat implementant une fonctionnalite specifique, enregistre aupres du Diamond et appele via delegatecall. |
+| Function Selector (Selecteur de Fonction) | Identifiant de 4 octets (bytes4) derive du hash de la signature d'une fonction, utilise pour acheminer les appels vers la bonne facette. |
+| Facet Cut (Coupe de Facette) | Une structure de donnees contenant une adresse de facette, une action (Ajouter/Remplacer/Supprimer) et des selecteurs a modifier. |
+| Facet Cut Action (Action de Coupe de Facette) | Enum : Add (0), Replace (1), Remove (2) — determine comment le Diamond est modifie. |
+| DiamondCut | La fonction qui applique les coupes de facettes pour modifier la table de routage du Diamond. |
+| DiamondLoupe | Interface de requete pour inspecter les facettes actuelles, les selecteurs et le routage d'un Diamond. |
+| Module | Regroupement logique de facettes liees. Chaque facette appartient a exactement un module. |
+| Base Module (Module de Base) | Module immuable (keccak256("BASE")) contenant les 4 facettes principales — toujours inclus dans chaque Garden. |
+| Delegatecall | Appel EVM de bas niveau qui execute du code externe dans le contexte de stockage du contrat appelant. |
+
+## Garden et Factory
+
+| Terme | Definition |
+|-------|-----------|
+| Garden | Le contrat Diamond (coffre-fort de l'utilisateur) qui detient des tokens et implemente des strategies a travers des facettes. |
+| Index Garden | Le Garden que l'utilisateur connecte a l'indice et qui est reequilibre automatiquement. |
+| Yield Garden | Le Garden que les utilisateurs gerent eux-memes et utilisent differentes strategies pour le faire croitre. |
+| GardenFactory | Contrat factory deployant de nouveaux Gardens via un deploiement deterministe CREATE2. |
+| Garden Index | Valeur numerique (1-10) identifiant de maniere unique l'un des Gardens d'un utilisateur pour le calcul deterministe d'adresses. |
+| Garden Type (Type de Garden) | Categorisation d'un Garden qui determine quels modules optionnels il peut utiliser. |
+| Garden Owner (Proprietaire du Garden) | L'adresse qui a cree/possede un Garden et controle ses operations. |
+| Facet Registry (Registre des Facettes) | Registre central gerant toutes les facettes, modules, types de garden et leurs versions. |
+
+## Indice et Reequilibrage
+
+| Terme | Definition |
+|-------|-----------|
+| Index (Indice) | Un contrat gerant un portefeuille diversifie de composants d'actifs avec des poids calcules. |
+| Index Component (Composant de l'Indice) | Un token ERC20 inclus dans la composition d'un Indice, associe a un flux de prix Chainlink. |
+| Index Calculation Strategy (Strategie de Calcul de l'Indice) | Contrat connectable qui calcule les poids des actifs (par exemple, MarketCapWeighted). |
+| Rebalance (Reequilibrage) | Processus d'ajustement des avoirs du Garden pour correspondre aux allocations cibles de l'Indice. |
+| Rebalance Intent (Intention de Reequilibrage) | Un reequilibrage en attente contenant les valeurs actuelles, les valeurs cibles et les poids pour tous les composants. |
+| Rebalance Interval (Intervalle de Reequilibrage) | Temps minimum (1 heure) entre les reequilibrages consecutifs. |
+| Swap Call (Appel d'Echange) | Instruction individuelle d'echange du CRE contenant le selecteur, les donnees encodees, le token de sortie et la sortie minimale. |
+| Component Weights (Poids des Composants) | Pourcentages d'allocation normalises pour les composants de l'Indice (mis a l'echelle a 1e18). |
+| Market Cap Weighted (Pondere par Capitalisation Boursiere) | Strategie qui pondere les composants proportionnellement a leur capitalisation boursiere. |
+
+## Gouvernance et Statut du Protocole
+
+| Terme | Definition |
+|-------|-----------|
+| Protocol Status (Statut du Protocole) | Enum : ACTIVE, UPGRADES_DISABLED ou INACTIVE — controle le comportement au niveau du protocole. |
+| Security Council Member (SCM) (Membre du Conseil de Securite) | Membres du DAO suivis via ENS qui peuvent autoriser les changements d'etat du protocole. |
+| ENS Namehash | Identifiant hash d'un domaine ENS utilise pour suivre l'adhesion au SCM. |
+
+## DEX et Liquidite
+
+| Terme | Definition |
+|-------|-----------|
+| Liquidity Pool (Pool de Liquidite) | Pool AMM enregistre dans le LiquidityPoolRegistry pour l'echange de tokens. |
+| DEX ID | Identifiant bytes32 pour une plateforme DEX (par exemple, keccak256("UNISWAP_V3")). |
+| Pair ID (ID de Paire) | Identifiant canonique (keccak256 des adresses de tokens ordonnees) pour une paire de tokens sur tous les DEX. |
+| Fee Tier (Niveau de Frais) | Pourcentage de frais pour les pools de liquidite concentree (uint24 : 500, 3000, 10000 points de base). |
+| Exact Input Swap (Echange a Entree Exacte) | Echange avec un montant d'entree fixe et une sortie variable. |
+| Exact Output Swap (Echange a Sortie Exacte) | Echange avec un montant de sortie fixe et une entree variable. |
+| Slippage Protection (Protection contre le Glissement) | Sortie minimale (amountOutMin) ou entree maximale (amountInMax) pour prevenir les echanges defavorables. |
+| Swap Path (Chemin d'Echange) | Sequence de sauts de tokens pour les echanges multi-pool (par exemple, WETH -> USDC -> DAI). |
+| TWAP (Prix Moyen Pondere dans le Temps) | Prix oracle a partir d'observations historiques, resistant a la manipulation par prets flash. |
+| Sqrt Price X96 | Representation interne des prix de Uniswap V3 en format a virgule fixe Q64.96. |
+
+## Cross-Chain (CCTP)
+
+| Terme | Definition |
+|-------|-----------|
+| CCTP | Protocole de Transfert Cross-Chain de Circle pour le transfert d'USDC entre les chaines. |
+| Destination Domain (Domaine de Destination) | ID de domaine Circle pour une blockchain (1 = Ethereum, 42161 = Arbitrum, etc.). |
+| TokenMessengerV2 | Contrat Circle pour initier les destructions d'USDC cross-chain. |
+| MessageTransmitterV2 | Contrat Circle pour recevoir/verifier les messages cross-chain. |
+
+## NFT et Adhesion
+
+| Terme | Definition |
+|-------|-----------|
+| Reward Collection (Collection de Recompenses) | Collection de NFT ERC721 frappee par les Gardens pour suivre leurs propres contributions. |
+| SBT (Token Soulbound) | NFT non transferable (ERC-5484) representant l'adhesion. |
+| SBT Registry (Registre des SBT) | Registre gerant les collections de SBT et les permissions de frappe. |
+
+## Stockage et Elements Internes
+
+| Terme | Definition |
+|-------|-----------|
+| Storage Layout (Disposition du Stockage) (EIP-7201) | Stockage avec espaces de noms utilisant LibStorageSlot pour prevenir les collisions de slots entre les facettes. |
+| LibDiamond | Bibliotheque principale stockant les metadonnees du Diamond (facetRegistry, protocolStatus, gardenType, etc.). |
+| Price Feed / Heartbeat (Flux de Prix / Battement) | Oracle Chainlink AggregatorV3 ; le battement est l'intervalle maximal d'obsolescence avant que les donnees ne soient considerees comme perimees. |
+| Self-call (Auto-appel) | Un Garden appelant son propre proxy Diamond (msg.sender == address(this)) pour la composabilite interne des facettes. |

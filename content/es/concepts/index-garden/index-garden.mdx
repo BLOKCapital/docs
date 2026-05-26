@@ -1,0 +1,96 @@
+---
+title: Jardín Indexado
+position: 1
+---
+![Jardín Indexado](/img/IndexGarden.png)
+
+# Protocolo de Jardines: Visión General de la Arquitectura
+
+---
+
+## Creación del Jardín
+
+Cada jardín se despliega a través de la Garden Factory, sin excepciones. No se permite el despliegue directo. Existen dos tipos: un **Jardín Indexado** (Index Garden) y un **Jardín de Rendimiento** (Yield Garden), cada uno con un propósito distinto dentro del ecosistema.
+
+---
+
+## El Sistema de Facetas
+
+Los jardines se construyen sobre una arquitectura modular de facetas, separando el almacenamiento de un vault de su lógica. Para que una faceta sea utilizable, debe estar adjunta al jardín y figurar como aprobada en el Facet Registry. Si una faceta es eliminada del registro, cualquier llamada enrutada a través de ella fallará, por lo que siempre se prefiere la deprecación a la eliminación.
+
+---
+
+## El Módulo de Índice
+
+El Módulo de Índice reside dentro del Facet Registry y alberga todas las Index Facets. Cada Index Facet es responsable de conectar un jardín con su índice elegido, obtener los pesos más recientes, ejecutar la asignación de activos y gestionar el reequilibrio cuando los pesos cambian.
+
+---
+
+## Definiciones de Índice
+
+El protocolo incluye tres índices predefinidos: **Block C2**, **Block C5** y **Block C10**. Cada uno define qué activos se incluyen y cómo se determinan los pesos. Estas definiciones residen a nivel del índice, no dentro de los jardines individuales, manteniendo las estrategias consistentes y auditables.
+
+---
+
+## Registro de Cálculo de Índice
+
+El cálculo de pesos pertenece enteramente al Index Calculation Registry. Extrae datos del oráculo, ejecuta la lógica de pesos y produce salidas como:
+
+```
+BTC → 0.8
+ETH → 0.2
+```
+
+Los jardines son puramente consumidores de estos datos.
+
+---
+
+## Flujo de Conexión
+
+Un usuario crea el jardín, instala la Index Facet apropiada y selecciona un índice, por ejemplo, BLOK C2. El jardín almacena una referencia a ese índice, y cada operación posterior queda anclada a él.
+
+---
+
+## Flujo de Depósito
+
+Cuando un usuario deposita 1.000 USDC, el jardín obtiene los pesos actuales y asigna en consecuencia:
+
+```
+800 USDC → BTC
+200 USDC → ETH
+```
+
+Se ejecutan los swaps y los activos resultantes se mantienen dentro del jardín.
+
+---
+
+## Ciclo de Vida del Jardín
+
+Un jardín admite reequilibrio, retiros y actualizaciones de índice a lo largo de su vida útil. Responde a los cambios en los datos de pesos o en la configuración del índice a medida que se producen.
+
+---
+
+## Reequilibrio
+
+El reequilibrio puede activarse manualmente o mediante un keeper. El jardín compara las posiciones actuales con los pesos más recientes y ajusta las posiciones para mantenerse alineado con su índice.
+
+---
+
+## Gobernanza y Despliegue
+
+Las Index Facets se despliegan a través de la Index Factory y requieren la aprobación de la DAO antes de su uso. Solo las facetas verificadas y aprobadas llegan a un jardín.
+
+---
+
+## Comportamiento de Actualización
+
+Si una faceta es eliminada del Facet Registry, cualquier jardín que dependa de ella se romperá inmediatamente sin retroceso elegante. Siempre depreque, marque las facetas como retiradas y deje de enrutar nuevos jardines hacia ellas, en lugar de eliminarlas.
+
+---
+
+## Modelo Mental
+
+- **Jardín** → Vault
+- **Faceta** → Lógica
+- **Índice** → Estrategia
+- **Registro** → Fuente de Verdad

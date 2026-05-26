@@ -1,0 +1,96 @@
+---
+title: Index Garden
+position: 1
+---
+![Index Garden](/img/IndexGarden.png)
+
+# Garden Protocol: Architecture Overview
+
+---
+
+## Garden Creation
+
+Every garden is deployed through the Garden Factory  no exceptions. Direct deployment is not permitted. There are two types: an **Index Garden** and a **Yield Garden**, each serving a distinct purpose within the ecosystem.
+
+---
+
+## The Facet System
+
+Gardens are built on a modular facet architecture, separating a vault's storage from its logic. For a facet to be usable, it must be attached to the garden and listed as approved in the Facet Registry. If a facet gets removed from the registry, any calls routed through it will fail  which is why deprecation is always preferred over deletion.
+
+---
+
+## The Index Module
+
+The Index Module lives inside the Facet Registry and houses all Index Facets. Each Index Facet is responsible for connecting a garden to its chosen index, fetching the latest weights, executing asset allocation, and handling rebalancing when weights shift.
+
+---
+
+## Index Definitions
+
+The protocol ships with three predefined indices  **Block C2**, **Block C5**, and **Block C10**. Each defines which assets are included and how weights are determined. These definitions live at the index level, not inside individual gardens, keeping strategies consistent and auditable.
+
+---
+
+## Index Calculation Registry
+
+Weight computation belongs entirely to the Index Calculation Registry. It pulls oracle data, runs the weight logic, and produces outputs like:
+
+```
+BTC → 0.8
+ETH → 0.2
+```
+
+Gardens are purely consumers of this data.
+
+---
+
+## Connection Flow
+
+A user creates the garden, installs the appropriate Index Facet, and selects an index  say, BLOK C2. The garden stores a reference to that index, and every subsequent operation is anchored to it.
+
+---
+
+## Deposit Flow
+
+When a user deposits 1,000 USDC, the garden fetches current weights and allocates accordingly:
+
+```
+800 USDC → BTC
+200 USDC → ETH
+```
+
+Swaps are executed and the resulting assets are held inside the garden.
+
+---
+
+## Garden Lifecycle
+
+A garden supports rebalancing, withdrawals, and index updates over its lifetime. It responds to changes in weight data or index configuration as they come.
+
+---
+
+## Rebalancing
+
+Rebalancing can be triggered manually or by a keeper. The garden compares current holdings against the latest weights and adjusts positions to stay aligned with its index.
+
+---
+
+## Governance and Deployment
+
+Index Facets are deployed through the Index Factory and require DAO approval before use. Only vetted, approved facets ever make it into a garden.
+
+---
+
+## Upgrade Behavior
+
+If a facet is removed from the Facet Registry, any garden relying on it will break immediately with no graceful fallback. Always deprecate mark facets as retired and stop routing new gardens to them rather than deleting.
+
+---
+
+## Mental Model
+
+- **Garden** → Vault
+- **Facet** → Logic
+- **Index** → Strategy
+- **Registry** → Source of Truth

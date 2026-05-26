@@ -1,0 +1,46 @@
+---
+title: Introducción y Guía del Constructor
+position: 1
+---
+![Descripción general del sistema](/img/Frame%2021.jpg)
+
+## **1. Descripción general del sistema**
+
+Este repositorio implementa un **protocolo de gestión de activos on-chain** construido alrededor de un **controlador Diamond (EIP-2535)** llamado el **Jardín** (Garden).
+
+Nivel alto:
+
+- Los usuarios y los sistemas externos interactúan con **un solo contrato**: `src/garden/Garden.sol`.
+- El Jardín en sí es **delgado**: no implementa la lógica de negocio directamente. En su lugar, **enruta las llamadas** a un conjunto de **facetas** (módulos) que implementan:
+  1. Mecánica central del protocolo (propiedad, actualizaciones, introspección).
+  2. Funciones relacionadas con el índice (conexión, seguimiento y reequilibrio de índices).
+  3. Integraciones DeFi (intercambios DEX, posiciones GMX, precios de Chainlink).
+- La **capa de dominio** (índices, registros, matemáticas) vive fuera del Diamond y puede entenderse por separado de la mecánica de enrutamiento y almacenamiento.
+
+### **¿Por qué Diamond?**
+
+Este protocolo está diseñado para:
+
+- **Evolucionar con el tiempo** (añadir/eliminar/actualizar funciones sin migrar el estado).
+- **Componer múltiples dominios** (índices, DEX, GMX, SBT) detrás de una sola dirección.
+- **Exponer una superficie estable** permitiendo al mismo tiempo el cambio de los módulos internos.
+
+El patrón Diamond le ofrece:
+
+- Una única dirección (`Garden.sol`) con:
+  - Un **registro de facetas**: contiene la información sobre qué selector de función es implementado por qué faceta.
+  - **Almacenamiento compartido**: el estado está centralizado en unos pocos diseños bien definidos.
+  - **Capacidad de actualización**: la faceta de actualización base controla qué facetas están activas.
+
+Conceptualmente, piense en el sistema como:
+
+1. **Punto de entrada (Garden)** → recibe las llamadas.
+2. **Facetas centrales** → gestionan la propiedad, las actualizaciones y la introspección.
+3. **Facetas de funciones** → lógica de índices e integraciones DeFi.
+4. **Capa de dominio** → índices, registros, estrategias, matemáticas.
+5. **Infraestructura** → LibDiamond, librerías de almacenamiento, OpenZeppelin.
+6. **Integraciones externas** → DEXs, GMX, Chainlink, SBTs.
+
+El diagrama proporcionado anteriormente es el mapa oficial de estas capas; esta documentación sigue esa estructura.
+
+---

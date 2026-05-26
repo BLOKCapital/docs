@@ -1,0 +1,31 @@
+---
+title: IndexStorage.sol
+position: 1
+---
+Comme le modèle Diamond repose sur `delegatecall`, l'état doit être géré avec soin pour éviter les collisions de stockage. Blok Capital utilise le modèle **Diamond Storage**.
+
+## Focus principal : Garde-fous du Protocole
+
+Cette bibliothèque définit les adresses exactes des oracles sur Arbitrum One Mainnet et fixe les limites financières strictes pour les opérations de rééquilibrage.
+
+## Extrait crucial pour les Builders : Limites Financières et Disposition du Stockage
+
+Les Builders doivent comprendre ces seuils codés en dur. Par exemple, une route de swap qui perd plus de 50 points de base (0,5 %) de la valeur totale du portefeuille déclenchera automatiquement un revert.
+
+```solidity
+// Rebalancing Parameters
+uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
+uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
+uint256 internal constant INTENT_EXPIRY = 10 minutes;
+
+// Diamond Storage Layout
+struct Layout {
+    address indexAddress;
+    uint256 lastRebalanceTimestamp;
+    uint256 lastIntentTimestamp;
+    bool rebalancing; // Custom reentrancy guard
+    PendingIntent pendingIntent;
+    uint256 lastIntentBlock; // Flash loan protection
+}
+```

@@ -1,0 +1,20 @@
+# Dependencies
+/node_modules
+
+# Next.js
+/.next
+/out
+
+# Production
+/build
+
+# Generated
+/src/lib/search-index.json
+tsconfig.tsbuildinfo
+next-env.d.ts
+
+# Misc
+.DS_Store
+.env*.local
+.vercel
+npm-debug.log*

@@ -1,0 +1,159 @@
+---
+title: Contribuye a nuestra documentación
+position: 7
+---
+BLOKC prospera gracias a las contribuciones abiertas, y nuestra documentación no es la excepción. Seas desarrollador, diseñador o miembro de la comunidad, tu aporte ayuda a que nuestros docs sean más útiles e inclusivos para todos.
+Esta guía te acompaña en la configuración básica y el conocimiento necesario para empezar a contribuir a la documentación de BLOKC alojada en [GitHub](https://github.com/BLOKCapital/documentation).
+
+## Requisitos previos
+Antes de comenzar, asegúrate de tener instaladas las siguientes herramientas en tu sistema:
+
+1. **Git**
+Se utiliza para clonar el repositorio y gestionar el control de versiones.
+[Instalar Git](https://git-scm.com/downloads)
+
+2. **Node.js y npm**
+Necesarios para ejecutar Docusaurus localmente.
+[Instalar Node.js (versión LTS)](https://nodejs.org/en)
+
+3. **VS Code o cualquier editor de texto**
+Facilita la edición de archivos Markdown y la navegación por el proyecto.
+[Descargar VS Code](https://code.visualstudio.com/download)
+
+4. **Conocimientos básicos de Markdown**
+Nuestra documentación está escrita en archivos .md y .mdx.
+
+## Flujo de contribución
+Para contribuir a la documentación de BLOKC, sigue los pasos a continuación para configurar tu entorno local y comprender la estructura del repositorio de documentación.
+
+---
+
+### Primeros pasos
+
+1. **Accede al repositorio**  
+   Dirígete al repositorio oficial de documentación de BLOKC en GitHub.
+
+2. **Haz un fork del repositorio**
+   Haz clic en el botón **"Fork"**, GitHub creará una copia del repo en tu cuenta. (ej: https://github.com/tu-usuario/documentation).
+
+2. **Clona el repositorio**  
+   Usa el siguiente comando para clonar el proyecto en tu máquina local:  
+   ```bash
+   git clone https://github.com/tu-usuario/documentation
+   ```
+
+3. **Navega al directorio del proyecto**  
+   ```bash
+   cd documentation
+   ```
+
+4. **Instala las dependencias**  
+   Instala todos los paquetes requeridos con:  
+   ```bash
+   npm install
+   ```
+
+5. **Ejecuta la documentación localmente**  
+   Inicia el servidor de desarrollo local con:  
+   ```bash
+   npm start
+   ```
+
+---
+
+### Entendiendo la estructura del proyecto
+
+Antes de contribuir, es útil entender cómo está organizada la documentación:
+
+- Cada **carpeta** en el directorio `/docs` representa una sección principal de la documentación.
+- Cada **archivo** dentro de esas carpetas es una subsección o página de contenido.
+- Todos los archivos están escritos en **Markdown** (`.md`).
+
+---
+
+### Tipos de contribuciones
+
+Puedes contribuir a la documentación de las siguientes maneras:
+
+- **Actualizar una sección o subsección existente**  
+  Agregar nueva información, corregir errores, actualizar contenido obsoleto o eliminar material irrelevante.
+
+- **Agregar una nueva subsección**  
+  Crear una nueva página de contenido en una sección existente.
+
+- **Crear una nueva sección**  
+  Introducir una sección completamente nueva en la documentación agregando una nueva carpeta.
+
+---
+
+### Cómo contribuir
+
+#### 1. Actualizar una sección o subsección existente
+
+- Identifica la sección o archivo que deseas actualizar.
+- Abre el archivo `.md` correspondiente.
+- Realiza tus ediciones directamente—agrega, elimina o corrige según sea necesario.
+
+#### 2. Agregar una nueva subsección
+
+- Ubica la carpeta de la sección correspondiente.
+- Crea un nuevo archivo con extensión `.md` (ej: `nueva-subseccion.md`).
+- Agrega tu contenido en formato Markdown.
+
+#### 3. Agregar una nueva sección
+
+- Crea una nueva carpeta bajo el directorio `/docs` con un nombre apropiado.
+- Dentro de esa carpeta, crea un nuevo archivo `.md` para tu contenido.
+- Tu nueva sección y su contenido ahora serán reconocidos por el sistema de documentación.
+
+---
+
+### Enviar tu contribución
+
+Una vez que hayas terminado tus cambios, sigue estos pasos para subirlos y abrir un Pull Request (PR):
+
+1. **Crea una nueva rama**
+   ```bash
+   git checkout -b tu-nombre-de-rama
+   ```
+
+2. **Agrega tus cambios**
+   ```bash
+   git add .
+   ```
+
+3. **Haz commit de tu trabajo**
+   ```bash
+   git commit -m "Mensaje descriptivo sobre tu contribución"
+   ```
+
+4. **Haz push a GitHub**
+   ```bash
+   git push -u origin tu-nombre-de-rama
+   ```
+
+5. **Abre un Pull Request**  
+   Ve al repositorio de GitHub, compara ramas y abre un PR para revisión.
+
+
+## Mira el tutorial en video
+¿Prefieres una guía visual? Mira este video rápido donde te guiamos por todo el proceso de contribución—desde clonar el repositorio hasta enviar tu primer pull request.
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/CMHOX2Wq31g"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+
+
+## Recursos
+- [Docusaurus Docs](https://docusaurus.io/docs) – Aprende cómo funciona Docusaurus, desde la configuración hasta la escritura de plugins personalizados.
+
+- [Guía Markdown](https://www.markdownguide.org/cheat-sheet/) – Un resumen rápido de la sintaxis Markdown.
+
+- [GitHub Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) – Guías de Git y GitHub para principiantes.

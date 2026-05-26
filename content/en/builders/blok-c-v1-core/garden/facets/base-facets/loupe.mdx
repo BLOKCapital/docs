@@ -1,0 +1,34 @@
+---
+title: Loupe
+position: 2
+---
+The Loupe module is entirely read-only. It provides the introspection functions required by EIP-2535, allowing block explorers, frontends, and indexing bots to "see" inside the Garden and map out its capabilities.
+
+## `DiamondLoupeBase.sol` & `DiamondLoupeFacet.sol`
+
+These contracts implement the standard `IDiamondLoupe` interface. Because a Garden's capabilities can change over time (via upgrades), UIs should use these functions to verify if a Garden supports a specific action before sending a transaction.
+
+It also implements `IERC165`, allowing other contracts to query `supportsInterface(bytes4)`.
+
+**Key Introspection Functions for Builders:**
+
+- `facets()`: Returns all active facet addresses and their bundled function selectors.
+- `facetFunctionSelectors(address _facet)`: Returns all functions bundled in a specific facet.
+- `facetAddress(bytes4 _functionSelector)`: Returns the exact facet address handling a specific function.
+
+**Crucial Snippet: Querying a Selector**
+
+Builders can use this to dynamically check if a Garden has a specific feature installed:
+
+```solidity
+// From DiamondLoupeBase.sol
+/// @notice Retrieves the facet that supports the given function selector
+function _facetAddress(bytes4 _functionSelector) internal view returns (address facetAddress_) {
+    // Looks up the specific routing mapping in Diamond Storage
+    facetAddress_ = DiamondCutStorage.layout().selectorToFacetAndPosition[_functionSelector].facetAddress;
+}
+```
+
+## `DiamondLoupeStorage.sol`
+
+Stores the mappings for ERC-165 interface detection (`mapping(bytes4 => bool) supportedInterfaces`). This is initialized when the Garden is first deployed.

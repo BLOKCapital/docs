@@ -1,0 +1,152 @@
+---
+title: Índices Garden
+position: 5
+---
+Un índice ponderado por capitalización de mercado asigna pesos a los activos en proporción a su capitalización de mercado relativa al total de la capitalización de mercado del portafolio (o cesta).
+
+---
+
+## 1. Concepto de Ponderación por Capitalización de Mercado
+
+Un **índice ponderado por capitalización de mercado** asigna pesos a los activos en proporción a su capitalización de mercado relativa al total de la capitalización del portafolio (o cesta).
+
+**Fórmula:**
+
+![Alt text](/img/mcapformula.png)
+
+Esto asegura que las empresas o tokens más grandes (por valor de mercado) tengan mayor influencia en el índice.
+
+---
+
+## 2. Pasos en la Construcción y Rebalanceo
+
+1. **Recolección de Datos**
+
+   * Capitalización de mercado de cada activo.
+   * Valor actual en dólares de cada activo.
+   * Precios de los activos.
+   * Valor total del portafolio.
+
+2. **Cálculo de Pesos Objetivo**
+
+   * Dividir la capitalización de mercado de cada activo entre la suma de todas las capitalizaciones.
+   * Ejemplo: Si A = 500B, B = 300B, C = 200B → pesos = 50%, 30%, 20%.
+
+3. **Comparación con las Tenencias Actuales**
+
+   * Identificar desviaciones entre valores actuales y objetivos.
+
+4. **Rebalanceo Cuando Sea Necesario**
+
+   * Vender activos con sobrepeso, comprar los con bajo peso.
+   * Igualar compras y ventas para que no haya flujo neto de efectivo.
+   * Operar con unidades completas (acciones o tokens).
+
+---
+
+## 3. Tolerancia y Eficiencia de Costos
+
+* **Umbral de tolerancia:** Un porcentaje establecido (p. ej., 5% del valor del portafolio) define cuándo se disparan las operaciones.
+
+  * Pequeñas desviaciones por debajo del umbral se ignoran (evita sobreoperar).
+  * Ejemplo: En un portafolio de \$20,000 con 5% de tolerancia (\$1,000), solo se ejecutan operaciones si las desviaciones superan los \$1,000.
+* **Minimización de costos de transacción:**
+
+  * Menos operaciones = menores comisiones.
+  * Agrupar operaciones si se gestionan múltiples cuentas.
+  * Considerar diferenciales de compra-venta en el análisis costo/beneficio.
+
+### Arquitectura Propuesta (Borrador)
+
+![Alt text](/img/GardenIndex.png)
+
+### Ejemplos de Operaciones
+
+Trabajemos con **tres escenarios ilustrativos** usando WETH y ARB, donde comparamos **pesos objetivo** vs. **pesos calculados (actuales)** bajo una regla de tolerancia del 5%.
+
+---
+
+#### Supuestos
+
+* Valor del Portafolio = **\$10,000**
+* Precios de Activos:
+
+  * WETH = **\$2,000**
+  * ARB = **\$1.00**
+* Pesos Objetivo:
+
+  * WETH = **70%**
+  * ARB = **30%**
+* Tolerancia: **+5% del valor total del portafolio (\$500)** — los intercambios se realizan solo si mejoran el portafolio al menos en esa cantidad.
+
+---
+
+#### Caso 1: **Peso objetivo = peso actual → No hay intercambio**
+
+* Tenencias actuales:
+
+  * WETH = 3.5 (\$7,000, 70%)
+  * ARB = 3,000 (\$3,000, 30%)
+* Pesos actuales = Pesos objetivo (70/30).
+
+**Acción:** No se requiere intercambio. El portafolio está alineado con los objetivos.
+
+---
+
+#### Caso 2: **Peso objetivo mayor → Se realiza intercambio**
+
+Supongamos que el portafolio actual es:
+
+* WETH = 3 (\$6,000, 60%)
+* ARB = 4,000 (\$4,000, 40%)
+* Pesos actuales: WETH 60%, ARB 40%.
+* Objetivo: WETH 70%, ARB 30%.
+
+Para rebalancear:
+
+* Objetivo WETH = \$7,000. Actualmente \$6,000 → necesita **+\$1,000 en WETH**.
+* Objetivo ARB = \$3,000. Actualmente \$4,000 → necesita **–\$1,000 en ARB**.
+
+Intercambio de \$1,000 en ARB → WETH.
+
+* Post-intercambio:
+
+  * WETH = \$7,000 (70%)
+  * ARB = \$3,000 (30%).
+
+**Cambio de valor = \$1,000 > \$500 de tolerancia → Se ejecuta intercambio.**
+
+---
+
+#### Caso 3: **Peso objetivo mayor, pero por debajo de tolerancia → No hay intercambio**
+
+Supongamos que el portafolio actual es:
+
+* WETH = 3.3 (\$6,600, 66%)
+* ARB = 3,400 (\$3,400, 34%)
+* Pesos actuales: WETH 66%, ARB 34%.
+* Objetivo: WETH 70%, ARB 30%.
+
+Para rebalancear:
+
+* Objetivo WETH = \$7,000. Actualmente \$6,600 → necesita **+\$400 en WETH**.
+* Objetivo ARB = \$3,000. Actualmente \$3,400 → necesita **–\$400 en ARB**.
+
+Tamaño del intercambio = \$400.
+
+* Esto es **< \$500 de tolerancia**, por lo que **no se realiza intercambio**.
+* El portafolio permanece ligeramente desbalanceado pero dentro de lo aceptable.
+
+---
+
+### Resumen
+
+* **Caso 1:** Perfectamente alineado → sin acción.
+* **Caso 2:** Desviación significativa → se realiza intercambio.
+* **Caso 3:** Existe desviación pero por debajo de tolerancia → no se realiza intercambio.
+
+<Admonition kind="warning" title="Esta arquitectura aún está en desarrollo y será introducida en una futura versión. La información aquí provista es preliminar y puede cambiar sin previo aviso.">
+
+
+
+</Admonition>

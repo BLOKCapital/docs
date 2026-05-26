@@ -1,0 +1,43 @@
+---
+title: Capa de Índices
+position: 5
+---
+## **Capa de índices (Dominio y Lógica de Negocio)**
+
+**Ubicación:** `src/indices/`
+
+**Componentes clave:**
+
+- `Index.sol`: Contrato de índice central que gestiona componentes y ponderaciones.
+- `IndexFactory.sol`: Fábrica para desplegar instancias de Index.
+- `IndexComponentRegistry.sol`: Lista blanca de tokens aprobados.
+- `IndexCalculationRegistry.sol`: Lista blanca de estrategias de cálculo aprobadas.
+- `CirculatingSupply.sol`: Oráculo de datos off-chain para el suministro de tokens.
+- `IndexMath.sol`: Librería para cálculos de ponderación y valor.
+
+### **Entidad de Índice (Index Entity)**
+
+Un `Index` es la **representación on-chain de la composición de una cartera**. Intencionadamente no ejecuta operaciones; solo define el **qué** (composición). El **cómo** (ejecución) es gestionado por la `IndexFacet` del Jardín.
+
+### **Fábrica de Índices (Index Factory)**
+
+- **Crea nuevos índices** con componentes validados.
+- **Aplica restricciones**: Máximo 250 componentes por índice.
+- **Realiza el seguimiento de metadatos**: Nombre, ID, tiempo de despliegue, estrategia de cálculo utilizada.
+
+### **Registros de Gobernanza**
+
+- **Registro de componentes**: La gobernanza controla qué tokens y canales de precios son "seguros" de usar.
+- **Registro de cálculos**: La DAO controla qué implementaciones matemáticas (ej. ponderado por capitalización de mercado, ponderado por igual) están aprobadas.
+
+### **Librería de Matemáticas de Índice**
+
+Proporciona lógica pura para:
+
+- **Cálculo de ponderación**: Dados los precios y suministros, computa las ponderaciones objetivo.
+- **Valor de la cartera**: Calcula el valor total en USD.
+- **Cantidades de reequilibrio**: Determina cuánto comprar/vender de cada token.
+
+### **Oráculo de Suministro Circulante**
+
+Un puente off-chain para los datos de suministro de tokens. Los actualizadores autorizados envían los últimos datos de suministro on-chain, que las facetas consultan para los cálculos basados en la capitalización de mercado.

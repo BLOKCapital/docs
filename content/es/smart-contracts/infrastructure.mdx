@@ -1,0 +1,146 @@
+---
+title: Infraestructura y Almacenamiento
+position: 6
+---
+## **5 Gestión de almacenamiento y estado**
+
+El poder de Diamond viene con una gran restricción: **todas las facetas comparten el almacenamiento**. Para gestionar eso de forma segura, este repositorio utiliza **librerías de almacenamiento**.
+
+### **Patrón de almacenamiento Diamond compartido**
+
+El patrón:
+
+- Definir una `struct Layout` que contenga variables para un interés específico.
+- Fijar un **depósito de almacenamiento** (storage slot) mediante un hash constante `bytes32` de una cadena única.
+- Proporcionar una función `layout()` que devuelva una referencia de almacenamiento a ese diseño.
+
+```solidity
+library SomeStorage {
+    bytes32 internal constant STORAGE_POSITION = keccak256("some.unique.storage.slot");
+
+    struct Layout {
+        uint256 value;
+        mapping(address => bool) allowed;
+    }
+
+    function layout() internal pure returns (Layout storage l) {
+        bytes32 position = STORAGE_POSITION;
+        assembly { l.slot := position }
+    }
+}
+```
+
+### **Cómo las facetas acceden de forma segura al estado**
+
+Cada faceta con estado importa la librería de almacenamiento relevante y obtiene inmediatamente una referencia:
+`SomeStorage.Layout storage s = SomeStorage.layout();`
+
+Esto garantiza que cada interés (propiedad, loupe, índice, etc.) tenga su propio espacio de almacenamiento dedicado y que no se solape.
+
+---
+
+## **6 Runtime e Infraestructura**
+
+### **LibDiamond**
+
+**Archivo:** `src/garden/libraries/LibDiamond.sol`
+
+Este es el **núcleo de tiempo de ejecución (runtime kernel)** para el Diamond. Posee el diseño de almacenamiento principal de Diamond (mapeo de selector a faceta) y proporciona funciones centrales para realizar cortes (cuts) y aplicar la propiedad.
+
+### **Librerías de OpenZeppelin**
+
+Se utilizan intensamente para seguridad y estándares:
+
+- `Ownable`: Control de acceso.
+- `IERC20`, `IERC20Metadata`: Interacciones con tokens.
+- `SafeERC20`: Operaciones de transferencia seguras.
+- `Math`, `EnumerableSet`: Operaciones matemáticas y de conjuntos de utilidad.
+
+### **Qué es infraestructura frente a lógica de negocio**
+
+- **Infraestructura**: mecánicas como `LibDiamond`, librerías de almacenamiento e interfaces DEX. No codifican reglas de protocolo.
+- **Lógica de negocio**: reglas para la construcción de índices, fijación de precios y reequilibrio.
+
+Los constructores deben sentirse cómodos leyendo la infraestructura, pero ser **cautos** al cambiarla, ya que afecta a todo el sistema.
+
+## **7 Cómo debe leer un constructor este repositorio**
+
+Si es nuevo en esta base de código, aquí tiene una ruta de lectura que coincide tanto con su diagrama como con el repositorio:
+
+### **Paso 1 – Comenzar en el punto de entrada**
+
+1. `src/garden/Garden.sol`
+   - Comprender:
+     - Que es un Diamond.
+     - Cómo enruta las llamadas usando `LibDiamond`.
+   - Eche un vistazo al constructor para ver cómo se conectan las facetas iniciales.
+
+### **Paso 2 – Explorar las facetas base (núcleo)**
+
+1. `src/garden/facets/baseFacets/ownership/*`
+   - Ver cómo se almacena y se aplica la propiedad.
+2. `src/garden/facets/baseFacets/cut/*` y `.../upgrade/*`
+   - Entender cómo funcionan los cortes (cuts) de diamante.
+   - Observar cómo se gestionan los selectores y las facetas.
+3. `src/garden/facets/baseFacets/loupe/*`
+   - Ver cómo se implementa la introspección.
+
+En este punto sabrá:
+
+“Quién es el dueño del Jardín, cómo se puede actualizar y cómo puedo descubrir sus capacidades.”
+
+### **Paso 3 – Explorar las facetas de funciones**
+
+1. `src/garden/facets/indexFacets/IIndex.sol`
+   - Observar el comportamiento externo: conectar, desconectar, reequilibrar, comprobar estado.
+2. `src/garden/facets/indexFacets/IndexBase.sol` + `IndexStorage.sol`
+   - Ver cómo:
+     - Extrae datos de registros y librerías matemáticas.
+     - Llama a utilidades DEX/GMX.
+     - Utiliza Chainlink para los precios.
+3. `src/garden/facets/utilityFacets/arbitrumOne/*`
+   - Entender la lógica de ayuda de Uniswap / Camelot y GMX.
+
+Aquí entenderá:
+
+“Cómo una llamada de reequilibrio en el Jardín se convierte en un conjunto de operaciones / cambios de posición.”
+
+### **Paso 4 – Explorar la capa de dominio**
+
+1. `src/indices/Index.sol`
+   - Aprender qué es un índice en este protocolo.
+2. `src/indices/IndexFactory.sol`
+   - Ver cómo se despliegan y configuran los índices.
+3. `src/indices/IndexComponentRegistry.sol`
+   - Entender la lista blanca de tokens permitidos y los canales de precios (price feeds).
+4. `src/indices/IndexCalculationRegistry.sol`
+   - Ver cómo se registran y aplican las estrategias.
+5. `src/indices/libraries/IndexMath.sol`
+   - Inspeccionar las matemáticas que impulsan las ponderaciones y valoraciones.
+
+Ahora sabrá:
+
+“Qué es exactamente un índice, cómo está restringido y cómo se computan los valores.”
+
+### **Paso 5 – Detalles de almacenamiento y tiempo de ejecución**
+
+1. Librerías de almacenamiento:
+   - `DiamondLoupeStorage.sol`
+   - `OwnershipStorage.sol`
+   - `DiamondCutStorage.sol`
+   - `IndexStorage.sol`
+   - `GmxV2Storage.sol`
+2. `src/garden/libraries/LibDiamond.sol`
+
+Aquí es donde consolidará su comprensión de **cómo se distribuye el estado** y cómo funciona internamente el Diamond. No necesita leer esto primero, pero debe leerlo antes de realizar cualquier cambio de bajo nivel.
+
+### **Paso 6 – Integraciones externas y SBTs**
+
+1. `src/interfaces/*`
+   - `IProtocolStatus.sol`
+   - `ICamelotRouterV3.sol`
+   - `AggregatorV3Interface.sol`
+   - `IERC173.sol`
+2. `src/GardenSBT/CollectionRegistry/SBTRegistry.sol`
+
+Esta es la última capa: comprenderá cómo el protocolo **se comunica con el mundo exterior** y cómo encajan las funciones SBT.

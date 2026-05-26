@@ -1,0 +1,421 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Garden Journal theme — warm cream paper, cocoa ink, moss + clay.
+ * Tokens mirror the marketing site (new-webiste) so docs and site share
+ * one visual language. R G B triplets feed Tailwind's `<alpha-value>`.
+ */
+:root {
+  --paper: 250 247 240;
+  --paper-warm: 244 238 224;
+  --paper-deep: 234 224 204;
+
+  --ink: 31 26 20;
+  --ink-2: 71 60 48;
+  --ink-3: 122 108 90;
+
+  --moss: 79 111 79;
+  --moss-deep: 50 78 56;
+  --moss-soft: 138 169 138;
+  --sage: 168 181 160;
+  --clay: 198 123 92;
+  --clay-deep: 154 91 65;
+  --ochre: 196 156 71;
+
+  --rule: 31 26 20;
+
+  --font-display: "Newsreader", "Source Serif 4", Georgia, serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-script: "Caveat", cursive;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  background: rgb(var(--paper));
+  color: rgb(var(--ink));
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(var(--clay) / 0.35);
+  color: rgb(var(--ink));
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--clay));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Paper grain. */
+.paper {
+  position: relative;
+  isolation: isolate;
+}
+.paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("/textures/noise.svg");
+  background-size: 220px 220px;
+}
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(var(--ink-3));
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.02;
+}
+
+.script {
+  font-family: var(--font-script);
+  font-weight: 400;
+}
+
+.rule-hand {
+  background-image: linear-gradient(
+    to right,
+    transparent 0,
+    rgb(var(--ink) / 0.16) 6%,
+    rgb(var(--ink) / 0.22) 50%,
+    rgb(var(--ink) / 0.16) 94%,
+    transparent 100%
+  );
+  height: 1px;
+}
+
+/* ── Documentation prose ──────────────────────────────────────────────
+   Rendered MDX lives inside .doc-prose. Reads like a printed journal on
+   cream paper: serif headings, ink body, clay-underlined links, moss list
+   markers, paper-deep code surfaces. */
+.doc-prose {
+  color: rgb(var(--ink-2));
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.doc-prose > *:first-child {
+  margin-top: 0;
+}
+
+.doc-prose h1,
+.doc-prose h2,
+.doc-prose h3,
+.doc-prose h4 {
+  font-family: var(--font-display);
+  color: rgb(var(--ink));
+  letter-spacing: -0.012em;
+  scroll-margin-top: 6rem;
+}
+.doc-prose h1 {
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+}
+.doc-prose h2 {
+  font-weight: 600;
+  font-size: 25px;
+  line-height: 1.22;
+  margin-top: 2.75rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgb(var(--rule) / 0.1);
+}
+.doc-prose h3 {
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+.doc-prose h4 {
+  font-weight: 600;
+  font-size: 17px;
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.doc-prose p {
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.doc-prose strong {
+  color: rgb(var(--ink));
+  font-weight: 600;
+}
+
+.doc-prose em {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: rgb(var(--moss-deep));
+}
+
+.doc-prose a {
+  color: rgb(var(--ink));
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--clay) / 0.55);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 200ms ease, color 200ms ease;
+}
+.doc-prose a:hover {
+  color: rgb(var(--clay-deep));
+  text-decoration-color: rgb(var(--clay));
+}
+
+/* Anchor links injected by rehype-autolink-headings. */
+.doc-prose .heading-anchor {
+  text-decoration: none;
+  margin-left: 0.4rem;
+  color: rgb(var(--ink-3));
+  opacity: 0;
+  font-weight: 400;
+  transition: opacity 150ms ease;
+}
+.doc-prose h2:hover .heading-anchor,
+.doc-prose h3:hover .heading-anchor,
+.doc-prose h4:hover .heading-anchor {
+  opacity: 1;
+}
+
+.doc-prose ul,
+.doc-prose ol {
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  padding-left: 1.4rem;
+}
+.doc-prose ul {
+  list-style: none;
+  padding-left: 1.25rem;
+}
+.doc-prose ul li {
+  position: relative;
+  padding-left: 1rem;
+  margin-top: 0.4rem;
+}
+.doc-prose ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(var(--moss));
+  opacity: 0.7;
+}
+.doc-prose ol {
+  list-style: decimal;
+}
+.doc-prose ol li {
+  margin-top: 0.4rem;
+  padding-left: 0.25rem;
+}
+.doc-prose ol li::marker {
+  color: rgb(var(--moss-deep));
+  font-weight: 600;
+}
+.doc-prose li > ul,
+.doc-prose li > ol {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+/* Inline code. */
+.doc-prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgb(var(--paper-deep));
+  padding: 0.12em 0.38em;
+  border-radius: 4px;
+  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--rule) / 0.06);
+}
+
+/* Fenced code blocks (rehype-pretty-code / shiki). */
+.doc-prose pre {
+  margin: 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-radius: 12px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.6;
+  border: 1px solid rgb(var(--rule) / 0.1);
+  background: #1d1a14 !important;
+}
+.doc-prose pre code {
+  font-family: var(--font-mono);
+  display: grid;
+  background: transparent !important;
+  counter-reset: line;
+}
+.doc-prose pre code [data-line] {
+  padding: 0 0.25rem;
+}
+.doc-prose [data-rehype-pretty-code-figure] {
+  margin: 1.5rem 0;
+}
+.doc-prose [data-rehype-pretty-code-title] {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgb(var(--ink-3));
+  background: rgb(var(--paper-deep));
+  border: 1px solid rgb(var(--rule) / 0.1);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  padding: 0.55rem 1rem;
+}
+.doc-prose [data-rehype-pretty-code-title] + pre {
+  margin-top: 0;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Blockquotes. */
+.doc-prose blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 3px solid rgb(var(--moss) / 0.5);
+  color: rgb(var(--ink-2));
+  font-family: var(--font-display);
+  font-style: italic;
+}
+.doc-prose blockquote p {
+  margin: 0.35rem 0;
+}
+
+/* Tables. */
+.doc-prose table {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  display: block;
+  overflow-x: auto;
+}
+.doc-prose thead {
+  border-bottom: 2px solid rgb(var(--rule) / 0.15);
+}
+.doc-prose th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: rgb(var(--ink));
+  padding: 0.6rem 0.9rem;
+}
+.doc-prose td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid rgb(var(--rule) / 0.08);
+  vertical-align: top;
+}
+.doc-prose tbody tr:hover {
+  background: rgb(var(--moss) / 0.04);
+}
+
+/* Images & figures. */
+.doc-prose img {
+  border-radius: 12px;
+  border: 1px solid rgb(var(--rule) / 0.1);
+  margin: 1.5rem 0;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Horizontal rule. */
+.doc-prose hr {
+  border: none;
+  height: 1px;
+  background: rgb(var(--ink) / 0.12);
+  margin: 2.5rem 0;
+}
+
+/* Admonitions (:::note / :::tip / :::warning / :::danger / :::info). */
+.admonition {
+  margin: 1.5rem 0;
+  padding: 1rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid rgb(var(--rule) / 0.1);
+  border-left-width: 3px;
+  background: rgb(var(--paper-warm));
+  font-size: 15px;
+}
+.admonition-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+  color: rgb(var(--ink));
+}
+.admonition > :last-child {
+  margin-bottom: 0;
+}
+.admonition-note {
+  border-left-color: rgb(var(--ink-3));
+}
+.admonition-tip {
+  border-left-color: rgb(var(--moss));
+}
+.admonition-tip .admonition-title {
+  color: rgb(var(--moss-deep));
+}
+.admonition-info {
+  border-left-color: rgb(var(--ochre));
+}
+.admonition-warning {
+  border-left-color: rgb(var(--clay));
+}
+.admonition-warning .admonition-title {
+  color: rgb(var(--clay-deep));
+}
+.admonition-danger {
+  border-left-color: rgb(var(--clay-deep));
+  background: rgb(var(--clay) / 0.06);
+}
+.admonition-danger .admonition-title {
+  color: rgb(var(--clay-deep));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

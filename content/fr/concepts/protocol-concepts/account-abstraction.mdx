@@ -1,0 +1,100 @@
+---
+title: Abstraction de Compte
+position: 3
+---
+![Abstraction de Compte](/img/Frame%2027.png)
+
+L'Abstraction de Compte remplace les limitations des portefeuilles Ethereum traditionnels par des portefeuilles de contrats intelligents programmables qui contrôlent la manière dont les transactions sont autorisées, exécutées et payées.
+
+Dans le modèle par défaut d'Ethereum, toutes les actions proviennent de Comptes Détenus de l'Extérieur (EOA). Les EOA sont contrôlés par une seule clé privée et se limitent à une signature de base. Ils ne peuvent pas regrouper de transactions, appliquer des autorisations personnalisées ou abstraire les paiements de gaz. Pour un protocole de gestion de patrimoine impliquant des flux complexes, une exécution déléguée et une sécurité des actifs à long terme, ce modèle est insuffisant.
+
+L'Abstraction de Compte, standardisée sous l'**ERC-4337**, introduit les Comptes de Portefeuille Intelligent (SWA). Il s'agit de contrats intelligents qui agissent comme des portefeuilles. Au lieu de s'appuyer uniquement sur une clé privée, la logique d'autorisation réside dans le portefeuille lui-même. Le portefeuille devient programmable, récupérable et conscient des politiques sans modifier le protocole de base d'Ethereum.
+
+---
+
+## Comment ça marche
+
+L'ERC-4337 introduit une nouvelle primitive de transaction appelée **UserOperation**.
+
+Au lieu d'envoyer un transaction standard au mempool d'Ethereum, les utilisateurs soumettent des UserOperations à un mempool dédié surveillé par des **Bundlers**. Les Bundlers agrègent et simulent ces opérations, puis les soumettent on-chain via un contrat partagé mondialement appelé **EntryPoint**.
+
+L'EntryPoint coordonne l'exécution en :
+
+- Appelant le Compte de Portefeuille Intelligent de l'utilisateur pour valider l'opération.
+- Exécutant les appels demandés si la validation réussit.
+- Gérant la logique de paiement du gaz.
+
+Les frais de gaz peuvent être sponsorisés par un **Paymaster**, qui peut couvrir entièrement les frais ou accepter un paiement en jetons ERC-20 au lieu d'ETH.
+
+De l'extérieur, le portefeuille se comporte comme un compte Ethereum normal. À l'intérieur, il exécute une logique personnalisée définie par le contrat du portefeuille.
+
+## Comment BLOK Capital utilise l'Abstraction de Compte
+
+BLOK Capital utilise l'Abstraction de Compte comme **couche de compte utilisateur principale**, et non comme un module complémentaire d'expérience utilisateur (UX).
+
+Chaque investisseur interagit avec le protocole via un Compte de Portefeuille Intelligent, intégré via **ZeroDev**.
+
+### Le Portefeuille Intelligent comme Identité de l'Investisseur
+
+Le Compte de Portefeuille Intelligent est l'identité on-chain qui :
+
+- Possède le Jardin de l'investisseur.
+- Détient des actifs.
+- Apparaît comme `msg.sender` dans toutes les interactions avec le protocole.
+
+L'EOA sous-jacent n'est qu'une clé de contrôle. Le protocole reconnaît le contrat du portefeuille, pas la clé elle-même. Cette séparation permet la programmabilité, la récupération et l'application de politiques sans garde (non-custodial).
+
+BLOK Capital utilise la **gestion de clés basée sur MPC** avec les Comptes de Portefeuille Intelligent. Cela signifie que la clé privée est divisée entre plusieurs parties, de sorte qu'aucun point de défaillance unique n'existe. Le système reste entièrement non-custodial et les utilisateurs n'ont pas besoin de gérer une phrase secrète.
+
+### Abstraction du Gaz
+
+Les investisseurs ne sont pas tenus de détenir de l'ETH pour utiliser le protocole.
+
+En utilisant les Paymasters ERC-4337 :
+
+- BLOK Capital peut sponsoriser le gaz pour les actions d'intégration.
+- Les transactions en cours peuvent être payées en jetons BLOKC.
+- La complexité du gaz spécifique au réseau est masquée pour l'utilisateur.
+
+Cela élimine un point de friction majeur pour les investisseurs non familiers de la crypto.
+
+---
+
+### Exécution Groupée (Batch)
+
+De nombreuses actions du protocole nécessitent plusieurs appels de contrat.
+
+Par exemple, la création d'un Jardin implique :
+
+- Le déploiement déterministe du Diamond.
+- L'enregistrement dans le registre.
+- La configuration de la propriété.
+- Les mises à jour et l'initialisation des Facettes.
+
+Avec l'Abstraction de Compte, tout cela est regroupé dans une seule UserOperation. L'investisseur signe une fois. L'exécution est atômique. La complexité reste au niveau de la couche protocole, pas au niveau de la couche utilisateur.
+
+### Clés de Session pour les Gestionnaires de Patrimoine
+
+L'Abstraction de Compte permet le modèle de délégation non-custodial de BLOK Capital.
+
+Les Comptes de Portefeuille Intelligent prennent en charge les **clés de session** : des clés à portée limitée et limitées dans le temps qui peuvent exécuter des fonctions spécifiques sous des contraintes strictes.
+
+Les Gestionnaires de Patrimoine peuvent être autorisés à :
+
+- Exécuter la logique de stratégie.
+- Déclencher des rééquilibrages.
+- Interagir uniquement avec les facettes approuvées.
+
+Ils ne peuvent pas retirer de fonds, augmenter les autorisations ou dépasser les limites prédéfinies. Ces règles sont appliquées directement par le contrat du portefeuille, et non par une politique hors-chaîne ou des intermédiaires.
+
+Le contrôle reste à l'investisseur à tout moment.
+
+---
+
+### Autorisation de Mise à Jour
+
+Après le déploiement, le Portefeuille Intelligent de l'investisseur autorise les mises à jour de son Jardin en appelant directement la fonction de mise à jour.
+
+Parce que le portefeuille peut regrouper le déploiement, les mises à jour et l'initialisation, tout le flux de configuration est transparent et ne nécessite aucune étape manuelle supplémentaire.
+
+Aucune partie, y compris BLOK Capital, ne peut modifier le Jardin d'un investisseur sans l'autorisation du portefeuille qui le possède.

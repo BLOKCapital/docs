@@ -1,0 +1,248 @@
+---
+title: Jardines & Diamonds
+position: 2
+---
+### La arquitectura de Diamonds & Gardens
+
+En BLOK Capital, nuestra arquitectura principal para los smart contracts se basa en el patrón proxy **Diamond**. En esta sección exploramos la arquitectura de los diamonds, un enfoque de despliegue basado en fábricas (factory) inspirado en el repositorio Diamond de Nick Mudge, y cómo estos conceptos crean un "jardín" que impulsa la arquitectura BLOK.
+
+### Flujo del contrato proxy:
+![Alt text](/img/diamondSchema2.png)
+
+### ¿Qué es el Diamond Standard?
+
+El Diamond Standard, propuesto por Nick Mudge en la EIP-2535, ayuda a resolver el problema de cómo crear contratos modulares y actualizables (upgradable) sin toparse con los límites de gas o de tamaño. Los contratos tradicionales son monolíticos, con toda la lógica empaquetada en una sola dirección, lo que hace que las actualizaciones sean muy difíciles y arriesgadas. Los diamonds, en cambio, son como jardines: consisten en un **contrato Diamond** central (por ejemplo, el suelo) que delega funcionalidades a múltiples **facetas** (por ejemplo, las plantas), cada una con lógica específica.
+
+Un diamond es un contrato proxy que utiliza una arquitectura única para:
+
+- **Modularizar la lógica**: dividir la funcionalidad en facetas más pequeñas y reutilizables.  
+- **Permitir actualizaciones**: añadir, reemplazar o eliminar facetas sin volver a desplegar todo el contrato.  
+- **Evitar límites de tamaño**: almacenar sólo los selectores de función en el diamond y delegar la ejecución a las facetas.
+
+Esta modularidad hace a los diamonds ideales para dApps complejas (DAO, DeFi, NFT) que deben evolucionar/actualizarse con el tiempo, al igual que un jardín que puede replantarse o ampliarse.
+
+### La arquitectura de un Diamond
+
+Imagínese el diamond como un hub central (el contrato `Diamond.sol`) que enruta las llamadas de función a facetas especializadas. Cada faceta es un contrato separado que contiene un subconjunto de la funcionalidad del sistema —por ejemplo, ownership, transferencias de tokens o gobernanza. El diamond mantiene un mapeo de **selectores de función** (identificadores únicos para funciones) a direcciones de facetas, lo que le permite delegar llamadas de forma eficiente.  
+![Alt text](/img/delegation.png)
+
+#### Componentes clave en la arquitectura Diamond
+
+1. **Contrato Diamond** (`Diamond.sol`):  
+    - Actúa como punto de entrada para todas las interacciones.  
+    - Almacena un mapping de selectores de función a direcciones de facetas.  
+    - Implementa la función `fallback` para enrutar las llamadas a la faceta adecuada.  
+    - Usa la función `diamondCut` para añadir, reemplazar o eliminar facetas, permitiendo upgrades.  
+2. **Facetas**:  
+    - Contratos independientes (p. ej., `DiamondCutFacet.sol`, `DiamondLoupeFacet.sol`) que contienen funciones específicas.  
+    - Por ejemplo, `DiamondCutFacet` gestiona las actualizaciones, mientras que `DiamondLoupeFacet` proporciona introspección (consultar direcciones de facetas y selectores).  
+3. **Interfaces**:  
+    - Interfaces estándar como `IDiamondCut` e `IDiamondLoupe` garantizan consistencia.  
+    - Las facetas implementan estas interfaces para ofrecer funcionalidad concreta.  
+4. **Selectores de función**:  
+    - Un hash de 4 bytes (p. ej., `keccak256("functionName()")`) que identifica una función.  
+    - El diamond mapea selectores a direcciones de facetas para asegurar que la llamada sea atendida por el contrato correcto.
+
+![Alt text](/img/diamondFacet2.png)
+
+Aquí hay un ejemplo simplificado de la función `fallback` en `Diamond.sol`, que delega llamadas a las facetas:
+
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Diamond {
+    mapping(bytes4 => address) public facets;
+
+    fallback() external payable {
+        address facet = facets[msg.sig];
+        require(facet != address(0), "Function does not exist");
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, 0, calldatasize())
+            let result := delegatecall(gas(), facet, ptr, calldatasize(), 0, 0)
+            let size := returndatasize()
+            returndatacopy(ptr, 0, size)
+            switch result
+            case 0 { revert(ptr, size) }
+            default { return(ptr, size) }
+        }
+    }
+}
+````
+
+Este código muestra cómo el diamond enruta las llamadas entrantes (`msg.sig`) a la faceta apropiada, permitiendo modularidad.
+
+### El Jardín: sistemas modulares y escalables
+
+¿Por qué llamarlo "jardín"? En un jardín, cada planta (faceta) cumple una función: algunas aportan estructura (como `DiamondCutFacet`), otras añaden introspección o utilidades (como `DiamondLoupeFacet`), y otras dan fruto (facetas personalizadas con la lógica de tu dApp). El Diamond Standard te permite cultivar un jardín de smart contracts que:
+
+* **Crece con el tiempo**: añadir nuevas facetas según evolucionen los requisitos.
+* **Podar y replantar**: reemplazar o eliminar facetas obsoletas sin interrumpir el jardín.
+* **Escalar eficientemente**: mantener ligero el contrato central delegando la lógica a las facetas.
+
+Esta modularidad es especialmente útil para dApps como DAOs, protocolos DeFi o marketplaces NFT, donde nuevas funcionalidades (gobernanza, staking, etc.) pueden añadirse sin redeplegar todo el sistema.
+
+### Despliegue basado en factory con `DiamondFactory.sol`
+
+Desplegar diamonds manualmente puede ser complejo, sobre todo para sistemas que requieren múltiples instancias (p. ej., un marketplace con muchos diamonds por usuario). El repositorio `diamond-foundry` introduce `DiamondFactory.sol`, una factory que automatiza el despliegue de diamonds y la inicialización de facetas, actuando como un jardinero que planta nuevos parterres.
+
+#### Cómo funciona `DiamondFactory.sol`
+
+La factory despliega un nuevo contrato `Diamond` y lo inicializa con las facetas especificadas. Aquí una versión simplificada de `DiamondFactory.sol`:
+
+```js
+// SPDX-License-License: MIT
+pragma solidity ^0.8.0;
+
+import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
+import {Diamond} from "../Diamond.sol";
+
+contract DiamondFactory {
+    event DiamondDeployed(address diamond, address owner);
+
+    function deployDiamond(
+        address _owner,
+        address[] memory _facets,
+        bytes[] memory _initData
+    ) external returns (address diamond) {
+        diamond = address(new Diamond(_owner, address(this)));
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](_facets.length);
+        for (uint256 i = 0; i < _facets.length; i++) {
+            cuts[i] = IDiamondCut.FacetCut({
+                facetAddress: _facets[i],
+                action: IDiamondCut.FacetCutAction.Add,
+                functionSelectors: getSelectors(_facets[i])
+            });
+        }
+        IDiamondCut(diamond).diamondCut(cuts, address(0), "");
+        emit DiamondDeployed(diamond, _owner);
+        return diamond;
+    }
+
+    function getSelectors(address facet) internal pure returns (bytes4[] memory selectors) {
+        // Simplified: Hardcode selectors for known facets
+        selectors = new bytes4;
+        selectors[0] = bytes4(keccak256("facets()"));
+        selectors[1] = bytes4(keccak256("facetFunctionSelectors(address)"));
+        selectors[2] = bytes4(keccak256("facetAddresses()"));
+        selectors[3] = bytes4(keccak256("facetAddress(bytes4)"));
+        return selectors;
+    }
+}
+```
+
+La factory:
+
+1. Despliega un nuevo contrato `Diamond` con el owner especificado.
+2. Crea un array `FacetCut` para registrar las facetas (p. ej., `DiamondCutFacet`, `DiamondLoupeFacet`).
+3. Llama a `diamondCut` para inicializar el diamond con las facetas.
+4. Emite un evento para rastrear los despliegues.
+
+Este patrón de factory permite despliegues escalables, facilitando plantar múltiples diamonds en tu jardín con poco esfuerzo.
+
+#### Ejemplo de despliegue
+
+Así podrías desplegar un diamond usando un script de Foundry:
+
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import {Script} from "forge-std/Script.sol";
+import {DiamondFactory} from "../src/factory/DiamondFactory.sol";
+import {DiamondCutFacet} from "../src/facets/DiamondCutFacet.sol";
+import {DiamondLoupeFacet} from "../src/facets/DiamondLoupeFacet.sol";
+
+contract DeployDiamond is Script {
+    function run() external {
+        vm.startBroadcast();
+        DiamondCutFacet cutFacet = new DiamondCutFacet();
+        DiamondLoupeFacet loupeFacet = new DiamondLoupeFacet();
+        DiamondFactory factory = new DiamondFactory();
+        address;
+        facets[0] = address(cutFacet);
+        facets[1] = address(loupeFacet);
+        bytes;
+        initData[0] = "";
+        initData[1] = "";
+        address diamond = factory.deployDiamond(msg.sender, facets, initData);
+        console.log("Diamond deployed at:", diamond);
+        vm.stopBroadcast();
+    }
+}
+```
+
+Ejecuta este script con:
+
+```shell
+forge script script/DeployDiamond.s.sol --fork-url http://localhost:8545 --broadcast
+```
+
+### Probar el jardín
+
+Para asegurar que tu jardín de diamonds prospere, necesitas pruebas robustas. Las pruebas en Solidity con Foundry facilitan esto. A continuación una suite de test que verifica el despliegue vía la factory y la funcionalidad del diamond:
+
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import {Test} from "forge-std/Test.sol";
+import {DiamondFactory} from "../src/factory/DiamondFactory.sol";
+import {DiamondCutFacet} from "../src/facets/DiamondCutFacet.sol";
+import {DiamondLoupeFacet} from "../src/facets/DiamondLoupeFacet.sol";
+import {IDiamondLoupe} from "../src/interfaces/IDiamondLoupe.sol";
+
+contract DiamondFactoryTest is Test {
+    DiamondFactory factory;
+    DiamondCutFacet cutFacet;
+    DiamondLoupeFacet loupeFacet;
+    address diamond;
+
+    function setUp() public {
+        cutFacet = new DiamondCutFacet();
+        loupeFacet = new DiamondLoupeFacet();
+        factory = new DiamondFactory();
+        address;
+        facets[0] = address(cutFacet);
+        facets[1] = address(loupeFacet);
+        bytes;
+        initData[0] = "";
+        initData[1] = "";
+        diamond = factory.deployDiamond(address(this), facets, initData);
+    }
+
+    function testDiamondDeployment() public {
+        assertTrue(diamond != address(0), "Diamond not deployed");
+    }
+
+    function testLoupeFunctions() public {
+        IDiamondLoupe loupe = IDiamondLoupe(diamond);
+        address[] memory facets = loupe.facetAddresses();
+        assertEq(facets.length, 2, "Incorrect number of facets");
+        assertEq(facets[0], address(cutFacet), "DiamondCutFacet not registered");
+        assertEq(facets[1], address(loupeFacet), "DiamondLoupeFacet not registered");
+    }
+}
+```
+
+Ejecuta las pruebas con:
+
+```shell
+forge test
+```
+
+### Beneficios del Diamond Garden
+
+El Diamond Standard, combinado con el despliegue mediante factory, ofrece:
+
+* **Modularidad**: añadir nuevas funcionalidades (facetas) sin redeplegar el contrato núcleo.
+* **Escalabilidad**: desplegar múltiples diamonds para distintos usuarios o casos de uso.
+* **Upgradabilidad**: actualizar funcionalidad sin romper contratos existentes.
+* **Eficiencia en gas**: mantener ligero el contrato diamond delegando lógica a las facetas.
+
+### Conclusión
+
+El Diamond Standard es una herramienta poderosa para construir sistemas de smart contracts modulares y actualizables, análoga al cultivo de un jardín donde cada planta (faceta) contribuye a un ecosistema próspero. Usando `DiamondFactory.sol`, puedes automatizar el despliegue de diamonds y escalar tu jardín a través de múltiples instancias. Ya sea que construyas un protocolo DeFi, una DAO o un marketplace NFT, el Diamond Standard ofrece la flexibilidad para crecer y adaptarse.
+
+¡Feliz jardinería!

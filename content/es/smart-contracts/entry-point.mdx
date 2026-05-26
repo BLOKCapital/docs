@@ -1,0 +1,63 @@
+---
+title: El Controlador Diamond
+position: 2
+---
+## **2. Punto de entrada: El controlador Diamond (`Garden.sol`)**
+
+**Archivo:**
+
+`src/garden/Garden.sol`
+
+Este es el **contrato controlador principal** y la **única dirección de contrato** con la que deben interactuar los usuarios finales y la mayoría de las integraciones.
+
+### **Qué es `Garden.sol`**
+
+- Un **proxy Diamond**:
+  - Posee el **registro de facetas** (a través de `LibDiamond` (Library diamond) y el almacenamiento relacionado).
+  - No define la lógica de negocio por sí mismo.
+  - Reenvía las llamadas, basándose en `msg.sig`, a la faceta correcta utilizando `delegatecall`.
+- Una **superficie de API estable**:
+  - Incluso cuando se actualizan las facetas, los usuarios siguen llamando a la misma dirección.
+
+### **Qué ocurre en el constructor**
+
+Sin citar código, el constructor suele:
+
+- **Inicializar el almacenamiento Diamond** a través de `LibDiamond`:
+  - Establece al **dueño del contrato** (para administración).
+  - Registra las **facetas iniciales** y sus selectores (facetas base como mínimo).
+
+- Puede **ejecutar un “corte de diamante” (diamond cut) inicial**:
+  - Añadir las facetas de propiedad, loupe y corte/actualización.
+  - Opcionalmente, registrar facetas de funciones tempranas (índice, utilidad).
+
+El resultado final: una vez desplegado, `Garden.sol` sabe qué funciones existen y qué faceta implementa cada una, pero **no** **codifica de forma rígida** ese mapeo.
+
+### **Qué hace y qué no hace el Diamond**
+
+**Hace:**
+
+- Enruta las funciones a las facetas mediante `delegatecall`.
+- Mantiene las **estructuras de datos de enrutamiento principales** en el almacenamiento Diamond.
+- Proporciona un punto final de interfaz único y coherente para todas las funciones del protocolo.
+
+**No hace:**
+
+- Implementar directamente la lógica de funciones como “reequilibrar índice”, “intercambiar en Uniswap” o “abrir posición GMX”.
+- Ser el dueño directo de los contratos de lógica de negocio como `Index.sol` y los registros; estos forman parte de la capa de dominio y se llaman desde las facetas.
+
+### **Enrutamiento de llamadas**
+
+Cuando llamas a `Garden`:
+
+1. La llamada llega a `Garden.sol`.
+2. El Diamond busca `msg.sig` en su mapeo interno de **selector → dirección de faceta** (mantenido por `LibDiamond` y el almacenamiento del corte de diamante).
+3. Realiza un `delegatecall` a la faceta:
+   - El código se ejecuta en el contexto del Jardín.
+   - El almacenamiento al que se accede es el **almacenamiento del Jardín**, no el de la faceta.
+4. El resultado se devuelve al llamador como si el Jardín hubiera implementado la función directamente.
+
+Para un constructor, esto significa:
+
+- Cuando ves una función en una faceta como `IndexBase.connectToIndex`, en realidad se **ejecuta en el almacenamiento del Jardín**.
+- Toda la lógica con estado debe utilizar las **librerías de diseño de almacenamiento correctas**.

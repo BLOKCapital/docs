@@ -1,0 +1,41 @@
+---
+title: Facet Registry
+position: 4
+---
+## **Facet Registry (Governance & Approval Layer)**
+
+**Location:** `src/facetRegistry/`
+
+**Key files:**
+
+- `FacetRegistry.sol` — Manages facet registration and version tracking
+- `IFacetRegistry.sol` — Public interface
+
+---
+
+### **What It Does**
+
+The Facet Registry is the **governed catalog of approved facets**. It acts as a gatekeeper ensuring:
+
+- **Only pre-approved facets** can be added to Gardens.
+- **4 immutable base facets** (Ownership, Cut, Upgrade, Loupe) remain protected.
+- **Complete audit trail** of all facet changes via versioning.
+- **Off-chain tools** can discover which facets and functions are available.
+
+### **Core Operations**
+
+**1. Register facets: `upgradeFacetRegistry()`**
+
+Called by governance to register, update, or remove facets. Validates that facets are contracts and that core base facets are never modified.
+
+**2. Query operations:**
+
+- `getFacets()`: Get all facets and their selectors.
+- `getFacetAddress(selector)`: Find the facet for a specific function.
+- `isFacetRegistered(address)`: Verify approval status.
+
+### **Safety Mechanisms**
+
+- **Immutable base facets**: Core Diamond logic cannot be "bricked".
+- **DAO Approval Required**: Governance must vote on new facet registrations.
+- **Version Tracking**: Every change creates a permanent record in history.

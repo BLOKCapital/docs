@@ -1,0 +1,100 @@
+---
+title: Account Abstraction
+position: 3
+---
+![Account Abstraction](/img/Frame%2027.png)
+
+Account Abstraction replaces the limitations of traditional Ethereum wallets with programmable smart contract wallets that control how transactions are authorized, executed, and paid for.
+
+In Ethereum’s default model, all actions originate from Externally Owned Accounts (EOAs). EOAs are controlled by a single private key and are limited to basic signing. They cannot batch transactions, enforce custom permissions, or abstract gas payments. For a wealth management protocol involving complex flows, delegated execution, and long-term asset security, this model is insufficient.
+
+Account Abstraction, standardized under **ERC-4337**, introduces Smart Wallet Accounts (SWAs). These are smart contracts that act as wallets. Instead of relying solely on a private key, authorization logic lives inside the wallet itself. The wallet becomes programmable, recoverable, and policy-aware without modifying Ethereum’s base protocol.
+
+---
+
+## How It Works
+
+ERC-4337 introduces a new transaction primitive called a **UserOperation**.
+
+Instead of sending a standard transaction to the Ethereum mempool, users submit UserOperations to a dedicated mempool monitored by **Bundlers**. Bundlers aggregate and simulate these operations, then submit them on-chain through a globally shared contract called the **EntryPoint**.
+
+The EntryPoint coordinates execution by:
+
+- Calling the user’s Smart Wallet Account to validate the operation
+- Executing the requested calls if validation passes
+- Handling gas payment logic
+
+Gas fees can be sponsored by a **Paymaster**, which may cover fees entirely or accept payment in ERC-20 tokens instead of ETH.
+
+From the outside, the wallet behaves like a normal Ethereum account. Internally, it executes custom logic defined by the wallet contract.
+
+## How BLOK Capital Uses Account Abstraction
+
+BLOK Capital uses Account Abstraction as the **core user account layer**, not as a UX add-on.
+
+Each investor interacts with the protocol through a Smart Wallet Account, integrated via **ZeroDev**.
+
+### Smart Wallet as Investor Identity
+
+The Smart Wallet Account is the on-chain identity that:
+
+- Owns the investor’s Garden
+- Holds assets
+- Appears as `msg.sender` across all protocol interactions
+
+The underlying EOA is only a control key. The protocol recognizes the wallet contract, not the key itself. This separation enables programmability, recovery, and policy enforcement without custody.
+
+BLOK Capital uses **MPC-based key management** with Smart Wallet Accounts. This means the private key is split across multiple parties, so no single point of failure exists. The system remains fully non-custodial, and users don't need to manage a seed phrase.
+
+### Gas Abstraction
+
+Investors are not required to hold ETH to use the protocol.
+
+Using ERC-4337 Paymasters:
+
+- BLOK Capital can sponsor gas for onboarding actions
+- Ongoing transactions can be paid in BLOKC tokens
+- Network-specific gas complexity is hidden from the user
+
+This removes a major friction point for non-crypto-native investors.
+
+---
+
+### Batched Execution
+
+Many protocol actions require multiple contract calls.
+
+For example, Garden creation involves:
+
+- Deterministic Diamond deployment
+- Registry registration
+- Ownership setup
+- Facet upgrades and initialization
+
+With Account Abstraction, all of this is bundled into a single UserOperation. The investor signs once. Execution is atomic. Complexity stays at the protocol layer, not the user layer.
+
+### Session Keys for Wealth Managers
+
+Account Abstraction enables BLOK Capital’s non-custodial delegation model.
+
+Smart Wallet Accounts support **session keys** scoped, time-bound keys that can execute specific functions under strict constraints.
+
+Wealth Managers can be authorized to:
+
+- Execute strategy logic
+- Trigger rebalances
+- Interact only with approved facets
+
+They cannot withdraw funds, escalate permissions, or exceed predefined limits. These rules are enforced directly by the wallet contract, not by off-chain policy or intermediaries.
+
+Control remains with the investor at all times.
+
+---
+
+### Upgrade Authorization
+
+After deployment, the investor’s Smart Wallet authorizes upgrades to their Garden by calling the upgrade function directly.
+
+Because the wallet can batch deployment, upgrades, and initialization, the entire setup flow is seamless and requires no additional manual steps.
+
+No party including BLOK Capital can modify an investor’s Garden without authorization from the wallet that owns it.

@@ -1,0 +1,41 @@
+---
+title: Registre des Facettes
+position: 4
+---
+## **Registre des Facettes (Couche de Gouvernance & d'Approbation)**
+
+**Emplacement :** `src/facetRegistry/`
+
+**Fichiers clés :**
+
+- `FacetRegistry.sol` — Gère l'enregistrement des facettes et le suivi des versions
+- `IFacetRegistry.sol` — Interface publique
+
+---
+
+### **Ce qu'il fait**
+
+Le Registre des Facettes est le **catalogue gouverné des facettes approuvées**. Il agit comme un garde-barrière garantissant que :
+
+- **Seules les facettes pré-approuvées** peuvent être ajoutées aux Gardens.
+- **Les 4 facettes de base immuables** (Propriété, Coupe, Mise à jour, Loupe) restent protégées.
+- Une **piste d'audit complète** de tous les changements de facettes est maintenue via le versionnement.
+- Les **outils hors-ligne** peuvent découvrir quelles facettes et fonctions sont disponibles.
+
+### **Opérations de Base**
+
+**1. Enregistrer des facettes : `upgradeFacetRegistry()`**
+
+Appelé par la gouvernance pour enregistrer, mettre à jour ou supprimer des facettes. Valide que les facettes sont des contrats et que les facettes de base centrales ne sont jamais modifiées.
+
+**2. Opérations de requête :**
+
+- `getFacets()` : Récupère toutes les facettes et leurs sélecteurs.
+- `getFacetAddress(selector)` : Trouve la facette pour une fonction spécifique.
+- `isFacetRegistered(address)` : Vérifie le statut d'approbation.
+
+### **Mécanismes de Sécurité**
+
+- **Facettes de base immuables** : La logique centrale du Diamond ne peut pas être rendue inutilisable (« bricked »).
+- **Approbation de la DAO Requise** : La gouvernance doit voter sur les nouveaux enregistrements de facettes.
+- **Suivi des Versions** : Chaque changement crée un enregistrement permanent dans l'historique.

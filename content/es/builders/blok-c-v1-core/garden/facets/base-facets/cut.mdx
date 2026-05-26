@@ -1,0 +1,54 @@
+---
+title: Cut
+position: 1
+---
+Este módulo gestiona las actualizaciones de estado dentro del Diamond, pero aplica el estricto modelo de seguridad "Registry-First" de Blok Capital.
+
+## `DiamondCutBase.sol`
+
+Este es el motor interno para todas las actualizaciones. A diferencia de los Diamonds estándar que aceptan direcciones de facetas arbitrarias, el `DiamondCutBase` de Blok Capital obliga a que cada actualización sea validada contra el `FacetRegistry` global.
+
+**Conclusión clave para Builders:** Un Garden no puede añadir una faceta a menos que esté incluida en la lista blanca global y su módulo esté explícitamente permitido para ese tipo concreto de Garden.
+
+**Fragmento crucial: Verificación de seguridad del Registry**
+
+```solidity
+// From addFunctions() in DiamondCutBase.sol
+// Ensure facet's module is allowed for this garden's type
+bytes32 gardenType = ld.gardenType;
+if (gardenType != bytes32(0)) {
+    bytes32 moduleId = IFacetRegistry(facetRegistry).getFacetModule(_facetAddress);
+    if (!IFacetRegistry(facetRegistry).isModuleAllowedForGardenType(gardenType, moduleId)) {
+        revert DiamondCut_ModuleNotAllowedForGardenType(gardenType, moduleId);
+    }
+}
+```
+
+## `DiamondCutFacet.sol` (El Escudo)
+
+En una implementación estándar de EIP-2535, el propietario puede llamar a la función `diamondCut` para actualizar el contrato. **En Blok Capital, esta función está bloqueada intencionalmente.** Esta faceta se incluye para satisfacer los requisitos de la interfaz EIP-2535, pero obliga a que todas las actualizaciones reales pasen por un flujo de actualización personalizado y altamente controlado (probablemente a través de un `UpgradeFacet` no mostrado aquí), evitando ambigüedades y errores humanos.
+
+**Fragmento crucial: El revert intencional**
+
+```solidity
+/// @inheritdoc IDiamondCut
+function diamondCut(
+    FacetCut[] memory _diamondCut,
+    address _init,
+    bytes calldata _calldata
+)
+    external
+    override
+    onlyGardenOwner
+    ifIndexNotConnected
+{
+    // Blocked intentionally to force controlled upgrade paths
+    revert DiamondCutFacet_DiamondCutNotAllowed();
+}
+```
+
+## `DiamondCutStorage.sol`
+
+Define la disposición de almacenamiento estándar de EIP-2535 necesaria para rastrear las direcciones de las facetas y sus selectores de funciones asociados.
+
+- **Patrón de Almacenamiento:** Utiliza `LibStorageSlot.deriveStorageSlot(type(DiamondCutStorage).name)` para garantizar que la disposición de almacenamiento nunca colisione con otras facetas.

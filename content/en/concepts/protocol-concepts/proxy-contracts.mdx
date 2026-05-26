@@ -1,0 +1,27 @@
+---
+title: Proxy Contracts
+position: 2
+---
+![Proxy Contracts](/img/Frame%2025.jpg)
+
+## Proxy Contracts Explained
+
+A proxy contract is a way to upgrade a smart contract system without changing the address users interact with.
+
+Instead of calling application logic directly, users interact with a permanent proxy contract. That proxy forwards each call to a separate implementation contract that contains the actual logic. The address users trust stays the same, even as the logic behind it evolves.
+
+This pattern exists because smart contracts are immutable. Once deployed, their code cannot be changed. Without proxies, fixing bugs or adding features would require deploying new contracts, changing state, and asking users to move to a new address an approach that doesn’t scale for real protocols.
+
+## How It Works
+
+The proxy contract stores all persistent data, such as balances and configuration. The implementation contract contains only the logic.
+
+When a user calls the proxy, it forwards the call using `delegatecall`. This executes the implementation’s code in the proxy’s context. State updates affect the proxy, the original caller remains unchanged, and assets never leave the proxy.
+
+In simple terms, the proxy owns the data. The implementation supplies the behavior.
+
+## How BLOK Capital Uses Proxy Contracts
+
+BLOK Capital uses proxy contracts to ensure the protocol can evolve without disrupting users or putting assets at risk. All user interactions go through stable proxy addresses, while logic upgrades are handled by deploying new implementations and updating the proxy reference.
+
+This allows BLOK Capital to improve index logic, fix issues, and introduce new features while keeping user state intact and contract addresses consistent. Upgrade authority is governed by the BLOK Capital DAO, ensuring changes are transparent and not controlled by a single party.

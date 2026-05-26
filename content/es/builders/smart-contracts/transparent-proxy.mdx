@@ -1,0 +1,49 @@
+---
+title: ¿Por qué el estándar Transparent Proxy para Fábricas y Registros?
+position: 4
+---
+### 1. ERC-1967: Prevenir colisiones de almacenamiento
+
+La implementación de **Transparent Proxy** sigue [EIP-1967](https://eips.ethereum.org/EIPS/eip-1967), que estandariza cómo los proxys almacenan la **dirección del contrato de implementación**.
+
+* **Sin un estándar:** Cada proyecto podría usar ranuras de almacenamiento arbitrarias, y al actualizar o componer contratos podrían ocurrir **colisiones de almacenamiento**, rompiendo las variables de estado.
+* **Con ERC-1967:** La dirección de implementación siempre se almacena en una ranura de almacenamiento determinista (`bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`). Esto evita colisiones, hace predecible el diseño del almacenamiento y permite que las herramientas se apoyen en una convención compartida.
+
+### 2. Visibilidad en exploradores de bloques
+
+Dado que ERC-1967 es un estándar ampliamente reconocido, los **exploradores de bloques** (como Etherscan, Basescan y Polygonscan) lo detectan automáticamente.
+
+* Muestran el enlace entre el **contrato proxy** (con el que interactúan los usuarios) y el **contrato de implementación** (donde reside la lógica).
+* Esta transparencia permite que nuestra comunidad verifique qué código se está ejecutando y asegura confianza en las actualizaciones.
+* Los desarrolladores y auditores se benefician porque pueden inspeccionar el contrato de implementación exacto detrás de cada proxy.
+
+### 3. Transparent vs. UUPS y otros patrones
+
+Al elegir un patrón de proxy, evaluamos **Transparent Proxy** frente a **UUPS (EIP-1822)** y otros modelos de contratos actualizables.
+
+* **Ventajas de Transparent Proxy**
+
+  * **Madurez:** Transparent Proxy es el patrón más adoptado y auditado. Ha sido utilizado durante años en protocolos DeFi, DAOs y registros.
+  * **Probado en batalla:** Muchos contratos críticos en producción lo usan, demostrando su fiabilidad en condiciones reales.
+  * **Funcionalidad de actualización inmutable:** El mecanismo de actualización está incrustado en el propio proxy y no puede ser sobrescrito o roto por futuros contratos de implementación. Esto evita la desactivación accidental o maliciosa de las actualizaciones.
+  * **Experiencia de desarrollador:** Es sencillo para los constructores: los administradores usan el proxy admin para actualizaciones, mientras que los usuarios solo interactúan con la lógica de implementación.
+
+* **¿Por qué no UUPS?**
+
+  * Los proxys UUPS requieren que la lógica de actualización viva en el contrato de implementación. Si no se gestiona con cuidado, esto podría introducir riesgos (ej. perder la capacidad de actualizar si la función de upgrade se elimina o falla).
+  * Aunque consumen menos gas, el costo es mayor responsabilidad para los desarrolladores de evitar errores.
+
+Dada nuestra necesidad de **estabilidad y confiabilidad a largo plazo** en los contratos de registro, Transparent Proxy fue la elección más clara.
+
+### 4. ¿Por qué diferente de Diamonds?
+
+* Para los **contratos de registro**, priorizamos **madurez, visibilidad y seguridad** — Transparent Proxy es perfecto aquí.
+* Para los **contratos Garden** (cuentas multifuncionales), usamos el **Diamond Standard (EIP-2535)**, que admite lógica modular y ampliable.
+* Cada elección se adapta a su propósito: Transparent Proxy para estabilidad y claridad, Diamonds para flexibilidad y composabilidad.
+
+### 5. Referencias
+
+* [EIP-1967: Standard Proxy Storage Slots](https://eips.ethereum.org/EIPS/eip-1967)
+* [Documentación de OpenZeppelin Transparent Proxy](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent)
+* [EIP-1822: Universal Upgradeable Proxy Standard (UUPS)](https://eips.ethereum.org/EIPS/eip-1822)
+* [EIP-2535: Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535)

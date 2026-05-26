@@ -1,0 +1,46 @@
+---
+title: Introduction & Builder's Guide
+position: 1
+---
+![System Overview](/img/Frame%2021.jpg)
+
+## **1. System Overview**
+
+This repository implements an **on‑chain asset management protocol** built around a **Diamond (EIP‑2535) controller** called the **Garden**.
+
+High Level:
+
+- Users and external systems interact with **one contract**: `src/garden/Garden.sol`.
+- The Garden itself is **thin**: it doesn’t implement business logic directly.Instead it **routes calls** to a set of **facets** (modules) that implement:
+  1. Core protocol mechanics (ownership, upgrades, introspection).
+  2. Index‑related features (connecting to, tracking, and rebalancing indices).
+  3. DeFi integrations (DEX swaps, GMX positions, Chainlink pricing).
+- The **domain layer** (indices, registries, math) lives outside the Diamond and can be understood separately from the routing and storage mechanics.
+
+### **Why Diamond?**
+
+This protocol is designed to:
+
+- **Evolve over time** (add/remove/upgrade features without migrating state).
+- **Compose multiple domains** (indices, DEXs, GMX, SBTs) behind one address.
+- **Expose a stable surface** while allowing internal modules to change.
+
+The Diamond pattern gives you:
+
+- A single address (`Garden.sol`) with:
+  - A **facet registry**: has the information about which function selector is implemented by which facet.
+  - **Shared storage**: state is centralized in a few well‑defined layouts.
+  - **Upgradability**: base upgrade facet controls which facets are active.
+
+Conceptually, think of the system as:
+
+1. **Entrypoint (Garden)** → receives calls.
+2. **Core Facets** → handle ownership, upgrades, introspection.
+3. **Feature Facets** → index logic and DeFi integrations.
+4. **Domain Layer** → indices, registries, strategies, math.
+5. **Infrastructure** → LibDiamond, storage libs, OpenZeppelin.
+6. **External Integrations** → DEXes, GMX, Chainlink, SBTs.
+
+The diagram provided above is the authoritative map for these layers; this documentation follows that structure.
+
+---

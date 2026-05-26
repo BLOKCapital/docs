@@ -1,0 +1,35 @@
+---
+title: Ownership
+position: 3
+---
+Le module de propriété (ownership) fournit le contrôle administratif standard ERC-173, mais stocke l'état de manière sécurisée dans le modèle Diamond Storage pour éviter les collisions lors des mises à jour.
+
+## Concept Central : Intégration du Standard ERC-173
+
+Ce module fournit le contrôle d'accès de base pour le Garden. Le propriétaire (généralement l'utilisateur ou une DAO) détient le droit de gérer le Garden lorsqu'il fonctionne de manière indépendante.
+
+## `OwnershipFacet.sol` et `OwnershipBase.sol`
+
+- `OwnershipFacet` expose les fonctions externes `transferOwnership(address)` et `owner()`.
+- La fonction `transferOwnership` est protégée par le modificateur `onlyGardenOwner`, garantissant que seul l'administrateur actuel peut transférer le contrôle.
+
+## `OwnershipStorage.sol`
+
+Comme toutes les variables d'état chez Blok Capital, l'adresse du propriétaire est stockée dans un slot déterministe pour garantir qu'elle survive aux mises à jour sans corruption mémoire.
+
+**Extrait crucial pour les Builders : Disposition du stockage Ownership**
+
+```solidity
+/// @dev Storage slot is derived from keccak256(bytes("OwnershipStorage"))
+struct Layout {
+    /// @notice Address of the owner. When zero, no owner is set (renounced).
+    address owner;
+}
+
+function layout() internal pure returns (Layout storage l) {
+    bytes32 position = LibStorageSlot.deriveStorageSlot(type(OwnershipStorage).name);
+    assembly {
+        l.slot := position
+    }
+}
+```

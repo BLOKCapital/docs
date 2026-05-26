@@ -1,0 +1,100 @@
+---
+title: Abstracción de Cuenta
+position: 3
+---
+![Abstracción de Cuenta](/img/Frame%2027.png)
+
+La Abstracción de Cuenta reemplaza las limitaciones de las billeteras tradicionales de Ethereum con billeteras de contratos inteligentes programables que controlan cómo se autorizan, ejecutan y pagan las transacciones.
+
+En el modelo predeterminado de Ethereum, todas las acciones se originan en Cuentas de Propiedad Externa (EOA). Las EOA están controladas por una única clave privada y se limitan a la firma básica. No pueden agrupar transacciones, aplicar permisos personalizados ni abstraer los pagos de gas. Para un protocolo de gestión de patrimonio que involucra flujos complejos, ejecución delegada y seguridad de activos a largo plazo, este modelo es insuficiente.
+
+La Abstracción de Cuenta, estandarizada bajo **ERC-4337**, introduce las Cuentas de Billetera Inteligente (SWA). Se trata de contratos inteligentes que actúan como billeteras. En lugar de depender únicamente de una clave privada, la lógica de autorización reside dentro de la propia billetera. La billetera se vuelve programable, recuperable y consciente de las políticas sin modificar el protocolo base de Ethereum.
+
+---
+
+## Cómo funciona
+
+ERC-4337 introduce una nueva primitiva de transacción llamada **UserOperation**.
+
+En lugar de enviar un transacción estándar al mempool de Ethereum, los usuarios envían UserOperations a un mempool dedicado supervisado por **Bundlers**. Los Bundlers agregan y simulan estas operaciones, luego las envían on-chain a través de un contrato compartido globalmente llamado **EntryPoint**.
+
+El EntryPoint coordina la ejecución mediante:
+
+- Llamar a la Cuenta de Billetera Inteligente del usuario para validar la operación.
+- Ejecutar las llamadas solicitadas si la validación es correcta.
+- Gestionar la lógica de pago de gas.
+
+Las tarifas de gas pueden ser patrocinadas por un **Paymaster**, que puede cubrir las tarifas por completo o aceptar el pago en tokens ERC-20 en lugar de ETH.
+
+Desde el exterior, la billetera se comporta como una cuenta normal de Ethereum. Internamente, ejecuta la lógica personalizada definida por el contrato de la billetera.
+
+## Cómo utiliza BLOK Capital la Abstracción de Cuenta
+
+BLOK Capital utiliza la Abstracción de Cuenta como la **capa principal de cuenta de usuario**, no como un complemento de UX.
+
+Cada inversor interactúa con el protocolo a través de una Cuenta de Billetera Inteligente, integrada a través de **ZeroDev**.
+
+### La Billetera Inteligente como Identidad del Inversor
+
+La Cuenta de Billetera Inteligente es la identidad on-chain que:
+
+- Posee el Jardín del inversor.
+- Mantiene los activos.
+- Aparece como `msg.sender` en todas las interacciones del protocolo.
+
+La EOA subyacente es solo una clave de control. El protocolo reconoce el contrato de la billetera, no la clave en sí. Esta separación permite la programabilidad, la recuperación y el cumplimiento de políticas sin custodia.
+
+BLOK Capital utiliza **gestión de claves basada en MPC** con Cuentas de Billetera Inteligente. Esto significa que la clave privada se divide entre múltiples partes, por lo que no existe un único punto de falla. El sistema sigue siendo totalmente sin custodia y los usuarios no necesitan gestionar una frase semilla.
+
+### Abstracción de Gas
+
+Los inversores no están obligados a tener ETH para utilizar el protocolo.
+
+Utilizando Paymasters ERC-4337:
+
+- BLOK Capital puede patrocinar el gas para las acciones de incorporación.
+- Las transacciones en curso se pueden pagar en tokens BLOKC.
+- La complejidad del gas específica de la red se oculta al usuario.
+
+Esto elimina un importante punto de fricción para los inversores que no son nativos de las criptomonedas.
+
+---
+
+### Ejecución por Lotes (Batch)
+
+Muchas acciones del protocolo requieren múltiples llamadas a contratos.
+
+Por ejemplo, la creación de un Jardín implica:
+
+- Despliegue determinista de Diamond.
+- Registro en el registro.
+- Configuración de la propiedad.
+- Actualizaciones e inicialización de Facetas.
+
+Con la Abstracción de Cuenta, todo esto se agrupa en una única UserOperation. El inversor firma una vez. La ejecución es atómica. La complejidad permanece en la capa del protocolo, no en la del usuario.
+
+### Claves de Sesión para Gestores de Patrimonio
+
+La Abstracción de Cuenta permite el modelo de delegación sin custodia de BLOK Capital.
+
+Las Cuentas de Billetera Inteligente admiten **claves de sesión**: claves limitadas en el tiempo y con un alcance definido que pueden ejecutar funciones específicas bajo restricciones estrictas.
+
+Los Gestores de Patrimonio pueden ser autorizados para:
+
+- Ejecutar la lógica de la estrategia.
+- Activar reequilibrios.
+- Interactuar solo con facetas aprobadas.
+
+No pueden retirar fondos, escalar permisos ni exceder límites predefinidos. Estas reglas las impone directamente el contrato de la billetera, no la política off-chain o los intermediarios.
+
+El control permanece en manos del inversor en todo momento.
+
+---
+
+### Autorización de Actualización
+
+Después del despliegue, la Billetera Inteligente del inversor autoriza las actualizaciones de su Jardín llamando directamente a la función de actualización.
+
+Debido a que la billetera puede agrupar el despliegue, las actualizaciones y la inicialización, todo el flujo de configuración es fluido y no requiere pasos manuales adicionales.
+
+Ninguna parte, incluido BLOK Capital, puede modificar el Jardín de un inversor sin la autorización de la billetera que lo posee.

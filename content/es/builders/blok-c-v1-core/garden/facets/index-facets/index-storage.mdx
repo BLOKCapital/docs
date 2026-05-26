@@ -1,0 +1,31 @@
+---
+title: IndexStorage.sol
+position: 1
+---
+Como el patrón Diamond depende de `delegatecall`, el estado debe gestionarse cuidadosamente para evitar colisiones de almacenamiento. Blok Capital utiliza el patrón **Diamond Storage**.
+
+## Foco principal: Salvaguardas del Protocolo
+
+Esta librería define las direcciones exactas de los oráculos en Arbitrum One Mainnet y establece los límites financieros estrictos para las operaciones de rebalanceo.
+
+## Fragmento crucial para Builders: Límites Financieros y Disposición del Almacenamiento
+
+Los Builders deben entender estos umbrales codificados. Por ejemplo, una ruta de swap que pierda más de 50 puntos básicos (0,5 %) del valor total de la cartera revertirá automáticamente.
+
+```solidity
+// Rebalancing Parameters
+uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
+uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
+uint256 internal constant INTENT_EXPIRY = 10 minutes;
+
+// Diamond Storage Layout
+struct Layout {
+    address indexAddress;
+    uint256 lastRebalanceTimestamp;
+    uint256 lastIntentTimestamp;
+    bool rebalancing; // Custom reentrancy guard
+    PendingIntent pendingIntent;
+    uint256 lastIntentBlock; // Flash loan protection
+}
+```

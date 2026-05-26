@@ -1,0 +1,96 @@
+---
+title: Jardin Indexé
+position: 1
+---
+![Jardin Indexé](/img/IndexGarden.png)
+
+# Protocole de Jardins : Vue d'ensemble de l'Architecture
+
+---
+
+## Création du Jardin
+
+Chaque jardin est déployé via la Garden Factory, sans exception. Le déploiement direct n'est pas autorisé. Il existe deux types : un **Jardin Indexé** (Index Garden) et un **Jardin de Rendement** (Yield Garden), chacun ayant un objectif distinct au sein de l'écosystème.
+
+---
+
+## Le Système de Facettes
+
+Les jardins reposent sur une architecture modulaire de facettes, séparant le stockage d'un vault de sa logique. Pour qu'une facette soit utilisable, elle doit être attachée au jardin et figurer comme approuvée dans le Facet Registry. Si une facette est retirée du registre, tout appel routé à travers elle échouera, c'est pourquoi la dépréciation est toujours préférée à la suppression.
+
+---
+
+## Le Module d'Index
+
+Le Module d'Index réside à l'intérieur du Facet Registry et héberge toutes les Index Facets. Chaque Index Facet est responsable de connecter un jardin à l'index qu'il a choisi, de récupérer les derniers poids, d'exécuter l'allocation d'actifs et de gérer le rééquilibrage lorsque les poids changent.
+
+---
+
+## Définitions d'Index
+
+Le protocole est livré avec trois index prédéfinis : **Block C2**, **Block C5** et **Block C10**. Chacun définit quels actifs sont inclus et comment les poids sont déterminés. Ces définitions résident au niveau de l'index, et non à l'intérieur des jardins individuels, ce qui maintient les stratégies cohérentes et auditables.
+
+---
+
+## Registre de Calcul d'Index
+
+Le calcul des poids appartient entièrement à l'Index Calculation Registry. Il extrait les données de l'oracle, exécute la logique des poids et produit des sorties telles que :
+
+```
+BTC → 0.8
+ETH → 0.2
+```
+
+Les jardins ne sont que des consommateurs de ces données.
+
+---
+
+## Flux de Connexion
+
+Un utilisateur crée le jardin, installe l'Index Facet appropriée et sélectionne un index, par exemple BLOK C2. Le jardin stocke une référence à cet index, et chaque opération ultérieure y est ancrée.
+
+---
+
+## Flux de Dépôt
+
+Lorsqu'un utilisateur dépose 1 000 USDC, le jardin récupère les poids actuels et alloue en conséquence :
+
+```
+800 USDC → BTC
+200 USDC → ETH
+```
+
+Les swaps sont exécutés et les actifs résultants sont conservés à l'intérieur du jardin.
+
+---
+
+## Cycle de Vie du Jardin
+
+Un jardin prend en charge le rééquilibrage, les retraits et les mises à jour d'index tout au long de sa durée de vie. Il répond aux modifications des données de poids ou de la configuration de l'index à mesure qu'elles surviennent.
+
+---
+
+## Rééquilibrage
+
+Le rééquilibrage peut être déclenché manuellement ou par un keeper. Le jardin compare les positions actuelles aux derniers poids et ajuste les positions pour rester aligné avec son index.
+
+---
+
+## Gouvernance et Déploiement
+
+Les Index Facets sont déployées via l'Index Factory et nécessitent l'approbation de la DAO avant utilisation. Seules les facettes vérifiées et approuvées sont intégrées dans un jardin.
+
+---
+
+## Comportement de Mise à Jour
+
+Si une facette est retirée du Facet Registry, tout jardin qui en dépend tombera en panne immédiatement, sans repli gracieux. Privilégiez toujours la dépréciation, marquez les facettes comme retirées et cessez de router les nouveaux jardins vers elles, plutôt que de les supprimer.
+
+---
+
+## Modèle Mental
+
+- **Jardin** → Vault
+- **Facette** → Logique
+- **Index** → Stratégie
+- **Registre** → Source de Vérité

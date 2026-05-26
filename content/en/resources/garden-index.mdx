@@ -1,0 +1,155 @@
+---
+title: Garden Indices
+position: 5
+---
+A market-cap weighted index assigns weights to assets proportional to their market capitalization relative to the total market capitalization of the portfolio (or basket).
+Here’s a structured **overview of market-cap weighted indexes**, based on the content of the document you uploaded.
+
+---
+
+## 1. Concept of Market-Cap Weighting
+
+A **market-cap weighted index** assigns weights to assets proportional to their market capitalization relative to the total market capitalization of the portfolio (or basket).
+
+**Formula:**
+
+
+![Alt text](/img/mcapformula.png)
+
+This ensures that larger companies or tokens (by market value) exert more influence on the index.
+
+---
+
+## 2. Steps in Construction & Rebalancing
+
+1. **Gather Data**
+
+   * Market capitalization of each asset.
+   * Current dollar value held.
+   * Asset prices.
+   * Total portfolio value.
+
+2. **Calculate Target Weights**
+
+   * Divide each asset’s market cap by the sum of all caps.
+   * Example: If A = 500B, B = 300B, C = 200B → weights = 50%, 30%, 20%.
+
+3. **Compare to Current Holdings**
+
+   * Identify deviations between current and target values.
+
+4. **Rebalance When Needed**
+
+   * Sell overweight assets, buy underweight ones.
+   * Match buy/sell so there’s no net cash flow.
+   * Trade in whole shares/tokens.
+
+---
+
+## 3. Tolerance & Cost Efficiency
+
+* **Tolerance threshold:** A set percentage (e.g., 5% of portfolio value) defines when trades are triggered.
+
+  * Small deviations below threshold are ignored (avoids over-trading).
+  * Example: On a \$20,000 portfolio with 5% tolerance (\$1,000), trades are only executed if deviations exceed \$1,000.
+* **Transaction cost minimization:**
+
+  * Fewer trades = lower fees.
+  * Batch trades if managing multiple accounts.
+  * Consider bid-ask spreads for cost/benefit.
+
+
+### Proposed architecture(WIP)
+
+![Alt text](/img/GardenIndex.png)
+
+### Trade samples
+
+Let’s work through **three illustrative scenarios** with WETH and ARB, where we compare **target weights** vs. **calculated (current) weights** under a 5% tolerance rule.
+
+---
+
+#### Assumptions
+
+* Portfolio Value = **\$10,000**
+* Asset Prices:
+
+  * WETH = **\$2,000**
+  * ARB = **\$1.00**
+* Target Weights:
+
+  * WETH = **70%**
+  * ARB = **30%**
+* Tolerance: **+5% of total portfolio value (\$500)** — swaps are performed only if they improve the portfolio value by at least this much.
+
+---
+
+#### Case 1: **Target weight = Current weight → No swap**
+
+* Current holdings:
+
+  * WETH = 3.5 (\$7,000 value, 70%)
+  * ARB = 3,000 (\$3,000 value, 30%)
+* Current weights = Target weights (70/30).
+
+**Action:** No swap required. Portfolio is aligned with targets.
+
+---
+
+#### Case 2: **Target weight higher → Swap performed**
+
+Suppose current portfolio is:
+
+* WETH = 3 (\$6,000, 60%)
+* ARB = 4,000 (\$4,000, 40%)
+* Current weights: WETH 60%, ARB 40%.
+* Target: WETH 70%, ARB 30%.
+
+To rebalance:
+
+* WETH target = \$7,000. Currently \$6,000 → need **+\$1,000 WETH**.
+* ARB target = \$3,000. Currently \$4,000 → need **–\$1,000 ARB**.
+
+Swap \$1,000 ARB → WETH.
+
+* Post-swap:
+
+  * WETH = \$7,000 (70%)
+  * ARB = \$3,000 (30%).
+
+**Value shift = \$1,000 > \$500 tolerance → Swap executed.**
+
+---
+
+#### Case 3: **Target weight higher, but below tolerance → No swap**
+
+Suppose current portfolio is:
+
+* WETH = 3.3 (\$6,600, 66%)
+* ARB = 3,400 (\$3,400, 34%)
+* Current weights: WETH 66%, ARB 34%.
+* Target: WETH 70%, ARB 30%.
+
+To rebalance:
+
+* WETH target = \$7,000. Currently \$6,600 → need **+\$400 WETH**.
+* ARB target = \$3,000. Currently \$3,400 → need **–\$400 ARB**.
+
+Swap size = \$400.
+
+* This is **< \$500 tolerance**, so **no swap performed**.
+* Portfolio remains slightly off-balance but within acceptable bounds.
+
+---
+
+### Summary
+
+* **Case 1:** Perfectly aligned → no action.
+* **Case 2:** Significant deviation → swap performed.
+* **Case 3:** Deviation exists but below tolerance → no action.
+
+<Admonition kind="warning" title="This architecture is still under development and will be introduced in a future release. The information provided here is preliminary and may change without notice.">
+
+
+
+</Admonition>

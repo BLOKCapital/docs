@@ -1,0 +1,41 @@
+---
+title: Registro de Facetas
+position: 4
+---
+## **Registro de Facetas (Capa de Gobernanza y Aprobación)**
+
+**Ubicación:** `src/facetRegistry/`
+
+**Archivos clave:**
+
+- `FacetRegistry.sol` — Gestiona el registro de facetas y el seguimiento de versiones.
+- `IFacetRegistry.sol` — Interfaz pública.
+
+---
+
+### **Qué hace**
+
+El Registro de Facetas es el **catálogo gobernado de facetas aprobadas**. Actúa como un guardián asegurando que:
+
+- **Solo las facetas preaprobadas** puedan ser añadidas a los Jardines.
+- **Las 4 facetas base inmutables** (Propiedad, Corte, Actualización, Loupe) permanezcan protegidas.
+- Exista un **rastro de auditoría completo** de todos los cambios de facetas mediante versiones.
+- Las **herramientas off-chain** puedan descubrir qué facetas y funciones están disponibles.
+
+### **Operaciones principales**
+
+**1. Registrar facetas: `upgradeFacetRegistry()`**
+
+Llamado por la gobernanza para registrar, actualizar o eliminar facetas. Valida que las facetas sean contratos y que las facetas base centrales nunca sean modificadas.
+
+**2. Operaciones de consulta:**
+
+- `getFacets()`: Obtiene todas las facetas y sus selectores.
+- `getFacetAddress(selector)`: Busca la faceta para una función específica.
+- `isFacetRegistered(address)`: Verifica el estado de aprobación.
+
+### **Mecanismos de seguridad**
+
+- **Facetas base inmutables**: La lógica central del Diamond no puede quedar inutilizada ("bricked").
+- **Se requiere aprobación de la DAO**: La gobernanza debe votar sobre los nuevos registros de facetas.
+- **Seguimiento de versiones**: Cada cambio crea un registro permanente en la historia.

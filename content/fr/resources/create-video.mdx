@@ -1,0 +1,159 @@
+---
+title: Contribuer à notre documentation
+position: 7
+---
+BLOKC prospère grâce aux contributions ouvertes, et notre documentation ne fait pas exception. Que vous soyez développeur, designer ou membre de la communauté, votre contribution aide à rendre nos docs plus utiles et inclusives pour tous.
+Ce guide vous accompagne dans la configuration de base et les connaissances nécessaires pour commencer à contribuer à la documentation BLOKC hébergée sur [GitHub](https://github.com/BLOKCapital/documentation).
+
+## Prérequis
+Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votre système :
+
+1. **Git**
+Utilisé pour cloner le dépôt et gérer le contrôle de version.
+[Installer Git](https://git-scm.com/downloads)
+
+2. **Node.js et npm**
+Nécessaires pour exécuter Docusaurus en local.
+[Installer Node.js (version LTS)](https://nodejs.org/en)
+
+3. **VS Code ou tout éditeur de texte**
+Facilite l'édition des fichiers Markdown et la navigation dans le projet.
+[Télécharger VS Code](https://code.visualstudio.com/download)
+
+4. **Notions de base sur Markdown**
+Notre documentation est rédigée en fichiers .md et .mdx.
+
+## Workflow de contribution
+Pour contribuer à la documentation BLOKC, suivez les étapes ci-dessous pour configurer votre environnement local et comprendre la structure du dépôt de documentation.
+
+---
+
+### Pour commencer
+
+1. **Accéder au dépôt**  
+   Rendez-vous sur le dépôt officiel de la documentation BLOKC sur GitHub.
+
+2. **Forker le dépôt**
+   Cliquez sur le bouton **"Fork"**, GitHub créera une copie du repo dans votre compte. (ex : https://github.com/votre-utilisateur/documentation).
+
+2. **Cloner le dépôt**  
+   Utilisez la commande suivante pour cloner le projet sur votre machine locale :  
+   ```bash
+   git clone https://github.com/votre-utilisateur/documentation
+   ```
+
+3. **Naviguer dans le répertoire du projet**  
+   ```bash
+   cd documentation
+   ```
+
+4. **Installer les dépendances**  
+   Installez tous les paquets requis avec :  
+   ```bash
+   npm install
+   ```
+
+5. **Lancer la documentation en local**  
+   Démarrez le serveur de développement local avec :  
+   ```bash
+   npm start
+   ```
+
+---
+
+### Comprendre la structure du projet
+
+Avant de contribuer, il est utile de comprendre comment la documentation est organisée :
+
+- Chaque **dossier** dans le répertoire `/docs` représente une section majeure de la documentation.
+- Chaque **fichier** dans ces dossiers est une sous-section ou une page de contenu.
+- Tous les fichiers sont rédigés en **Markdown** (`.md`).
+
+---
+
+### Types de contributions
+
+Vous pouvez contribuer à la documentation de plusieurs façons :
+
+- **Mettre à jour une section ou sous-section existante**  
+  Ajouter de nouvelles informations, corriger des erreurs, mettre à jour du contenu obsolète ou supprimer du contenu non pertinent.
+
+- **Ajouter une nouvelle sous-section**  
+  Créer une nouvelle page de contenu dans une section existante.
+
+- **Créer une nouvelle section**  
+  Introduire une toute nouvelle section à la documentation en ajoutant un nouveau dossier.
+
+---
+
+### Comment contribuer
+
+#### 1. Mettre à jour une section ou sous-section existante
+
+- Identifiez la section ou le fichier à mettre à jour.
+- Ouvrez le fichier `.md` correspondant.
+- Faites vos modifications directement—ajouts, suppressions ou corrections selon le besoin.
+
+#### 2. Ajouter une nouvelle sous-section
+
+- Repérez le dossier de la section concernée.
+- Créez un nouveau fichier avec l'extension `.md` (ex : `nouvelle-sous-section.md`).
+- Ajoutez votre contenu au format Markdown.
+
+#### 3. Ajouter une nouvelle section
+
+- Créez un nouveau dossier sous le répertoire `/docs` avec un nom approprié.
+- À l'intérieur de ce dossier, créez un nouveau fichier `.md` pour votre contenu.
+- Votre nouvelle section et son contenu seront désormais reconnus par le système de documentation.
+
+---
+
+### Soumettre votre contribution
+
+Une fois vos modifications terminées, suivez ces étapes pour pousser vos changements et ouvrir une Pull Request (PR) :
+
+1. **Créer une nouvelle branche**
+   ```bash
+   git checkout -b votre-nom-de-branche
+   ```
+
+2. **Stager vos modifications**
+   ```bash
+   git add .
+   ```
+
+3. **Committer votre travail**
+   ```bash
+   git commit -m "Message descriptif sur votre contribution"
+   ```
+
+4. **Pousser sur GitHub**
+   ```bash
+   git push -u origin votre-nom-de-branche
+   ```
+
+5. **Ouvrir une Pull Request**  
+   Rendez-vous sur le dépôt GitHub, comparez les branches et ouvrez une PR pour relecture.
+
+
+## Voir le tutoriel vidéo
+Vous préférez un guide visuel ? Regardez cette courte vidéo qui vous guide à travers tout le processus de contribution—du clonage du dépôt à la soumission de votre première pull request.
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/CMHOX2Wq31g"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+
+
+## Ressources
+- [Docusaurus Docs](https://docusaurus.io/docs) – Découvrez comment fonctionne Docusaurus, de la configuration à l'écriture de plugins personnalisés.
+
+- [Guide Markdown](https://www.markdownguide.org/cheat-sheet/) – Un aperçu rapide de la syntaxe Markdown.
+
+- [GitHub Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) – Guides Git et GitHub pour débutants.

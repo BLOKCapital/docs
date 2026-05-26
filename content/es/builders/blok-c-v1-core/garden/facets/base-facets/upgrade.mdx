@@ -1,0 +1,50 @@
+---
+title: Upgrade
+position: 4
+---
+Como `diamondCut` está bloqueado en las Base Facets, el **Módulo de Upgrade** es la única forma autorizada de modificar la lógica de un Garden. Se basa en una sincronización determinista y versionada con el `FacetRegistry` global.
+
+## Foco principal: Actualizaciones Verificadas por Hash
+
+En lugar de pasar un array de selectores de funciones y direcciones arbitrarios, el llamador debe proporcionar un payload `_hashData`. El `UpgradeBase` (lógica interna) compara este hash con el `FacetRegistry` oficial. Si el hash coincide con las versiones de módulo autorizadas para ese tipo de Garden, la actualización se obtiene y se ejecuta de forma segura.
+
+## `UpgradeFacet.sol` (El Ejecutor)
+
+Esta faceta expone la interfaz externa para actualizar el Garden y comprobar las versiones de los módulos instalados.
+
+**Fragmento crucial para Builders: El modificador inteligente de Upgrade**
+
+Observa el modificador `onlyOwnerUnlessIndexConnected`. Es una decisión arquitectónica brillante para la gestión automatizada de carteras.
+
+Si el Garden está conectado a un Índice, *cualquiera* (incluido un bot automatizado) puede activar la función `upgrade`. Como la actualización depende de un hash estricto verificado por el Facet Registry global, es inmune a inyecciones maliciosas. Esto permite al protocolo parchear automáticamente los Gardens conectados sin requerir firmas manuales del usuario.
+
+```solidity
+/// @inheritdoc IUpgrade
+function upgrade(bytes32 _hashData) external onlyOwnerUnlessIndexConnected nonReentrant {
+    // Executes the registry-verified upgrade using the provided hash
+    _upgrade(_hashData);
+}
+
+/// @inheritdoc IUpgrade
+function upgradeDetails() external view returns (IDiamondCut.FacetCut[] memory facetCuts, bytes32 hashData) {
+    // Returns the pending cuts and the hash required to execute them
+    (facetCuts, hashData) = _upgradeDetails();
+}
+```
+
+## `UpgradeStorage.sol`
+
+En lugar de rastrear cada selector de función individual (lo que gestiona `DiamondCutStorage`), esta disposición de almacenamiento concreta rastrea **versiones de módulos**.
+
+**Fragmento crucial para Builders: Seguimiento de versiones**
+
+Al rastrear versiones, el protocolo sabe exactamente qué componentes del Garden están desactualizados respecto al registro global, permitiendo actualizaciones modulares y precisas.
+
+```solidity
+/// @dev Tracks per-module versions only. Upgrade logic is driven by module versions;
+///      the garden installs only modules allowed for its type
+struct Layout {
+    // Maps the Module ID (e.g., keccak256("DEX")) to its currently installed version
+    mapping(bytes32 => uint256) moduleVersions;
+}
+```

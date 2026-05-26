@@ -1,0 +1,50 @@
+---
+title: Upgrade
+position: 4
+---
+As `diamondCut` is blocked in the Base Facets, the **Upgrade Module** is the only authorized way to alter a Garden's logic. It relies on a deterministic, version-controlled sync with the global `FacetRegistry`.
+
+## Main focus: Hash-Verified Upgrades
+
+Instead of passing an array of arbitrary function selectors and addresses, a caller must provide a `_hashData` payload. The `UpgradeBase` (internal logic) compares this hash against the official `FacetRegistry`. If the hash matches the authorized module versions for that Garden Type, the upgrade is pulled and executed securely.
+
+## `UpgradeFacet.sol` (The Executor)
+
+This facet exposes the external interface for upgrading the Garden and checking installed module versions.
+
+**Crucial Builder Snippet: The Smart Upgrade Modifier**
+
+Notice the `onlyOwnerUnlessIndexConnected` modifier. This is a brilliant architectural decision for automated portfolio management.
+
+If the Garden is connected to an Index, *anyone* (including an automated bot) can trigger the `upgrade` function. Because the upgrade relies on a strict hash verified by the global Facet Registry, it is immune to malicious injection. This allows the protocol to automatically patch connected Gardens without requiring manual user signatures.
+
+```solidity
+/// @inheritdoc IUpgrade
+function upgrade(bytes32 _hashData) external onlyOwnerUnlessIndexConnected nonReentrant {
+    // Executes the registry-verified upgrade using the provided hash
+    _upgrade(_hashData);
+}
+
+/// @inheritdoc IUpgrade
+function upgradeDetails() external view returns (IDiamondCut.FacetCut[] memory facetCuts, bytes32 hashData) {
+    // Returns the pending cuts and the hash required to execute them
+    (facetCuts, hashData) = _upgradeDetails();
+}
+```
+
+## `UpgradeStorage.sol`
+
+Rather than tracking every single function selector (which is handled by `DiamondCutStorage`), this specific storage layout tracks **Module Versions**.
+
+**Crucial Builder Snippet: Version Tracking**
+
+By tracking versions, the protocol knows exactly which components of the Garden are out of date compared to the global registry, allowing for precise, modular updates.
+
+```solidity
+/// @dev Tracks per-module versions only. Upgrade logic is driven by module versions;
+///      the garden installs only modules allowed for its type
+struct Layout {
+    // Maps the Module ID (e.g., keccak256("DEX")) to its currently installed version
+    mapping(bytes32 => uint256) moduleVersions;
+}
+```

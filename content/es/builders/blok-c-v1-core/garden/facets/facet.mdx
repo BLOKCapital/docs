@@ -1,0 +1,48 @@
+---
+title: Facet.sol
+position: 1
+---
+## Capa de Acceso: `Facet.sol`
+
+- `Facet.sol` actúa como el **contrato base** para todos los módulos de lógica del Garden.
+- Define las **reglas centrales de control de acceso** que sigue cada módulo.
+- Su función principal es **proteger el sistema frente a acciones no autorizadas o inseguras**, especialmente durante operaciones sensibles.
+
+---
+
+## Idea principal: Interacciones restringidas durante la conexión a un Índice
+
+- Cuando un Garden está conectado a un Índice, ciertas operaciones se vuelven **más restrictivas**.
+- La **interacción directa del usuario se limita** durante procesos automatizados como el rebalanceo.
+- Esto ayuda a evitar:
+  - **Front-running** (usuarios que aprovechan los tiempos para obtener beneficio)
+  - **Inconsistencias de estado** causadas por acciones externas inesperadas
+
+---
+
+## Restricción de Llamadas al DEX
+
+- Durante un rebalanceo, **las funciones de swap solo pueden ser ejecutadas por el propio contrato del Garden**.
+- **Los usuarios o contratos externos no pueden** activar estos swaps.
+- Esta restricción garantiza:
+  - Ejecución controlada de las operaciones
+  - Sin interferencia externa
+  - Comportamiento del sistema consistente y predecible
+
+```solidity
+/// @notice Checks if the caller is the garden itself when connected to an index
+function _onlyGardenCanCallDexWhenIndexConnected() internal view {
+    LibDiamond.Layout storage ld = LibDiamond.layout();
+    if (ld.isConnectedToIndex) {
+        // Enforce Diamond self-calls only
+        if (msg.sender != address(this)) {
+            revert Garden_OnlyGardenCanCallDexWhenIndexConnected();
+        }
+    } else {
+        // If not connected to an index, fallback to owner validation
+        if (msg.sender != OwnershipStorage.layout().owner) {
+            revert Garden_UnauthorizedCaller();
+        }
+    }
+}
+```

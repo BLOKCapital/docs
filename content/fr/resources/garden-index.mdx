@@ -1,0 +1,152 @@
+---
+title: Indices Garden
+position: 5
+---
+Un indice pondéré par la capitalisation boursière attribue des poids aux actifs proportionnels à leur capitalisation boursière par rapport à la capitalisation boursière totale du portefeuille (ou panier).
+
+---
+
+## 1. Concept de Pondération par Capitalisation Boursière
+
+Un **indice pondéré par la capitalisation boursière** attribue des poids aux actifs proportionnels à leur capitalisation boursière par rapport à la capitalisation totale du portefeuille (ou panier).
+
+**Formule :**
+
+![Alt text](/img/mcapformula.png)
+
+Cela garantit que les entreprises ou tokens les plus importants (par valeur de marché) exercent une plus grande influence sur l’indice.
+
+---
+
+## 2. Étapes de Construction et de Rééquilibrage
+
+1. **Collecte des Données**
+
+   * Capitalisation boursière de chaque actif.
+   * Valeur actuelle en dollars détenue.
+   * Prix des actifs.
+   * Valeur totale du portefeuille.
+
+2. **Calcul des Poids Cibles**
+
+   * Diviser la capitalisation de chaque actif par la somme des capitalisations.
+   * Exemple : Si A = 500B, B = 300B, C = 200B → poids = 50%, 30%, 20%.
+
+3. **Comparer aux Positions Actuelles**
+
+   * Identifier les écarts entre valeurs actuelles et valeurs cibles.
+
+4. **Rééquilibrer si Nécessaire**
+
+   * Vendre les actifs en surpoids, acheter ceux en sous-poids.
+   * Faire correspondre achats et ventes afin d’éviter tout flux net de trésorerie.
+   * Négocier en unités entières (actions ou tokens).
+
+---
+
+## 3. Tolérance et Efficacité des Coûts
+
+* **Seuil de tolérance :** Un pourcentage défini (ex. 5% de la valeur du portefeuille) détermine quand déclencher les transactions.
+
+  * Les petits écarts sous le seuil sont ignorés (évite une sur-activité de trading).
+  * Exemple : Sur un portefeuille de 20 000 \$ avec une tolérance de 5% (1 000 \$), les transactions ne sont exécutées que si les écarts dépassent 1 000 \$.
+* **Minimisation des coûts de transaction :**
+
+  * Moins de transactions = moins de frais.
+  * Grouper les transactions si plusieurs comptes sont gérés.
+  * Prendre en compte les écarts bid-ask dans l’évaluation coûts/bénéfices.
+
+### Architecture Proposée (Brouillon)
+
+![Alt text](/img/GardenIndex.png)
+
+### Exemples de Transactions
+
+Voyons **trois scénarios illustratifs** avec WETH et ARB, où nous comparons **poids cibles** et **poids actuels** en appliquant une règle de tolérance de 5%.
+
+---
+
+#### Hypothèses
+
+* Valeur du Portefeuille = **10 000 \$**
+* Prix des Actifs :
+
+  * WETH = **2 000 \$**
+  * ARB = **1.00 \$**
+* Poids Cibles :
+
+  * WETH = **70%**
+  * ARB = **30%**
+* Tolérance : **+5% de la valeur totale du portefeuille (500 \$)** — les échanges ne sont réalisés que si l’amélioration atteint au moins ce seuil.
+
+---
+
+#### Cas 1 : **Poids cible = poids actuel → Aucun échange**
+
+* Positions actuelles :
+
+  * WETH = 3,5 (7 000 \$, 70%)
+  * ARB = 3 000 (3 000 \$, 30%)
+* Poids actuels = Poids cibles (70/30).
+
+**Action :** Aucun échange requis. Le portefeuille est aligné aux objectifs.
+
+---
+
+#### Cas 2 : **Poids cible supérieur → Échange exécuté**
+
+Supposons que le portefeuille actuel soit :
+
+* WETH = 3 (6 000 \$, 60%)
+* ARB = 4 000 (4 000 \$, 40%)
+* Poids actuels : WETH 60%, ARB 40%.
+* Objectif : WETH 70%, ARB 30%.
+
+Pour rééquilibrer :
+
+* Cible WETH = 7 000 \$. Actuellement 6 000 \$ → besoin de **+1 000 \$ en WETH**.
+* Cible ARB = 3 000 \$. Actuellement 4 000 \$ → besoin de **–1 000 \$ en ARB**.
+
+Échanger 1 000 \$ d’ARB → WETH.
+
+* Après échange :
+
+  * WETH = 7 000 \$ (70%)
+  * ARB = 3 000 \$ (30%).
+
+**Changement = 1 000 \$ > 500 \$ de tolérance → Échange exécuté.**
+
+---
+
+#### Cas 3 : **Poids cible supérieur mais en dessous de la tolérance → Aucun échange**
+
+Supposons que le portefeuille actuel soit :
+
+* WETH = 3,3 (6 600 \$, 66%)
+* ARB = 3 400 (3 400 \$, 34%)
+* Poids actuels : WETH 66%, ARB 34%.
+* Objectif : WETH 70%, ARB 30%.
+
+Pour rééquilibrer :
+
+* Cible WETH = 7 000 \$. Actuellement 6 600 \$ → besoin de **+400 \$ en WETH**.
+* Cible ARB = 3 000 \$. Actuellement 3 400 \$ → besoin de **–400 \$ en ARB**.
+
+Montant de l’échange = 400 \$.
+
+* Cela est **< 500 \$ de tolérance**, donc **aucun échange n’est exécuté**.
+* Le portefeuille reste légèrement déséquilibré mais dans la limite acceptable.
+
+---
+
+### Résumé
+
+* **Cas 1 :** Parfaitement aligné → aucune action.
+* **Cas 2 :** Écart significatif → échange exécuté.
+* **Cas 3 :** Écart présent mais inférieur à la tolérance → aucun échange.
+
+<Admonition kind="warning" title="Cette architecture est encore en cours de développement et sera introduite dans une future version. Les informations fournies ici sont préliminaires et peuvent être modifiées sans préavis.">
+
+
+
+</Admonition>

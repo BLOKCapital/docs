@@ -1,0 +1,39 @@
+---
+title: Réseau d'Oracles Décentralisé (DON)
+position: 5
+---
+### Comment Blok Capital gère-t-il la transaction asynchrone atomique ?
+
+![Réseau d'Oracles Décentralisé](/img/Frame%2022.jpg)
+
+### 1). Couche Contrat (Émission de signaux) :
+
+- Ici, les contrats déployés font principalement 3 choses :
+
+1. Gérer l'état de votre jardin.
+2. Détenir vos actifs crypto et vos jetons dans votre portefeuille.
+3. Diffuser des événements lorsqu'une activité notable se produit (ex. lorsqu'un Jardin particulier s'enregistre auprès d'un Indice DeFi).
+
+Cette couche est essentiellement un gardien qui détient vos actifs et autorise les modifications lorsqu'il reçoit les changements vérifiés.
+
+### 2). Couche CRE (Chainlink Runtime Environment) :
+
+- Cette couche est divisée en 3 parties :
+
+1. **Feeders** : Les Feeders collectent des informations à partir de diverses sources telles que la surveillance de la blockchain en observant les événements du jardin, et le suivi des prix du marché.
+2. **Couche de déclenchement (Traitement par lots)** : La couche de déclenchement normalise toutes les données dans un format commun que le DON (Decentralised Oracle Network) peut comprendre et traiter.
+3. **[DON](https://docs.chain.link/cre) (Decentralised Oracle Network)**: C'est la couche où toute l'exécution a lieu.
+
+   → La **Computation** exécute les flux de travail personnalisés. Différentes opérations nécessitent des logiques différentes, il existe donc différents flux de travail pour les différentes opérations.
+
+   (Ex. : Le rééquilibrage du portefeuille nécessite de récupérer les prix de l'indice.)
+
+   → La **_Validation_** effectue des contrôles de sécurité avant l'exécution de tout flux de travail.
+
+   → Le **Consensus** agrège les résultats des multiples réseaux DON. Puisque chaque nœud exécute le même flux de travail avec les mêmes entrées, ils devraient tous obtenir la même réponse. Ces résultats sont comparés par cryptographie.
+
+   → Nous utilisons le DON public, BLOK Capital ne contrôle pas la couche de calcul puisque de multiples nœuds à travers le monde la contrôlent. Ainsi, les résultats du calcul ne peuvent pas être falsifiés.
+
+### 3). Couche Contrat (Exécution) :
+
+Après le calcul et le consensus, les résultats retournent à la blockchain avec la preuve cryptographique que de multiples nœuds DON sont d'accord. Après vérification de la signature du DON, les opérations sont exécutées.

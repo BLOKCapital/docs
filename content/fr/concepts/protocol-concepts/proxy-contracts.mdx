@@ -1,0 +1,27 @@
+---
+title: Contrats Proxy
+position: 2
+---
+![Contrats Proxy](/img/Frame%2025.jpg)
+
+## Explication des Contrats Proxy
+
+Un contrat proxy est un moyen de mettre à jour un système de contrats intelligents sans changer l'adresse avec laquelle les utilisateurs interagissent.
+
+Au lieu d'appeler directement la logique de l'application, les utilisateurs interagissent avec un contrat proxy permanent. Ce proxy transmet chaque appel à un contrat d'implémentation séparé qui contient la logique réelle. L'adresse en laquelle les utilisateurs ont confiance reste la même, même si la logique qui la sous-tend évolue.
+
+Ce modèle existe parce que les contrats intelligents sont immuables. Une fois déployés, leur code ne peut pas être modifié. Sans proxies, la correction de bugs ou l'ajout de fonctionnalités nécessiterait le déploiement de nouveaux contrats, la modification de l'état et la demande aux utilisateurs de migrer vers une nouvelle adresse — une approche qui n'est pas adaptée aux protocoles réels.
+
+## Comment ça marche
+
+Le contrat proxy stocke toutes les données persistantes, telles que les soldes et la configuration. Le contrat d'implémentation ne contient que la logique.
+
+Lorsqu'un utilisateur appelle le proxy, celui-ci transmet l'appel via `delegatecall`. Cela exécute le code de l'implémentation dans le contexte du proxy. Les mises à jour d'état affectent le proxy, l'appelant d'origine reste inchangé et les actifs ne quittent jamais le proxy.
+
+En termes simples, le prix possède les données. L'implémentation fournit le comportement.
+
+## Comment BLOK Capital utilise les Contrats Proxy
+
+BLOK Capital utilise des contrats proxy pour garantir que le protocole puisse évoluer sans perturber les utilisateurs ni mettre les actifs en péril. Toutes les interactions des utilisateurs passent par des adresses de proxy stables, tandis que les mises à jour de la logique sont gérées par le déploiement de nouvelles implémentations et la mise à jour de la référence du proxy.
+
+Cela permet à BLOK Capital d'améliorer la logique des indices, de corriger des problèmes et d'introduire de nouvelles fonctionnalités tout en préservent l'état de l'utilisateur et en maintenant la cohérence des adresses de contrat. L'autorité de mise à jour est gouvernée par la DAO de BLOK Capital, garantissant que les changements sont transparents et ne sont pas contrôlés par une seule partie.

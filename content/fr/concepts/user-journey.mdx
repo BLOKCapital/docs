@@ -1,0 +1,83 @@
+---
+title: Parcours Utilisateur
+position: 2
+---
+![Userflow](/img/Userflow.png)
+
+## 1. Connectez-vous et créez votre portefeuille intelligent
+
+- Connectez-vous avec Google.
+- Créez votre compte de portefeuille intelligent (SWA). C'est le compte qui détiendra vos actifs et interagira avec le protocole.
+- Le SWA est surveillé pour sa santé, ses soldes, ses approbations et son activité. Si nécessaire, le système peut afficher des alertes et des analyses pour le SWA.
+
+## 2. Code de parrainage et mint de pass
+
+- Vous pouvez saisir un code de parrainage facultatif lors de l'intégration. Les codes de parrainage sont fournis uniquement par le protocole (par exemple, parrainage "builder" pour les Constructeurs).
+- En fonction de votre parrainage et de votre rôle, le protocole minte un pass soulbound (SBT). Exemples :
+  - Pass de Constructeur (Builder Pass)
+  - Pass de Baddie (Baddie Pass)
+  - Pass d'Ange (Angel Pass)
+- Les pass sont non transférables et servent de jetons d'accès pour créer certains types de jardins.
+- Chaque pass est valable pour un jardin. Si vous avez deux pass (par exemple un Builder et un Baddie), vous pouvez créer deux jardins (un par pass).
+
+## 3. Choisissez la collection du jardin et créez votre jardin
+
+- Lorsque vous créez un jardin, vous choisissez à quelle collection il appartient. Le protocole contrôle les collections disponibles.
+- Pour créer un jardin dans une collection, vous devez détenir le pass correspondant. L'application vous guide et vous montre quelles collections vous pouvez accéder en fonction de votre pass.
+- Si vous détenez plusieurs pass (par exemple, à la fois Builder et Quant), vous pouvez créer plusieurs jardins, un pour chaque pass que vous possédez.
+
+## 4. Financer votre jardin
+
+- Déposez des fonds dans votre jardin depuis votre SWA.
+- Le dépôt se fait en premier. Ce n'est qu'après le financement que vous connectez une stratégie ou choisissez le mode manuel.
+
+Les actifs pris en charge dépendent des paramètres du réseau et du protocole. L'application affiche les actifs et les soldes pris en charge.
+
+## 5. Choisissez comment vous souhaitez gérer le jardin
+
+Vous pouvez gérer le jardin de l'une de ces manières :
+
+- Jardin d'Indice (automatique)
+  - Connectez-vous à une stratégie d'Indice pour un rééquilibrage automatique.
+  - Le jardin ajuste les positions pour correspondre aux poids de l'indice automatiquement.
+  - Les échanges sont acheminés via des DEX pris en charge (par exemple, Uniswap V3), et le WETH est utilisé comme base là où cela aide à l'acheminement.
+- Jardin autogéré (manuel)
+  - Vous choisissez les actifs et gérez les transactions vous-même.
+  - Pas de rééquilibrage automatique.
+
+Notes :
+
+- Certains jardins sont spécifiquement conçus pour les stratégies d'Indice (rééquilibrage automatique).
+- Certains jardins sont des jardins autogérés normaux.
+- L'application indiquera clairement quel type vous créez ou utilisez.
+
+## 6. Connectez la stratégie ou choisissez le mode manuel
+
+- Après avoir déposé des fonds, définissez le fonctionnement du jardin.
+- Pour les jardins d'Indice :
+  - Connectez-vous à l'Indice choisi.
+  - Le jardin lit les poids cibles de l'Indice et se rééquilibre automatiquement.
+- Pour les jardins autogérés :
+  - Sélectionnez « Autogéré » (mode manuel).
+  - Vous décidez des actifs et passez les ordres vous-même.
+  - Il n'y a pas de rééquilibrage automatique.
+
+Important :
+
+- Déposez des fonds d'abord, puis connectez un Indice ou choisissez le mode Autogéré.
+- Seuls les jardins d'Indice se rééquilibrent automatiquement. Les jardins autogérés ne le font pas.
+
+## 7. DAO et vote
+
+- Il existe un onglet DAO où les votes ont lieu.
+- Le pouvoir de vote est basé sur le montant de BLOKC que vous détenez.
+- Utilisez l'onglet DAO pour participer aux votes, voir les propositions et voir les résultats.
+
+## 8. Analyses
+
+- L'application affiche des analyses pour votre jardin et votre compte :
+  - Valeur du portefeuille et P&L (pertes et profits)
+  - Allocation d'actifs et historique de rééquilibrage
+  - Échanges et frais
+  - Risque et approbations
+- Les analyses SWA sont également affichées afin que vous puissiez suivre la santé et l'activité de votre portefeuille intelligent.

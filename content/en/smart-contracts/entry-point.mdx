@@ -1,0 +1,63 @@
+---
+title: The Diamond Controller
+position: 2
+---
+## **2. Entry Point: The Diamond Controller (`Garden.sol`)**
+
+**File:**
+
+`src/garden/Garden.sol`
+
+This is the **main controller contract** and the **only contract address** that end‑users and most integrations should interact with.
+
+### **What `Garden.sol` is**
+
+- A **Diamond proxy**:
+  - It owns the **facet registry** (via `LibDiamond` (Library diamond) and related storage).
+  - It does not define business logic itself.
+  - It forwards calls, based on `msg.sig`, to the correct facet using `delegatecall`.
+- A **stable API surface**:
+  - Even as facets are upgraded, users keep calling the same address.
+
+### **What happens in the constructor**
+
+Without quoting code, the constructor typically:
+
+- **Initializes Diamond storage** via `LibDiamond`:
+  - Sets the **contract owner** (for administration).
+  - Registers the **initial facets** and their selectors (base facets at minimum).
+
+- May **run an initial “diamond cut”**:
+  - Add ownership, loupe, and cut/upgrade facets.
+  - Optionally register early feature facets (index, utility).
+
+The end result: once deployed, `Garden.sol` knows which functions exist and which facet implements each one, but it does **not** **hard‑code** that mapping.
+
+### **What the Diamond does and does not do**
+
+**Does:**
+
+- Routes functions to facets via `delegatecall`.
+- Maintains the **core routing data structures** in Diamond storage.
+- Provides a single, consistent interface endpoint for all protocol features.
+
+**Does not:**
+
+- Implement feature logic like “rebalance index”, “swap on Uniswap”, or “open GMX position” directly.
+- Directly own the business logic contracts such as `Index.sol` and registries – those are part of the domain layer and are called from facets.
+
+### **Call routing**
+
+When you call `Garden`:
+
+1. The call hits `Garden.sol`.
+2. The Diamond looks up `msg.sig` in its internal **selector → facet address** mapping (maintained by `LibDiamond` and diamond cut storage).
+3. It issues a `delegatecall` into the facet:
+   - Code runs in the context of the Garden.
+   - Storage accessed is **Garden’s storage**, not the facet’s.
+4. The result is returned to the caller as if the Garden implemented the function directly.
+
+For a builder, this means:
+
+- When you see a function in a facet like `IndexBase.connectToIndex`, it is actually **executed in Garden storage**.
+- All stateful logic must use the **right storage layout libraries**.

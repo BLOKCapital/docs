@@ -1,0 +1,46 @@
+---
+title: Introduction et Guide du Builder
+position: 1
+---
+![Aperçu du Système](/img/Frame%2021.jpg)
+
+## **1. Aperçu du Système**
+
+Ce dépôt implémente un **protocole de gestion d'actifs on-chain** construit autour d'un **contrôleur Diamond (EIP-2535)** appelé le **Garden**.
+
+Haut Niveau :
+
+- Les utilisateurs et les systèmes externes interagissent avec **un seul contrat** : `src/garden/Garden.sol`.
+- Le Garden lui-même est **léger** : il n'implémente pas directement la logique métier. À la place, il **achemine les appels** vers un ensemble de **facettes** (modules) qui implémentent :
+  1. La mécanique de base du protocole (propriété, mises à jour, introspection).
+  2. Les fonctionnalités liées aux indices (connexion, suivi et rééquilibrage des indices).
+  3. Les intégrations DeFi (échanges DEX, positions GMX, tarification Chainlink).
+- La **couche domaine** (indices, registres, mathématiques) réside en dehors du Diamond et peut être comprise indépendamment de la mécanique d'acheminement et de stockage.
+
+### **Pourquoi Diamond ?**
+
+Ce protocole est conçu pour :
+
+- **Évoluer dans le temps** (ajouter/supprimer/mettre à jour des fonctionnalités sans migration d'état).
+- **Composer plusieurs domaines** (indices, DEX, GMX, SBT) derrière une seule adresse.
+- **Exposer une surface stable** tout en permettant aux modules internes de changer.
+
+Le modèle Diamond vous offre :
+
+- Une adresse unique (`Garden.sol`) avec :
+  - Un **registre de facettes** : contient les informations sur quel sélecteur de fonction est implémenté par quelle facette.
+  - un **stockage partagé** : l'état est centralisé dans quelques dispositions bien définies.
+  - une **évolutivité** : la facette de mise à jour de base contrôle quelles facettes sont actives.
+
+Conceptuellement, considérez le système comme :
+
+1. **Point d'entrée (Garden)** → reçoit les appels.
+2. **Facettes de base** → gèrent la propriété, les mises à jour, l'introspection.
+3. **Facettes de fonctionnalités** → logique d'indice et intégrations DeFi.
+4. **Couche Domaine** → indices, registres, stratégies, mathématiques.
+5. **Infrastructure** → LibDiamond, bibliothèques de stockage, OpenZeppelin.
+6. **Intégrations Externes** → DEXes, GMX, Chainlink, SBTs.
+
+Le diagramme fourni ci-dessus est la carte faisant foi pour ces couches ; cette documentation suit cette structure.
+
+---

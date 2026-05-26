@@ -1,0 +1,49 @@
+---
+title: Why Transparent proxy standard for Factory and Registries?
+position: 4
+---
+### 1. ERC-1967: Preventing Storage Collisions
+
+The **Transparent Proxy** implementation follows [EIP-1967](https://eips.ethereum.org/EIPS/eip-1967), which standardizes how proxies store the **implementation contract address**.
+
+* **Without a standard:** Each project could use arbitrary storage slots, and upgrading or composing contracts could lead to **storage collisions**, breaking state variables.
+* **With ERC-1967:** The implementation address is always stored in a deterministic storage slot (`bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`). This prevents collisions, makes the storage layout predictable, and allows tooling to rely on a shared convention.
+
+### 2. Visibility on Blockscanners
+
+Since ERC-1967 is a widely recognized standard, **block explorers** (such as Etherscan, Basescan, and Polygonscan) automatically detect it.
+
+* They show the link between the **proxy contract** (what users interact with) and the **implementation contract** (where the logic resides).
+* This transparency allows our community to verify which code is running and ensures confidence in upgrades.
+* Builders and auditors benefit because they can inspect the exact implementation contract behind each proxy.
+
+### 3. Transparent vs. UUPS and Other Patterns
+
+When choosing a proxy pattern, we evaluated **Transparent Proxy** against **UUPS (EIP-1822)** and other upgradeable models.
+
+* **Transparent Proxy Pros**
+
+  * **Maturity:** Transparent Proxy is the most widely adopted and audited pattern. It has been used for years across DeFi protocols, DAOs, and registries.
+  * **Battle-Tested:** Many critical contracts in production use it, proving its reliability under real conditions.
+  * **Immutable Upgrade Functionality:** The upgrade mechanism is embedded in the proxy itself and cannot be overridden or broken by future implementation contracts. This prevents accidental or malicious disabling of upgrades.
+  * **Developer Experience:** It is straightforward for builders—admins use the proxy admin for upgrades, while users only interact with the implementation logic.
+
+* **Why Not UUPS?**
+
+  * UUPS proxies require the upgrade logic to live in the implementation contract. If not carefully managed, this could introduce risk (e.g., losing the ability to upgrade if the upgrade function is removed or broken).
+  * While lighter in gas usage, the trade-off is more responsibility on developers to avoid errors.
+
+Given our need for **long-term stability and trustworthiness** in registry contracts, Transparent Proxy was the clear choice.
+
+### 4. Why Different from Diamonds
+
+* For **registry contracts**, we prioritize **maturity, visibility, and safety**—Transparent Proxy is perfect here.
+* For **Garden contracts** (multi-feature accounts), we use the **Diamond Standard (EIP-2535)**, which supports modular and expandable logic.
+* Each choice fits its purpose: Transparent Proxy for stability and clarity, Diamonds for flexibility and composability.
+
+### 5. References
+
+* [EIP-1967: Standard Proxy Storage Slots](https://eips.ethereum.org/EIPS/eip-1967)
+* [OpenZeppelin Transparent Proxy Docs](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent)
+* [EIP-1822: Universal Upgradeable Proxy Standard (UUPS)](https://eips.ethereum.org/EIPS/eip-1822)
+* [EIP-2535: Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535)

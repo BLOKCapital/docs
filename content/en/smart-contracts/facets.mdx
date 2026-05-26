@@ -1,0 +1,110 @@
+---
+title: Facet Architecture
+position: 3
+---
+## **3. Facet Architecture (Grouped by Responsibility)**
+
+The facets are split into two main groups:
+
+1. **Base facets** – the core of the Diamond.
+2. **Feature facets** – index & integration features.
+
+### **3.1 Base Facets (Core)**
+
+These live under:
+
+`src/garden/facets/baseFacets/`
+
+They exist to keep **non‑business‑logic concerns** modular and upgradeable.
+
+### **Ownership Facet**
+
+**Key components:**
+
+- `OwnershipFacet.sol` - Main facet contract implementing ERC-173 ownership interface
+- `OwnershipBase.sol` - Base contract containing core ownership logic
+- `OwnershipStorage.sol` - Storage layout for ownership state
+
+**What it controls:**
+
+- **Who owns the Garden** (the Diamond contract).
+- Who is allowed to perform diamond cuts and change protocol configuration.
+- **Owner transfer functionality**: Current owner can transfer ownership to a new address or renounce ownership.
+
+### **Cut Facet (Upgrade Facet)**
+
+**Key components:**
+
+- `IDiamondCut.sol` - Interface defining the diamondCut function
+- `DiamondCutFacet.sol` - Main facet contract
+- `DiamondCutBase.sol` - Core diamond cut logic
+- `DiamondCutStorage.sol` - Storage layout for facet mappings
+
+**What it controls:**
+
+- **Which facets are registered** with the Diamond.
+- **What function selectors** each facet exposes.
+- How upgrades are **authorized and executed**.
+
+### **Upgrade Facet**
+
+**Key components:**
+
+- `IUpgrade.sol` - Interface for high-level upgrade operations
+- `UpgradeFacet.sol` - Main facet contract
+- `UpgradeBase.sol` - Core upgrade logic
+- `UpgradeStorage.sol` - Version tracking
+
+**What it controls:**
+
+- **Synchronization with external FacetRegistry** to pull approved upgrades.
+- **Version tracking** to ensure Diamonds are up to date.
+- **Hash verification** for upgrade data integrity.
+
+### **Introspection (Loupe) Facet**
+
+**Key components:**
+
+- `IDiamondLoupe.sol` - Interface for introspection
+- `DiamondLoupeFacet.sol` - Implementation
+- `DiamondLoupeBase.sol` - Core logic
+- `DiamondLoupeStorage.sol` - Supported interfaces (ERC-165)
+
+**What it controls:**
+
+- **Reflection / introspection**:
+  - Which facets exist and what function selectors they implement.
+  - Which interfaces the Diamond supports.
+
+### **3.2 Feature / Domain Facets**
+
+These implement **protocol‑level behavior** which users actually care about.
+
+### **Index facets (Index Feature)**
+
+**Key components:**
+
+- `IIndex.sol`, `IndexFacet.sol`, `IndexBase.sol`, `IndexStorage.sol`
+
+**What problem they solve:**
+
+- Provide **index‑related capabilities** directly on the Garden:
+  - `connectToIndex(address indexAddress)`
+  - `disconnectFromIndex()`
+  - `rebalance()`
+  - `isConnectedToIndex()`
+
+### **Utility / Protocol‑Integration facets (DeFi Integrations)**
+
+**Key components:**
+
+- **Uniswap V3**: `UniswapV3Base.sol`, `IUniswapV3.sol`
+- **Camelot V3**: `CamelotV3Base.sol`, `ICamelotV3.sol`
+- **GMX V2**: `GmxV2Base.sol`, `IGmxV2.sol`, `GmxV2Storage.sol`
+- **Aave V3**: `AaveV3Base.sol`, `IAaveV3.sol`
+- **Pendle V2**: `PendleV2Base.sol`, `IPendleV2.sol`
+
+**What problem they solve:**
+
+- Turn **abstract operations** like rebalancing into concrete swaps or position management.
+- Provide reusable adapters around external protocols.

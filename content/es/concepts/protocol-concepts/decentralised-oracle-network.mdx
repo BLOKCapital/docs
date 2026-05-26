@@ -1,0 +1,39 @@
+---
+title: Red de Oráculos Descentralizados (DON)
+position: 5
+---
+### ¿Cómo gestiona Blok Capital la transacción asíncrona atómica?
+
+![Red de Oráculos Descentralizados](/img/Frame%2022.jpg)
+
+### 1). Capa de contrato (Emisión de señales):
+
+- Aquí los contratos que se despliegan hacen principalmente 3 cosas:
+
+1. Gestionar el estado de su jardín.
+2. Mantener sus criptoactivos y tokens en su billetera.
+3. Transmitir eventos cuando sucede alguna actividad notable (por ejemplo, cuando un Jardín determinado se registra en un Índice DeFi).
+
+Esta capa es básicamente un guardián que retiene sus activos y permite cambios cuando recibe los cambios verificados.
+
+### 2). Capa CRE (Chainlink Runtime Environment):
+
+- Esta capa se divide en 3 partes:
+
+1. **Feeders**: Los Feeders recopilan información de diversas fuentes, como el monitoreo de la cadena de bloques observando los eventos del jardín y el seguimiento de los precios del mercado.
+2. **Capa de activación (Procesamiento por lotes)**: La capa de activación estandariza todos los datos en un formato común que la DON (Red de Oráculos Descentralizados) puede entender y procesar.
+3. **[DON](https://docs.chain.link/cre) (Red de Oráculos Descentralizados)**: Esta es la capa donde se lleva a cabo toda la ejecución.
+
+   → La **Computación** ejecuta los flujos de trabajo personalizados. Las diferentes operaciones necesitan lógicas distintas, por lo que existen diferentes flujos de trabajo para las diversas operaciones.
+
+   (Ej.: El reequilibrio de la cartera necesita obtener los precios del índice).
+
+   → La **_Validación_** realiza comprobaciones de seguridad antes de que se ejecute cualquier flujo de trabajo.
+
+   → El **Consenso** agrega los resultados de las múltiples redes DON. Dado que cada nodo ejecuta el mismo flujo de trabajo con las mismas entradas, todos deberían obtener la misma respuesta. Estos resultados se comparan criptográficamente.
+
+   → Utilizamos la DON pública; BLOK Capital no controla la capa de computación, ya que múltiples nodos en todo el mundo la controlan. Por lo tanto, los resultados de la computación no pueden falsificarse.
+
+### 3). Capa de contrato (Ejecución):
+
+Después de la computación y el consenso, los resultados regresan a la cadena de bloques con la prueba criptográfica de que múltiples nodos de la DON estuvieron de acuerdo. Tras la verificación de la firma de la DON, se ejecutan las operaciones.

@@ -1,0 +1,93 @@
+[
+  {
+    "title": "IDO",
+    "value": 20.0,
+    "color": "#0083FF",
+    "description": "Initial DEX offering",
+    "subtitle": "Public sale"
+  },
+  {
+    "title": "Product Development",
+    "value": 15.0,
+    "color": "#1991FF",
+    "description": "Technical development",
+    "subtitle": "Core development"
+  },
+  {
+    "title": "Team",
+    "value": 20,
+    "color": "#339EFF",
+    "description": "Vested Over 3 Years",
+    "subtitle": "Long-term team commitment"
+  },
+  {
+    "title": "Treasury",
+    "value": 12.5,
+    "color": "#4DABFF",
+    "description": "Platform development and maintenance",
+    "subtitle": "Operational reserves"
+  },
+  {
+    "title": "Marketing And PR",
+    "value": 10.0,
+    "color": "#66B8FF",
+    "description": "Growth and awareness",
+    "subtitle": "Market expansion"
+  },
+  {
+    "title": "Liquidity",
+    "value": 10.0,
+    "color": "#80C5FF",
+    "description": "Market stability",
+    "subtitle": "Trading liquidity"
+  },
+  {
+    "title": "Seed",
+    "value": 5.0,
+    "color": "#99D2FF",
+    "description": "Vested Over 3 Years",
+    "subtitle": "Early stage investors"
+  },
+  {
+    "title": "Influencers",
+    "value": 3.0,
+    "color": "#B3DFFF",
+    "description": "Marketing and promotion",
+    "subtitle": "Strategic partnerships"
+  },
+  {
+    "title": "Bug Bounty",
+    "value": 3.0,
+    "color": "#CCE9FF",
+    "description": "Security and improvements",
+    "subtitle": "Platform security"
+  },
+  {
+    "title": "Presale",
+    "value": 3.0,
+    "color": "#B0DAFF",
+    "description": "Early supporters",
+    "subtitle": "Private round"
+  },
+  {
+    "title": "Advisors",
+    "value": 3.0,
+    "color": "#99CBFF",
+    "description": "Strategic guidance",
+    "subtitle": "Expert consultation"
+  },
+  {
+    "title": "Community",
+    "value": 2.0,
+    "color": "#80BBFF",
+    "description": "Community development",
+    "subtitle": "Building ecosystem"
+  },
+  {
+    "title": "Air Drop",
+    "value": 1.0,
+    "color": "#66ACFF",
+    "description": "Community rewards and engagement",
+    "subtitle": "Community incentives"
+  }
+]

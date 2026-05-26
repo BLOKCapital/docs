@@ -1,0 +1,63 @@
+---
+title: Diamond
+position: 1
+---
+## Diamond Architecture Overview
+
+![Diamond Proxy](/img/Diamond_proxy.png)
+
+The Diamond architecture is a modular smart contract system designed for long-lived, evolving protocols.
+
+At its core, a Diamond is a single contract address that represents the protocol. That address never changes. Only the functionality gets changed.
+
+Instead of treating upgrades as “replacing a contract,” Diamonds treat upgrades as **restructuring a system** adding new capabilities, removing obsolete ones, or refining existing behavior, all without disrupting state or users.
+
+This architecture is intentionally built for protocols that grow, diversify, and evolve after launch.
+
+---
+
+## How the Diamond Thinks About Logic
+
+A Diamond does not contain application logic directly.
+
+Instead, it maintains a registry that maps **function selectors** to external logic modules called _facets_ as we saw in proxy contracts. Each facet is responsible for a specific domain of behavior governance, strategy execution, accounting, risk controls, or protocol extensions.
+
+When a function is called on the Diamond, it resolves _which facet owns that function_ and executes it in the Diamond’s context. All state lives in one place. All behavior is composed around it.
+
+## Upgrade Model
+
+Upgrades in a Diamond are explicit, granular, and auditable.
+
+Rather than redeploying or swapping an entire implementation, upgrades operate at the **function level**:
+
+→New functions can be added
+
+→Existing functions can be replaced
+
+→Unused functions can be removed
+
+Each change is recorded on-chain, creating a clear historical record of how the protocol evolved over time.
+
+Upgrades are not hidden rewrites. They are deliberate architectural changes.
+
+---
+
+## Why This Matters
+
+The Diamond architecture is designed for protocols that:
+
+- Cannot fit into a single contract
+- Expect multiple independent feature domains
+- Need transparent, controlled upgrades
+
+Instead of building “one big contract,” the protocol becomes a **composable system** whose structure can adapt as requirements change.
+
+## How BLOK Capital Uses Diamonds
+
+BLOK Capital uses the Diamond architecture to model the protocol as a collection of independent financial capabilities unified under one address.
+
+Index execution, asset strategies, accounting rules, and governance logic are implemented as separate facets. Each can evolve independently without affecting user balances or integrations.
+
+This allows BLOK Capital to introduce new strategies, refine execution logic, or upgrade risk controls while preserving protocol continuity and user trust.
+
+The Diamond becomes not just a contract, but the **stable identity of the system itself**.
