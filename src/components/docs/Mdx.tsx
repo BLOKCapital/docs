@@ -1,5 +1,4 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
-import Image from "next/image";
 import Link from "next/link";
 import type { ImgHTMLAttributes, AnchorHTMLAttributes } from "react";
 import remarkGfm from "remark-gfm";
@@ -21,23 +20,24 @@ function MdxLink({ href = "", ...rest }: AnchorHTMLAttributes<HTMLAnchorElement>
   return <Link href={href} {...rest} />;
 }
 
-/** Content images live in /public; render through next/image when possible. */
+/**
+ * Content images live in /public with arbitrary, unknown dimensions, so we
+ * render a plain lazy <img> rather than next/image — which would require fixed
+ * width/height and distort non-16:10 art. Browser-native lazy loading keeps
+ * off-screen images cheap.
+ */
 function MdxImage({ src, alt = "", ...rest }: ImgHTMLAttributes<HTMLImageElement>) {
-  if (typeof src === "string" && src.startsWith("/")) {
-    return (
-      <Image
-        src={src}
-        alt={alt}
-        width={1200}
-        height={720}
-        className="h-auto w-full"
-        sizes="(max-width: 768px) 100vw, 720px"
-        unoptimized
-      />
-    );
-  }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src as string} alt={alt} {...rest} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src as string}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className="h-auto w-full"
+      {...rest}
+    />
+  );
 }
 
 const components = {
@@ -73,7 +73,7 @@ export function Mdx({ source }: { source: string }) {
                 behavior: "append",
                 properties: {
                   className: ["heading-anchor"],
-                  arialabel: "Link to section",
+                  ariaLabel: "Link to section",
                 },
                 content: { type: "text", value: "#" },
               },

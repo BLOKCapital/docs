@@ -47,6 +47,7 @@ export const UI: Record<
     noResults: string;
     editPage: string;
     home: string;
+    helpTranslate: string;
   }
 > = {
   en: {
@@ -64,6 +65,7 @@ export const UI: Record<
     noResults: "No results found",
     editPage: "Edit this page",
     home: "Home",
+    helpTranslate: "Help us translate",
   },
   es: {
     sections: {
@@ -80,6 +82,7 @@ export const UI: Record<
     noResults: "No se encontraron resultados",
     editPage: "Editar esta página",
     home: "Inicio",
+    helpTranslate: "Ayúdanos a traducir",
   },
   fr: {
     sections: {
@@ -96,12 +99,36 @@ export const UI: Record<
     noResults: "Aucun résultat trouvé",
     editPage: "Modifier cette page",
     home: "Accueil",
+    helpTranslate: "Aidez-nous à traduire",
+  },
+};
+
+/** Short, localized one-liners describing each section (home + section landing). */
+export const SECTION_BLURB: Record<Locale, Record<SectionSlug, string>> = {
+  en: {
+    concepts: "Protocol fundamentals — account abstraction, Diamonds, oracles, and wealth management.",
+    "smart-contracts": "The V1 on-chain architecture: entry points, facets, the registry, and indices.",
+    builders: "Hands-on guides for building on BLOK Capital — Gardens, facets, and governance.",
+    resources: "Tokenomics, audits, FAQs, brand assets, and contract addresses.",
+  },
+  es: {
+    concepts: "Fundamentos del protocolo — abstracción de cuentas, Diamonds, oráculos y gestión patrimonial.",
+    "smart-contracts": "La arquitectura on-chain de V1: puntos de entrada, facets, el registro e índices.",
+    builders: "Guías prácticas para construir sobre BLOK Capital — Gardens, facets y gobernanza.",
+    resources: "Tokenomics, auditorías, preguntas frecuentes, recursos de marca y direcciones de contratos.",
+  },
+  fr: {
+    concepts: "Fondamentaux du protocole — abstraction de compte, Diamonds, oracles et gestion de patrimoine.",
+    "smart-contracts": "L'architecture on-chain V1 : points d'entrée, facets, le registre et les index.",
+    builders: "Guides pratiques pour construire sur BLOK Capital — Gardens, facets et gouvernance.",
+    resources: "Tokenomics, audits, FAQ, ressources de marque et adresses de contrats.",
   },
 };
 
 export const EXTERNAL = {
   whitepaper: "https://docsend.com/view/4j6qvvrudyr6izyb",
   github: "https://github.com/BLOKCapital",
+  githubDocs: "https://github.com/BLOKCapital/docs",
   discord: "https://discord.com/invite/blokc",
   telegram: "https://t.me/BLOKCapital",
   x: "https://x.com/blok_cap",

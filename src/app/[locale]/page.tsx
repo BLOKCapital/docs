@@ -1,28 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { isLocale, SECTIONS, UI, SITE, type Locale } from "@/lib/config";
+import {
+  isLocale,
+  SECTIONS,
+  SECTION_BLURB,
+  UI,
+  SITE,
+  type Locale,
+} from "@/lib/config";
 import { getSectionNav, flattenNav } from "@/lib/content";
-
-const SECTION_BLURB: Record<Locale, Record<string, string>> = {
-  en: {
-    concepts: "Protocol fundamentals — account abstraction, Diamonds, oracles, and wealth management.",
-    "smart-contracts": "The V1 on-chain architecture: entry points, facets, the registry, and indices.",
-    builders: "Hands-on guides for building on BLOK Capital — Gardens, facets, and governance.",
-    resources: "Tokenomics, audits, FAQs, brand assets, and contract addresses.",
-  },
-  es: {
-    concepts: "Fundamentos del protocolo — abstracción de cuentas, Diamonds, oráculos y gestión patrimonial.",
-    "smart-contracts": "La arquitectura on-chain de V1: puntos de entrada, facets, el registro e índices.",
-    builders: "Guías prácticas para construir sobre BLOK Capital — Gardens, facets y gobernanza.",
-    resources: "Tokenomics, auditorías, preguntas frecuentes, recursos de marca y direcciones de contratos.",
-  },
-  fr: {
-    concepts: "Fondamentaux du protocole — abstraction de compte, Diamonds, oracles et gestion de patrimoine.",
-    "smart-contracts": "L'architecture on-chain V1 : points d'entrée, facets, le registre et les index.",
-    builders: "Guides pratiques pour construire sur BLOK Capital — Gardens, facets et gouvernance.",
-    resources: "Tokenomics, audits, FAQ, ressources de marque et adresses de contrats.",
-  },
-};
 
 export default async function LocaleHome({
   params,
@@ -57,14 +43,11 @@ export default async function LocaleHome({
 
         <div className="grid gap-5 sm:grid-cols-2">
           {SECTIONS.map((s) => {
-            const nav = getSectionNav(loc, s.slug);
-            const first = flattenNav(nav)[0];
-            const href = first?.href ?? `/${loc}/${s.slug}`;
-            const count = flattenNav(nav).length;
+            const count = flattenNav(getSectionNav(loc, s.slug)).length;
             return (
               <Link
                 key={s.slug}
-                href={href}
+                href={`/${loc}/${s.slug}`}
                 className="group/c flex flex-col rounded-2xl border border-ink/10 bg-paper-warm p-6 transition-[transform,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-moss/30 hover:bg-moss/[0.04]"
               >
                 <div className="flex items-baseline justify-between">

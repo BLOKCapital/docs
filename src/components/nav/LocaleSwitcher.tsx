@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LOCALES, LOCALE_LABELS, isLocale, type Locale } from "@/lib/config";
+import { LOCALES, LOCALE_LABELS, EXTERNAL, UI, isLocale, type Locale } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 /**
@@ -63,6 +63,20 @@ export function LocaleSwitcher({ current }: { current: Locale }) {
                 </button>
               </li>
             ))}
+            <li role="presentation" className="border-t border-ink/10">
+              <a
+                href={EXTERNAL.githubDocs}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-1.5 px-3.5 py-2 text-left text-[13px] text-ink-subtle transition-colors hover:bg-paper-deep/60 hover:text-ink"
+              >
+                {UI[current].helpTranslate}
+                <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden className="opacity-60">
+                  <path d="M2 8 L8 2 M3.5 2 L8 2 L8 6.5" stroke="currentColor" strokeWidth="1.1" fill="none" />
+                </svg>
+              </a>
+            </li>
           </ul>
         </>
       )}

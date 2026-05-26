@@ -9,13 +9,17 @@ design language with the marketing site (`new-webiste`). No Docusaurus.
 - **MDX content** under `content/<locale>/<section>/…`, rendered with
   `next-mdx-remote` (GFM, math via KaTeX, syntax highlighting via Shiki).
 - **Three locales** — `en`, `es`, `fr` — routed as `/<locale>/…` with a
-  language switcher. Full content parity migrated from the old Docusaurus repo.
+  language switcher, each page tagged with the correct `<html lang>`. Migrated
+  from the old Docusaurus repo; `npm run check:content` reports any locale
+  parity gaps.
 - **Four sections** — Concepts, Smart Contracts, Builders, Resources.
 - **Local search** — a build-time index (`public/search/<locale>.json`) queried
   client-side with FlexSearch (⌘K / Ctrl-K). No external service.
 - **Docs shell** — collapsible sidebar, scroll-spy "On this page" rail,
   breadcrumbs, and prev/next pagination, all derived from the filesystem.
-- **Static export** — every page is prerendered (`generateStaticParams`).
+- **Fully prerendered (SSG)** — every page is statically generated at build
+  time via `generateStaticParams` (`dynamicParams = false`) and served by
+  `next start`.
 
 ## Getting started
 
@@ -29,6 +33,9 @@ npm run dev          # http://localhost:3000  (regenerates search index first)
 ```bash
 npm run build        # runs the search-index generator, then next build
 npm run start        # serve the production build
+npm run check:content # validate frontmatter, internal links & locale parity
+npm run lint          # eslint (next/core-web-vitals + next/typescript)
+npm run typecheck     # tsc --noEmit
 ```
 
 ## Content
@@ -70,4 +77,5 @@ internal links, and copies `static/img` → `public/img`.
 | MDX renderer   | `src/components/docs/Mdx.tsx`                     |
 | Search         | `scripts/build-search-index.mjs` + `src/components/search/*` |
 | Routing        | `src/app/[locale]/[...slug]/page.tsx`            |
-# docs
+| Shared script helpers | `scripts/_content.mjs` (walk/parse, locale + section lists) |
+| Validation     | `scripts/check-content.mjs` (run in CI)          |

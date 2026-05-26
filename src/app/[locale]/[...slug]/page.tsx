@@ -7,17 +7,36 @@ import {
   flattenNav,
 } from "@/lib/content";
 import { extractToc } from "@/lib/toc";
-import { isLocale, UI, type Locale, type SectionSlug } from "@/lib/config";
+import {
+  isLocale,
+  LOCALES,
+  SECTIONS,
+  SECTION_BLURB,
+  UI,
+  type Locale,
+  type SectionSlug,
+} from "@/lib/config";
 import { Mdx } from "@/components/docs/Mdx";
 import { Sidebar } from "@/components/docs/Sidebar";
+import { SectionIndex } from "@/components/docs/SectionIndex";
 import { TableOfContents } from "@/components/docs/TableOfContents";
 import { PrevNext } from "@/components/docs/PrevNext";
 import { Breadcrumbs, type Crumb } from "@/components/docs/Breadcrumbs";
 
 export const dynamicParams = false;
 
+const SECTION_SLUGS = SECTIONS.map((s) => s.slug) as SectionSlug[];
+
+function isSectionRoot(slug: string[]): slug is [SectionSlug] {
+  return slug.length === 1 && SECTION_SLUGS.includes(slug[0] as SectionSlug);
+}
+
 export function generateStaticParams() {
-  return getAllDocParams();
+  // Doc pages + a landing page for each section root (`/<locale>/<section>`).
+  const sectionParams = LOCALES.flatMap((locale) =>
+    SECTION_SLUGS.map((slug) => ({ locale, slug: [slug] })),
+  );
+  return [...sectionParams, ...getAllDocParams()];
 }
 
 export async function generateMetadata({
@@ -27,6 +46,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
+  if (isSectionRoot(slug)) {
+    return {
+      title: UI[locale].sections[slug[0]],
+      description: SECTION_BLURB[locale][slug[0]],
+    };
+  }
   const doc = getDoc(locale, slug);
   if (!doc) return {};
   return {
@@ -45,22 +70,30 @@ export default async function DocPage({
   const loc = locale as Locale;
   const t = UI[loc];
 
-  const doc = getDoc(loc, slug);
-  if (!doc) notFound();
-
   const section = slug[0] as SectionSlug;
+  const sectionRoot = isSectionRoot(slug);
+
+  const doc = sectionRoot ? null : getDoc(loc, slug);
+  if (!doc && !sectionRoot) notFound();
+
   const nav = getSectionNav(loc, section);
   const flat = flattenNav(nav);
-  const toc = extractToc(doc.body);
+  const toc = doc ? extractToc(doc.body) : [];
 
-  const idx = flat.findIndex((d) => d.href === doc.href);
+  const idx = doc ? flat.findIndex((d) => d.href === doc.href) : -1;
   const prev = idx > 0 ? flat[idx - 1] : null;
   const next = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] : null;
+
+  // Section landing: title/blurb come from config; doc pages use frontmatter.
+  const title = doc ? doc.frontmatter.title : t.sections[section];
+  const description = doc
+    ? doc.frontmatter.description
+    : SECTION_BLURB[loc][section];
 
   const crumbs: Crumb[] = [
     { label: t.sections[section], href: `/${loc}/${section}` },
   ];
-  if (slug.length > 1) crumbs.push({ label: doc.frontmatter.title });
+  if (doc && slug.length > 1) crumbs.push({ label: doc.frontmatter.title });
 
   return (
     <div className="paper relative isolate">
@@ -77,31 +110,39 @@ export default async function DocPage({
           <article className="min-w-0 flex-1">
             <Breadcrumbs items={crumbs} />
             <h1 className="display text-[34px] leading-[1.1] text-ink sm:text-[40px]">
-              {doc.frontmatter.title}
+              {title}
             </h1>
-            {doc.frontmatter.description && (
+            {description && (
               <p className="mt-3 text-[17px] leading-relaxed text-ink-muted">
-                {doc.frontmatter.description}
+                {description}
               </p>
             )}
             <div aria-hidden className="rule-hand my-7" />
-            <div className="doc-prose">
-              <Mdx source={doc.body} />
-            </div>
-            <PrevNext
-              prev={prev}
-              next={next}
-              prevLabel={t.previous}
-              nextLabel={t.next}
-            />
+            {doc ? (
+              <>
+                <div className="doc-prose">
+                  <Mdx source={doc.body} />
+                </div>
+                <PrevNext
+                  prev={prev}
+                  next={next}
+                  prevLabel={t.previous}
+                  nextLabel={t.next}
+                />
+              </>
+            ) : (
+              <SectionIndex nav={nav} />
+            )}
           </article>
 
-          {/* Right TOC rail */}
-          <aside className="hidden w-56 shrink-0 xl:block">
-            <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-10">
-              <TableOfContents items={toc} label={t.onThisPage} />
-            </div>
-          </aside>
+          {/* Right TOC rail — only for doc pages with headings */}
+          {doc && (
+            <aside className="hidden w-56 shrink-0 xl:block">
+              <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-10">
+                <TableOfContents items={toc} label={t.onThisPage} />
+              </div>
+            </aside>
+          )}
         </div>
       </div>
     </div>

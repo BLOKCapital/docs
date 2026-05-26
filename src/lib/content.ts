@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { cache } from "react";
 import matter from "gray-matter";
 import {
   LOCALES,
@@ -52,7 +53,8 @@ function readCategoryMeta(dir: string): CategoryMeta {
     if (fs.existsSync(p)) {
       try {
         return JSON.parse(fs.readFileSync(p, "utf8")) as CategoryMeta;
-      } catch {
+      } catch (e) {
+        console.warn(`[content] malformed ${path.relative(process.cwd(), p)}: ${(e as Error).message}`);
         return {};
       }
     }
@@ -127,15 +129,21 @@ function walkSection(
   }
 }
 
-/** All docs for a locale across every section. */
-export function getAllDocs(locale: Locale): Doc[] {
+/**
+ * All docs for a locale across every section.
+ *
+ * Wrapped in React `cache()` so the filesystem walk + MDX parse runs once per
+ * locale per request/render pass, rather than once for each of the ~140 pages
+ * that call `getDoc` during static generation.
+ */
+export const getAllDocs = cache((locale: Locale): Doc[] => {
   const out: Doc[] = [];
   for (const { slug, dir } of SECTIONS) {
     const base = path.join(CONTENT_ROOT, locale, dir);
     walkSection(base, locale, slug, [slug], out);
   }
   return out;
-}
+});
 
 /** Look up one doc by its URL segments (after the locale). */
 export function getDoc(locale: Locale, segments: string[]): Doc | null {
@@ -159,12 +167,14 @@ export function getAllDocParams(): { locale: Locale; slug: string[] }[] {
  * Build the ordered navigation tree for one section, mirroring the folder
  * hierarchy. Ordering: frontmatter/category `position` ascending, then label.
  */
-export function getSectionNav(locale: Locale, section: SectionSlug): NavNode[] {
-  const sectionDef = SECTIONS.find((s) => s.slug === section);
-  if (!sectionDef) return [];
-  const root = path.join(CONTENT_ROOT, locale, sectionDef.dir);
-  return buildTree(root, locale, section, [section]);
-}
+export const getSectionNav = cache(
+  (locale: Locale, section: SectionSlug): NavNode[] => {
+    const sectionDef = SECTIONS.find((s) => s.slug === section);
+    if (!sectionDef) return [];
+    const root = path.join(CONTENT_ROOT, locale, sectionDef.dir);
+    return buildTree(root, locale, section, [section]);
+  },
+);
 
 function buildTree(
   dir: string,

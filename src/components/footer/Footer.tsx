@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
-import { EXTERNAL, type Locale } from "@/lib/config";
+import { EXTERNAL } from "@/lib/config";
 
 const YEAR = new Date().getFullYear();
 
-export function Footer({ locale }: { locale: Locale }) {
+export function Footer() {
   return (
     <footer className="paper relative border-t border-ink/10 bg-paper">
       <div className="relative z-10 mx-auto max-w-screen-2xl px-4 py-12 sm:px-6">
