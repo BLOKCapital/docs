@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Inter, Newsreader, Caveat, JetBrains_Mono } from "next/font/google";
 import { DEFAULT_LOCALE } from "@/lib/config";
+
+export const metadata: Metadata = {
+  title: "Page not found",
+  robots: { index: false, follow: false },
+};
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-body" });
 const newsreader = Newsreader({

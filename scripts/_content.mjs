@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
+import GithubSlugger from "github-slugger";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.join(__dirname, "..");
@@ -41,8 +42,15 @@ export function toPlainText(body) {
     .trim();
 }
 
+/**
+ * Collect h2/h3 headings with their anchor slugs so search can deep-link to a
+ * section. A single GithubSlugger is advanced over *every* heading (h1–h6) in
+ * document order — the same way rehype-slug runs per page — so duplicate-slug
+ * suffixes (`-1`, `-2`) match the ids actually rendered into the DOM.
+ */
 export function collectHeadings(body) {
   const out = [];
+  const slugger = new GithubSlugger();
   let inFence = false;
   for (const line of body.split("\n")) {
     if (/^\s*(```|~~~)/.test(line)) {
@@ -50,8 +58,12 @@ export function collectHeadings(body) {
       continue;
     }
     if (inFence) continue;
-    const m = line.match(/^#{2,3}\s+(.+?)\s*#*\s*$/);
-    if (m) out.push(m[1].replace(/[*_`]/g, "").trim());
+    const m = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (!m) continue;
+    const level = m[1].length;
+    const text = m[2].replace(/[*_`]/g, "").trim();
+    const slug = slugger.slug(text); // advance for all levels to mirror rehype
+    if (level >= 2 && level <= 3) out.push({ text, slug });
   }
   return out;
 }

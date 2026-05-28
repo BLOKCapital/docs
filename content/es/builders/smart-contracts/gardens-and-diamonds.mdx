@@ -7,7 +7,7 @@ position: 2
 En BLOK Capital, nuestra arquitectura principal para los smart contracts se basa en el patrón proxy **Diamond**. En esta sección exploramos la arquitectura de los diamonds, un enfoque de despliegue basado en fábricas (factory) inspirado en el repositorio Diamond de Nick Mudge, y cómo estos conceptos crean un "jardín" que impulsa la arquitectura BLOK.
 
 ### Flujo del contrato proxy:
-![Alt text](/img/diamondSchema2.png)
+<ProxyFlowDiagram />
 
 ### ¿Qué es el Diamond Standard?
 
@@ -24,7 +24,7 @@ Esta modularidad hace a los diamonds ideales para dApps complejas (DAO, DeFi, NF
 ### La arquitectura de un Diamond
 
 Imagínese el diamond como un hub central (el contrato `Diamond.sol`) que enruta las llamadas de función a facetas especializadas. Cada faceta es un contrato separado que contiene un subconjunto de la funcionalidad del sistema —por ejemplo, ownership, transferencias de tokens o gobernanza. El diamond mantiene un mapeo de **selectores de función** (identificadores únicos para funciones) a direcciones de facetas, lo que le permite delegar llamadas de forma eficiente.  
-![Alt text](/img/delegation.png)
+<DelegationDiagram />
 
 #### Componentes clave en la arquitectura Diamond
 
@@ -43,7 +43,7 @@ Imagínese el diamond como un hub central (el contrato `Diamond.sol`) que enruta
     - Un hash de 4 bytes (p. ej., `keccak256("functionName()")`) que identifica una función.  
     - El diamond mapea selectores a direcciones de facetas para asegurar que la llamada sea atendida por el contrato correcto.
 
-![Alt text](/img/diamondFacet2.png)
+<DiamondComponentsDiagram />
 
 Aquí hay un ejemplo simplificado de la función `fallback` en `Diamond.sol`, que delega llamadas a las facetas:
 

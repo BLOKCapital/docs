@@ -22,6 +22,19 @@ import { SectionIndex } from "@/components/docs/SectionIndex";
 import { TableOfContents } from "@/components/docs/TableOfContents";
 import { PrevNext } from "@/components/docs/PrevNext";
 import { Breadcrumbs, type Crumb } from "@/components/docs/Breadcrumbs";
+import {
+  JsonLd,
+  alternatesFor,
+  canonicalFor,
+  articleLd,
+  breadcrumbLd,
+  collectionPageLd,
+  faqLd,
+  extractFaq,
+  excerpt,
+  ogLocale,
+  OG_IMAGE,
+} from "@/lib/seo";
 
 export const dynamicParams = false;
 
@@ -46,17 +59,53 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
+  const pathAfterLocale = slug.join("/");
+
   if (isSectionRoot(slug)) {
+    const title = UI[locale].sections[slug[0]];
+    const description = SECTION_BLURB[locale][slug[0]];
     return {
-      title: UI[locale].sections[slug[0]],
-      description: SECTION_BLURB[locale][slug[0]],
+      title,
+      description,
+      alternates: alternatesFor(locale, pathAfterLocale),
+      openGraph: {
+        type: "website",
+        title,
+        description,
+        url: canonicalFor(locale, pathAfterLocale),
+        images: [OG_IMAGE],
+        ...ogLocale(locale),
+      },
     };
   }
+
   const doc = getDoc(locale, slug);
   if (!doc) return {};
+  const title = doc.frontmatter.title;
+  // Fall back to a generated excerpt when frontmatter omits a description so
+  // every page ships a real meta description (CTR + answer-engine snippets).
+  const description =
+    doc.frontmatter.description?.trim() || excerpt(doc.body);
+
   return {
-    title: doc.frontmatter.title,
-    description: doc.frontmatter.description,
+    title,
+    description,
+    keywords: [title, UI[locale].sections[doc.section], "BLOK Capital"],
+    alternates: alternatesFor(locale, pathAfterLocale),
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: canonicalFor(locale, pathAfterLocale),
+      images: [OG_IMAGE],
+      ...ogLocale(locale),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [OG_IMAGE.url],
+    },
   };
 }
 
@@ -95,12 +144,53 @@ export default async function DocPage({
   ];
   if (doc && slug.length > 1) crumbs.push({ label: doc.frontmatter.title });
 
+  // Structured data: a breadcrumb trail on every page, plus a TechArticle for
+  // doc pages (FAQPage when the page is a Q&A list) or a CollectionPage for
+  // section landings.
+  const pageUrl = canonicalFor(loc, slug.join("/"));
+  const metaDescription = doc
+    ? doc.frontmatter.description?.trim() || excerpt(doc.body)
+    : description;
+
+  const structuredData: Record<string, unknown>[] = [
+    breadcrumbLd([
+      { name: t.home, url: canonicalFor(loc, "") },
+      { name: t.sections[section], url: canonicalFor(loc, section) },
+      ...(doc && slug.length > 1 ? [{ name: title, url: pageUrl }] : []),
+    ]),
+  ];
+
+  if (doc) {
+    const faq = /faq/i.test(slug.join("/")) ? extractFaq(doc.body) : [];
+    structuredData.push(
+      faq.length
+        ? faqLd(faq)
+        : articleLd({
+            title,
+            description: metaDescription || title,
+            url: pageUrl,
+            locale: loc,
+            section: t.sections[section],
+          }),
+    );
+  } else {
+    structuredData.push(
+      collectionPageLd({
+        name: title,
+        description: description || title,
+        url: pageUrl,
+        locale: loc,
+      }),
+    );
+  }
+
   return (
     <div className="paper relative isolate">
+      <JsonLd data={structuredData} />
       <div className="mx-auto flex max-w-screen-2xl gap-8 px-4 sm:px-6">
-        {/* Left sidebar */}
-        <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-2">
+        {/* Left sidebar — subtle vertical rule separates nav from content. */}
+        <aside className="hidden w-60 shrink-0 border-r border-ink/10 lg:block">
+          <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-4">
             <Sidebar nav={nav} />
           </div>
         </aside>

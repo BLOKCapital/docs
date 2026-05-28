@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -9,6 +10,37 @@ import {
   type Locale,
 } from "@/lib/config";
 import { getSectionNav, flattenNav } from "@/lib/content";
+import {
+  JsonLd,
+  alternatesFor,
+  canonicalFor,
+  collectionPageLd,
+  ogLocale,
+  OG_IMAGE,
+} from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const title = `${SITE.name}: Decentralized Wealth Management Protocol`;
+  return {
+    // Absolute so the home title isn't wrapped by the "%s · …" template.
+    title: { absolute: title },
+    description: SITE.description,
+    alternates: alternatesFor(locale, ""),
+    openGraph: {
+      title,
+      description: SITE.description,
+      url: canonicalFor(locale, ""),
+      images: [OG_IMAGE],
+      ...ogLocale(locale),
+    },
+  };
+}
 
 export default async function LocaleHome({
   params,
@@ -22,6 +54,14 @@ export default async function LocaleHome({
 
   return (
     <div className="paper relative isolate">
+      <JsonLd
+        data={collectionPageLd({
+          name: `${SITE.name}: Decentralized Wealth Management Protocol`,
+          description: SITE.description,
+          url: canonicalFor(loc, ""),
+          locale: loc,
+        })}
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"

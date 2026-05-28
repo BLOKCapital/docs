@@ -15,7 +15,7 @@ export function Footer() {
               It&apos;s crypto, but different.
             </p>
             <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-              Documentation for the BLOK Capital protocol — concepts, smart
+              Documentation for the BLOK Capital protocol concepts, smart
               contracts, builder guides, and resources.
             </p>
           </div>

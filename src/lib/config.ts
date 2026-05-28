@@ -5,10 +5,66 @@
 
 export const SITE = {
   name: "BLOK Capital Docs",
+  /** Short brand name used in titles / structured data. */
+  brand: "BLOK Capital",
   url: "https://docs.blokcapital.io",
   siteUrl: "https://blokcapital.io",
   tagline: "Decentralized wealth management, documented.",
+  /**
+   * Longer, entity-rich description used as the default meta description and
+   * for AI/answer-engine summaries. Names the primary entities a crawler
+   * should associate with the brand.
+   */
+  description:
+    "Official documentation for BLOK Capital, a non-custodial, on-chain wealth management protocol on EVM chains. Learn the Diamond (EIP-2535) architecture, account abstraction, Gardens, facets, oracles, tokenomics, governance, and how to build on the protocol.",
 } as const;
+
+/**
+ * Organization / brand entity used for JSON-LD (Organization, WebSite) and
+ * for knowledge-graph / answer-engine recognition. `sameAs` links the entity
+ * to its authoritative profiles across the web.
+ */
+export const ORG = {
+  name: "BLOK Capital",
+  legalName: "BLOK Capital DAO LLC",
+  logo: `${SITE.url}/brand/blokc-black.svg`,
+  sameAs: [
+    "https://blokcapital.io",
+    "https://github.com/BLOKCapital",
+    "https://x.com/blok_cap",
+    "https://discord.com/invite/blokc",
+    "https://t.me/BLOKCapital",
+  ],
+} as const;
+
+/** X/Twitter handle for `twitter:site` / `twitter:creator`. */
+export const TWITTER_HANDLE = "@blok_cap";
+
+/**
+ * Broad, brand- and topic-level keywords. Per-page keywords are derived from
+ * frontmatter + section context; these anchor the site's topical authority.
+ * Kept lean; keyword stuffing hurts more than it helps in 2026.
+ */
+export const SITE_KEYWORDS = [
+  "BLOK Capital",
+  "decentralized wealth management",
+  "non-custodial asset management",
+  "on-chain wealth management",
+  "Diamond proxy",
+  "EIP-2535",
+  "account abstraction",
+  "smart contract wallet",
+  "DeFi protocol documentation",
+  "crypto index funds",
+  "DAO governance",
+] as const;
+
+/** BCP-47 / Open Graph locale codes per supported language. */
+export const OG_LOCALE: Record<Locale, string> = {
+  en: "en_US",
+  es: "es_ES",
+  fr: "fr_FR",
+};
 
 export const LOCALES = ["en", "es", "fr"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -106,21 +162,21 @@ export const UI: Record<
 /** Short, localized one-liners describing each section (home + section landing). */
 export const SECTION_BLURB: Record<Locale, Record<SectionSlug, string>> = {
   en: {
-    concepts: "Protocol fundamentals — account abstraction, Diamonds, oracles, and wealth management.",
+    concepts: "Protocol fundamentals: account abstraction, Diamonds, oracles, and wealth management.",
     "smart-contracts": "The V1 on-chain architecture: entry points, facets, the registry, and indices.",
-    builders: "Hands-on guides for building on BLOK Capital — Gardens, facets, and governance.",
+    builders: "Hands-on guides for building on BLOK Capital: Gardens, facets, and governance.",
     resources: "Tokenomics, audits, FAQs, brand assets, and contract addresses.",
   },
   es: {
-    concepts: "Fundamentos del protocolo — abstracción de cuentas, Diamonds, oráculos y gestión patrimonial.",
+    concepts: "Fundamentos del protocolo: abstracción de cuentas, Diamonds, oráculos y gestión patrimonial.",
     "smart-contracts": "La arquitectura on-chain de V1: puntos de entrada, facets, el registro e índices.",
-    builders: "Guías prácticas para construir sobre BLOK Capital — Gardens, facets y gobernanza.",
+    builders: "Guías prácticas para construir sobre BLOK Capital: Gardens, facets y gobernanza.",
     resources: "Tokenomics, auditorías, preguntas frecuentes, recursos de marca y direcciones de contratos.",
   },
   fr: {
-    concepts: "Fondamentaux du protocole — abstraction de compte, Diamonds, oracles et gestion de patrimoine.",
+    concepts: "Fondamentaux du protocole : abstraction de compte, Diamonds, oracles et gestion de patrimoine.",
     "smart-contracts": "L'architecture on-chain V1 : points d'entrée, facets, le registre et les index.",
-    builders: "Guides pratiques pour construire sur BLOK Capital — Gardens, facets et gouvernance.",
+    builders: "Guides pratiques pour construire sur BLOK Capital : Gardens, facets et gouvernance.",
     resources: "Tokenomics, audits, FAQ, ressources de marque et adresses de contrats.",
   },
 };

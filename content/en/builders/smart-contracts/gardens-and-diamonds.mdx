@@ -7,7 +7,7 @@ position: 2
 At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern. In this section, we’ll explore the architecture of diamonds, a factory-based deployment approach inspired by the Nick Mudge Diamond repository, and how these concepts create a "garden" powering the BLOK architecture.
 
 ### Proxy Contract Flow: 
-![Alt text](/img/diamondSchema2.png)
+<ProxyFlowDiagram />
 
 ### What is the Diamond Standard?
 
@@ -24,7 +24,7 @@ This modularity makes diamonds ideal for complex decentralized applications (dAp
 ### The Architecture of a Diamond
 
 Imagine the diamond as a central hub (the `Diamond.sol` contract) that routes function calls to specialized facets. Each facet is a separate contract containing a subset of the system’s functionality, such as ownership, token transfers, or governance. The diamond maintains a mapping of **function selectors** (unique identifiers for functions) to facet addresses, allowing it to delegate calls efficiently.
-![Alt text](/img/delegation.png)
+<DelegationDiagram />
 
 #### Key Components in the Diamond Architecture
 
@@ -43,7 +43,7 @@ Imagine the diamond as a central hub (the `Diamond.sol` contract) that routes fu
     - A 4-byte hash (e.g., `keccak256("functionName()")`) that identifies a function.
     - The diamond maps selectors to facet addresses, ensuring the correct contract handles each call.
 
-![Alt text](/img/diamondFacet2.png)
+<DiamondComponentsDiagram />
 
 Here’s a simplified example of the `Diamond.sol` fallback function, which delegates calls to facets:
 

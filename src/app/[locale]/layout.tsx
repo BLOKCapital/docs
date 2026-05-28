@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav/Nav";
 import { Footer } from "@/components/footer/Footer";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { LOCALES, isLocale, type Locale } from "@/lib/config";
+import { JsonLd, organizationLd, websiteLd } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-body" });
 const newsreader = Newsreader({
@@ -37,9 +38,17 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${newsreader.variable} ${caveat.variable} ${jetbrains.variable} bg-paper text-ink`}
     >
       <body className="min-h-screen antialiased" suppressHydrationWarning>
+        {/* Site-wide entity graph: Organization + WebSite (with SearchAction). */}
+        <JsonLd data={[organizationLd(), websiteLd(loc)]} />
+        <a
+          href="#main-content"
+          className="sr-only z-50 rounded-full bg-moss px-4 py-2 text-sm font-medium text-paper focus:not-sr-only focus:absolute focus:left-4 focus:top-4"
+        >
+          Skip to content
+        </a>
         <SearchProvider>
           <Nav locale={loc} />
-          {children}
+          <main id="main-content">{children}</main>
           <Footer />
         </SearchProvider>
       </body>

@@ -1,0 +1,69 @@
+# BLOK Capital Docs
+
+> Official documentation for BLOK Capital, a non-custodial, on-chain wealth management protocol on EVM chains. Covers the Diamond (EIP-2535) architecture, account abstraction, Gardens, facets, oracles, the V1 smart-contract system, tokenomics, DAO governance, and builder guides.
+
+This file helps AI assistants and answer engines discover and cite the BLOK Capital documentation. All pages are also available in Spanish (`/es/`) and French (`/fr/`).
+
+## Concepts
+
+- [BLOK Capital Overview](https://docs.blokcapital.io/en/concepts/blok-c-overview): What is BLOK Capital? BLOK Capital lets you grow your crypto wealth without ever giving up control. You can follow professionally selected crypto indices (like a Standard & Poor’s 500 Index ) for cryp
+- [Glossary](https://docs.blokcapital.io/en/concepts/glossary/glossary): Core Architecture (Diamond Pattern / EIP 2535) Term Definition Diamond The main upgradeable proxy contract (Garden) that routes function calls to facets based on selectors. Central to EIP 2535. Facet
+- [Index Garden](https://docs.blokcapital.io/en/concepts/index-garden/index-garden): Garden Protocol: Architecture Overview Garden Creation Every garden is deployed through the Garden Factory no exceptions. Direct deployment is not permitted. There are two types: an Index Garden and a
+- [Account Abstraction](https://docs.blokcapital.io/en/concepts/protocol-concepts/account-abstraction): Account Abstraction replaces the limitations of traditional Ethereum wallets with programmable smart contract wallets that control how transactions are authorized, executed, and paid for. In Ethereum’
+- [Decentralised Oracle Network](https://docs.blokcapital.io/en/concepts/protocol-concepts/decentralised-oracle-network): How does Blok Capital manages the atomic asynchronous transaction? 1). Contract Layer (Signal Emission): Here the contracts which are deployed mainly do 3 things which are 1. Manage your garden state.
+- [Diamond](https://docs.blokcapital.io/en/concepts/protocol-concepts/diamond): Diamond Architecture Overview The Diamond architecture is a modular smart contract system designed for long lived, evolving protocols. At its core, a Diamond is a single contract address that represen
+- [ERC’s & EIP’s](https://docs.blokcapital.io/en/concepts/protocol-concepts/ercs-and-eips): Which ERCs and EIPs back the protocol? ERC 20 – Standard for fungible tokens, ensuring your assets work everywhere in DeFi. ERC 165 – Interface detection, so contracts can communicate smoothly with ea
+- [Proxy Contracts](https://docs.blokcapital.io/en/concepts/protocol-concepts/proxy-contracts): Proxy Contracts Explained A proxy contract is a way to upgrade a smart contract system without changing the address users interact with. Instead of calling application logic directly, users interact w
+- [Wealth Management](https://docs.blokcapital.io/en/concepts/protocol-concepts/wealth-management): Introduction Decentralized wealth management solves a long standing problem in investing: getting structured portfolio management without giving up control of your assets. In traditional systems, user
+- [User Journey](https://docs.blokcapital.io/en/concepts/user-journey): Sign in and create your smart wallet Sign in with Google. Create your smart wallet account (SWA). This is the account that will hold your assets and interact with the protocol. The SWA is monitored fo
+
+## Smart Contracts
+
+- [The Diamond Controller](https://docs.blokcapital.io/en/smart-contracts/entry-point): Entry Point: The Diamond Controller ( ) File: This is the main controller contract and the only contract address that end‑users and most integrations should interact with. What is A Diamond proxy : It
+- [Facet Registry](https://docs.blokcapital.io/en/smart-contracts/facet-registry): Facet Registry (Governance & Approval Layer) Location: Key files: — Manages facet registration and version tracking — Public interface What It Does The Facet Registry is the governed catalog of approv
+- [Facet Architecture](https://docs.blokcapital.io/en/smart-contracts/facets): Facet Architecture (Grouped by Responsibility) The facets are split into two main groups: 1. Base facets – the core of the Diamond. 2. Feature facets – index & integration features. 3.1 Base Facets (C
+- [Indices Layer](https://docs.blokcapital.io/en/smart-contracts/indices-layer): Indices Layer (Domain & Business Logic) Location: Key components: : Core index contract managing components and weights. : Factory for deploying Index instances. : Whitelist of approved tokens. : Whit
+- [Infrastructure & Storage](https://docs.blokcapital.io/en/smart-contracts/infrastructure): 5 Storage & State Management Diamond’s power comes with one big constraint: all facets share storage . To manage that safely, this repo uses storage libraries . Shared Diamond storage pattern The patt
+- [Introduction & Builder's Guide](https://docs.blokcapital.io/en/smart-contracts/introduction): System Overview This repository implements an on‑chain asset management protocol built around a Diamond (EIP‑2535) controller called the Garden . High Level: Users and external systems interact with o
+
+## Builders
+
+- [Guide: Creating a New Diamond Facet](https://docs.blokcapital.io/en/builders/Guides/Facets): Overview In this project we use the EIP 2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic. For example, “A F
+- [Smart contract style guide](https://docs.blokcapital.io/en/builders/Guides/contract-style-guide): Naming conventions 1. Architectural Overview Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access contr
+- [Cut](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/cut): This module manages state upgrades within the Diamond but enforces Blok Capital's strict "Registry First" security model. This is the internal engine for all upgrades. Unlike standard Diamonds that ac
+- [Loupe](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/loupe): The Loupe module is entirely read only. It provides the introspection functions required by EIP 2535, allowing block explorers, frontends, and indexing bots to "see" inside the Garden and map out its
+- [Ownership](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/ownership): The ownership module provides standard ERC 173 administrative control but stores the state securely within the Diamond Storage pattern to prevent collisions during upgrades. Core Concept: ERC 173 Stan
+- [Upgrade](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/upgrade): As is blocked in the Base Facets, the Upgrade Module is the only authorized way to alter a Garden's logic. It relies on a deterministic, version controlled sync with the global . Main focus: Hash Veri
+- [Facet.sol](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/facet): Access Layer: acts as the base contract for all logic modules in the Garden. It defines the core access control rules that every module follows. Its primary role is to protect the system from unauthor
+- [Base.sol & Facet.sol](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/base-and-facet): These files house the core business logic for portfolio rebalancing. The process is divided into two distinct transactions to guarantee security. Core Concept: The Two Step Pipeline 1. : Locks in the
+- [IIndex.sol](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/i-index): This interface defines the essential data structures passed between the off chain Centralized Relayer Engine (CRE) and the on chain protocol. Core Concept: Swap Instructions & Intents To execute a reb
+- [IndexStorage.sol](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/index-storage): As the Diamond pattern relies on , state must be carefully managed to avoid storage collisions. Blok Capital uses the Diamond Storage pattern. Main Focus: Protocol Guardrails This library defines the
+- [Protocol Architecture V1](https://docs.blokcapital.io/en/builders/blok-capital-v1): The core parts of our architecture is as follows : Wallet Infrastructure Onboarding new users is hindered by the complexity and risk of seed phrase management. By integrating Web3Auth’s MPC solution,
+- [Governance with Aragon](https://docs.blokcapital.io/en/builders/dao-governance/blokc-proposal): At BLOK Capital, we’re redefining decentralized governance by building a robust and modular DAO proposal system, seamlessly powered by Aragon OSX. By tapping into Aragon’s cutting edge framework, we’r
+- [Builders Section](https://docs.blokcapital.io/en/builders/intro): The Builders Section is designed for developers and technical contributors who want to dive deep into the architecture, smart contracts, and governance logic of the Blok Capital ecosystem. This sectio
+- [Gardens & Diamonds](https://docs.blokcapital.io/en/builders/smart-contracts/gardens-and-diamonds): The Architecture of Diamonds & Gardens At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern. In this section, we’ll explore the architecture of diamonds,
+- [Overview](https://docs.blokcapital.io/en/builders/smart-contracts/overview): Gardens Gardens are programmable crypto portfolios implemented as ERC 2535 Diamond contracts. Each Garden acts as a smart “hub” for a user’s investments, enabling upgradable DeFi strategies while abst
+- [Why Transparent proxy standard for Factory and Registries?](https://docs.blokcapital.io/en/builders/smart-contracts/transparent-proxy): ERC 1967: Preventing Storage Collisions The Transparent Proxy implementation follows EIP 1967, which standardizes how proxies store the implementation contract address . Without a standard: Each proje
+
+## Resources
+
+- [FAQs](https://docs.blokcapital.io/en/resources/FAQs/FAQs): Frequently asked questions about BLOK Capital.
+- [Behavioural Economics](https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics): The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time poor and need professional help to try and invest
+- [The Token](https://docs.blokcapital.io/en/resources/Tokenomics/the-token): Key details of the BLOKC token—built on Arbitrum, designed for utility, governance, and long-term ecosystem alignment.
+- [Token Utility](https://docs.blokcapital.io/en/resources/Tokenomics/token-utility): Our token will be used for the following: Governance of the Blok Capital Platform Medium of exchange on the platform between investors and wealth managers to handle payment of fees. Platform fees paya
+- [Tokenomics Chart](https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart): A visual breakdown of BLOKC's token distribution—designed to ensure long-term sustainability, alignment, and ecosystem growth.
+- [Reports](https://docs.blokcapital.io/en/resources/audits-and-security/Reports): Explore BLOK Capital’s third-party security audit reports—reinforcing transparency, trust, and technical resilience.
+- [Security Overview](https://docs.blokcapital.io/en/resources/audits-and-security/audits): At BLOK Capital, security isn’t just a feature, it’s our foundation. We are committed to ensuring that our smart contracts are as secure, reliable, and resilient as possible. To achieve this, we are t
+- [Luca](https://docs.blokcapital.io/en/resources/brand-guidelines/Luca): Meet Luca, the wise guardian of BLOK — embodying trust, clarity, and our community-first mission.
+- [Color Palette](https://docs.blokcapital.io/en/resources/brand-guidelines/color-palette): At BLOK Capital, our color palette is carefully curated to reflect both our technological innovation and our community first approach. Each color has been chosen with intentional symbolism, supporting
+- [Logo Design](https://docs.blokcapital.io/en/resources/brand-guidelines/logo-design): The BLOK Capital logo is a foundational element of our visual identity. It features a custom designed symbol paired with a distinctive logotype, crafted for flexibility across diverse applications and
+- [Token Design](https://docs.blokcapital.io/en/resources/brand-guidelines/token-design): At BLOK Capital, our token transcends mere functionality—it embodies our commitment to decentralized wealth management and community driven governance. Design Philosophy The BLOK token is a tangible r
+- [Contribute to our docs](https://docs.blokcapital.io/en/resources/create-video): BLOKC thrives on open contributions, and our documentation is no exception. Whether you're a developer, designer, or community member, your input helps make our docs more helpful and inclusive for eve
+- [Garden Indices](https://docs.blokcapital.io/en/resources/garden-index): A market cap weighted index assigns weights to assets proportional to their market capitalization relative to the total market capitalization of the portfolio (or basket). Here’s a structured overview
+- [Resources Section](https://docs.blokcapital.io/en/resources/intro): The Resources Section provides essential materials and references for users, developers, and contributors. It includes security audits, brand usage guidelines, official smart contract addresses, blog
+- [Smart Contract Addresses](https://docs.blokcapital.io/en/resources/smart-contract-address): The contracts are currently under development, this section would be live soon.
+
+## Optional
+
+- [Website](https://blokcapital.io): The BLOK Capital product site.
+- [Full documentation corpus](https://docs.blokcapital.io/llms-full.txt): Every page concatenated as Markdown.

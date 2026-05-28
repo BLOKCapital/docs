@@ -31,8 +31,11 @@ function build() {
         titleFromSlug(doc.segments[doc.segments.length - 1] ?? doc.section),
       section: doc.section,
       description: doc.data.description ?? "",
+      // { text, slug }[] — slugs let results deep-link to the matched section.
       headings: collectHeadings(doc.content),
-      text: toPlainText(doc.content).slice(0, 1200),
+      // Indexed + used for contextual snippets. Generous cap so matches deep in
+      // a page are searchable (the old 1200 limit silently dropped them).
+      text: toPlainText(doc.content).slice(0, 4000),
     }));
     fs.writeFileSync(
       path.join(OUT_DIR, `${locale}.json`),
