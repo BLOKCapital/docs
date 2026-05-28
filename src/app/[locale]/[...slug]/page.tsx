@@ -188,9 +188,11 @@ export default async function DocPage({
     <div className="paper relative isolate">
       <JsonLd data={structuredData} />
       <div className="mx-auto flex max-w-screen-2xl gap-8 px-4 sm:px-6">
-        {/* Left sidebar — subtle vertical rule separates nav from content. */}
+        {/* Left sidebar — subtle vertical rule separates nav from content.
+            sidebar-fade masks the top/bottom edges so items glide behind the
+            translucent navbar instead of butting up against it. */}
         <aside className="hidden w-60 shrink-0 border-r border-ink/10 lg:block">
-          <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-4">
+          <div className="sidebar-fade sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto pb-10 pr-4 pt-7">
             <Sidebar nav={nav} />
           </div>
         </aside>
@@ -228,7 +230,7 @@ export default async function DocPage({
           {/* Right TOC rail — only for doc pages with headings */}
           {doc && (
             <aside className="hidden w-56 shrink-0 xl:block">
-              <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-10">
+              <div className="sidebar-fade sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto pb-10 pt-7">
                 <TableOfContents items={toc} label={t.onThisPage} />
               </div>
             </aside>

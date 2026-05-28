@@ -413,6 +413,28 @@ body {
   color: rgb(var(--clay-deep));
 }
 
+/**
+ * Soft fade at the top and bottom of a scrollable rail (sidebar, TOC), so
+ * items disappear gracefully behind the translucent sticky navbar instead of
+ * being hard-clipped against its bottom edge.
+ */
+.sidebar-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black 14px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black 14px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
