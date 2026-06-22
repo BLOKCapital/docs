@@ -3,15 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "tsx scripts/build-search-index.ts && tsx scripts/build-llms.ts",
+    "predev": "tsx scripts/build-search-index.ts && tsx scripts/build-llms.ts && tsx scripts/build-markdown.ts",
     "dev": "next dev",
-    "prebuild": "tsx scripts/build-search-index.ts && tsx scripts/build-llms.ts",
+    "prebuild": "tsx scripts/build-search-index.ts && tsx scripts/build-llms.ts && tsx scripts/build-markdown.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "search:index": "tsx scripts/build-search-index.ts",
     "llms": "tsx scripts/build-llms.ts",
+    "md": "tsx scripts/build-markdown.ts",
     "check:content": "tsx scripts/check-content.ts"
   },
   "dependencies": {

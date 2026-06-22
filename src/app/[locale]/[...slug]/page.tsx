@@ -40,6 +40,19 @@ export const dynamicParams = false;
 
 const SECTION_SLUGS = SECTIONS.map((s) => s.slug) as SectionSlug[];
 
+/** Localized, human-readable date from an ISO 8601 string. */
+function formatDate(iso: string, locale: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(locale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 function isSectionRoot(slug: string[]): slug is [SectionSlug] {
   return slug.length === 1 && SECTION_SLUGS.includes(slug[0] as SectionSlug);
 }
@@ -207,6 +220,14 @@ export default async function DocPage({
             {description && (
               <p className="mt-3 text-[17px] leading-relaxed text-ink-muted">
                 {description}
+              </p>
+            )}
+            {doc?.updatedAt && (
+              <p className="mt-3 text-sm text-ink-muted">
+                {t.lastUpdated}:{" "}
+                <time dateTime={doc.updatedAt}>
+                  {formatDate(doc.updatedAt, loc)}
+                </time>
               </p>
             )}
             <div aria-hidden className="rule-hand my-7" />

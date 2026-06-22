@@ -12,6 +12,13 @@
 /src/lib/search-index.json
 tsconfig.tsbuildinfo
 next-env.d.ts
+# Agent-facing Markdown twins + freshness map (rebuilt by predev/prebuild).
+# The route manifest (src/lib/generated/markdown-routes.json) IS committed —
+# typecheck and the edge middleware bundle import it without a prior build.
+/public/en/
+/public/es/
+/public/fr/
+/public/last-updated.json
 
 # Misc
 .DS_Store

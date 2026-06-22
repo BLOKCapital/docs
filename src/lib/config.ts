@@ -104,6 +104,7 @@ export const UI: Record<
     editPage: string;
     home: string;
     helpTranslate: string;
+    lastUpdated: string;
   }
 > = {
   en: {
@@ -122,6 +123,7 @@ export const UI: Record<
     editPage: "Edit this page",
     home: "Home",
     helpTranslate: "Help us translate",
+    lastUpdated: "Last updated",
   },
   es: {
     sections: {
@@ -139,6 +141,7 @@ export const UI: Record<
     editPage: "Editar esta página",
     home: "Inicio",
     helpTranslate: "Ayúdanos a traducir",
+    lastUpdated: "Última actualización",
   },
   fr: {
     sections: {
@@ -156,6 +159,7 @@ export const UI: Record<
     editPage: "Modifier cette page",
     home: "Accueil",
     helpTranslate: "Aidez-nous à traduire",
+    lastUpdated: "Dernière mise à jour",
   },
 };
 

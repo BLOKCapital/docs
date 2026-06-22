@@ -30,16 +30,22 @@ const SECTION_ORDER = ["concepts", "smart-contracts", "builders", "resources"];
 
 function firstParagraph(content: string): string {
   const text = toPlainText(content);
-  // Skip leading section numbers ("1.") and short, letter-free fragments.
+  // Accumulate whole sentences (never cut mid-word). Skip leading section
+  // numbers ("1.") and short, letter-free fragments.
   const sentences = text.split(/(?<=[.!?])\s+/);
   let out = "";
   for (const s of sentences) {
     const clean = s.trim();
     if (!out && (clean.length < 12 || !/[a-zA-Z]{3,}/.test(clean))) continue;
-    out = out ? `${out} ${clean}` : clean;
-    if (out.length >= 200) break;
+    const candidate = out ? `${out} ${clean}` : clean;
+    if (out && candidate.length > 200) break; // stop at the sentence boundary
+    out = candidate;
+    if (out.length >= 160) break;
   }
-  return (out || text).slice(0, 200).trim();
+  if (!out) out = text;
+  // Single over-long sentence: trim to the last whole word, add an ellipsis.
+  if (out.length > 220) out = out.slice(0, 220).replace(/\s+\S*$/, "") + "…";
+  return out.trim();
 }
 
 function docTitle(doc: Doc): string {
@@ -83,7 +89,9 @@ function build(): void {
       const desc =
         (doc.data.description as string | undefined)?.trim() ||
         firstParagraph(doc.content);
-      const url = `${SITE_URL}${doc.href}`;
+      // Link to the Markdown twin so agents fetch clean source, not the HTML
+      // shell (satisfies the llms-txt-links-markdown check).
+      const url = `${SITE_URL}${doc.href}.md`;
       lines.push(`- [${docTitle(doc)}](${url})${desc ? `: ${desc}` : ""}`);
     }
     lines.push("");

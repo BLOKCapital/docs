@@ -12,6 +12,24 @@ import {
 /** Absolute path to the content root (content/<locale>/<section>/…). */
 const CONTENT_ROOT = path.join(process.cwd(), "content");
 
+/**
+ * Per-doc last-commit dates (href → ISO 8601), generated into public/ by
+ * `scripts/build-markdown.ts`. Read defensively: the file is absent before the
+ * first build (e.g. a bare `tsc` typecheck), in which case dates are simply
+ * omitted rather than failing the render.
+ */
+const UPDATED_AT: Record<string, string> = (() => {
+  try {
+    const raw = fs.readFileSync(
+      path.join(process.cwd(), "public", "last-updated.json"),
+      "utf8",
+    );
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    return {};
+  }
+})();
+
 export type DocFrontmatter = {
   title: string;
   description?: string;
@@ -32,6 +50,8 @@ export type Doc = {
   body: string;
   /** Absolute file path. */
   filePath: string;
+  /** Last-commit date (ISO 8601), when known. */
+  updatedAt?: string;
 };
 
 export type NavNode =
@@ -89,14 +109,16 @@ function readDoc(
   const fm = data as DocFrontmatter;
   const title =
     fm.title ?? titleFromSlug(segments[segments.length - 1] ?? section);
+  const href = `/${locale}/${segments.join("/")}`;
   return {
     segments,
-    href: `/${locale}/${segments.join("/")}`,
+    href,
     locale,
     section,
     frontmatter: { ...fm, title },
     body: content,
     filePath,
+    updatedAt: UPDATED_AT[href],
   };
 }
 
