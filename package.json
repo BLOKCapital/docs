@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/build-search-index.mjs && node scripts/build-llms.mjs",
+    "predev": "tsx scripts/build-search-index.ts && tsx scripts/build-llms.ts",
     "dev": "next dev",
-    "prebuild": "node scripts/build-search-index.mjs && node scripts/build-llms.mjs",
+    "prebuild": "tsx scripts/build-search-index.ts && tsx scripts/build-llms.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "search:index": "node scripts/build-search-index.mjs",
-    "llms": "node scripts/build-llms.mjs",
-    "check:content": "node scripts/check-content.mjs"
+    "search:index": "tsx scripts/build-search-index.ts",
+    "llms": "tsx scripts/build-llms.ts",
+    "check:content": "tsx scripts/check-content.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -43,6 +43,7 @@
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
+    "tsx": "^4.22.4",
     "typescript": "^5.6.3"
   },
   "engines": {

@@ -13,19 +13,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import {
-  ROOT,
-  walkLocale,
-  titleFromSlug,
-  toPlainText,
-} from "./_content.mjs";
+import { ROOT, walkLocale, titleFromSlug, toPlainText, type Doc } from "./_content";
 
 const SITE_URL = "https://docs.blokcapital.io";
 const SITE_NAME = "BLOK Capital Docs";
 const SUMMARY =
   "Official documentation for BLOK Capital, a non-custodial, on-chain wealth management protocol on EVM chains. Covers the Diamond (EIP-2535) architecture, account abstraction, Gardens, facets, oracles, the V1 smart-contract system, tokenomics, DAO governance, and builder guides.";
 
-const SECTION_TITLES = {
+const SECTION_TITLES: Record<string, string> = {
   concepts: "Concepts",
   "smart-contracts": "Smart Contracts",
   builders: "Builders",
@@ -33,7 +28,7 @@ const SECTION_TITLES = {
 };
 const SECTION_ORDER = ["concepts", "smart-contracts", "builders", "resources"];
 
-function firstParagraph(content) {
+function firstParagraph(content: string): string {
   const text = toPlainText(content);
   // Skip leading section numbers ("1.") and short, letter-free fragments.
   const sentences = text.split(/(?<=[.!?])\s+/);
@@ -47,19 +42,25 @@ function firstParagraph(content) {
   return (out || text).slice(0, 200).trim();
 }
 
-function docTitle(doc) {
+function docTitle(doc: Doc): string {
   return (
-    doc.data.title ??
+    (doc.data.title as string | undefined) ??
     titleFromSlug(doc.segments[doc.segments.length - 1] ?? doc.section)
   );
 }
 
-function build() {
+function build(): void {
   const docs = walkLocale("en");
-  const bySection = new Map(SECTION_ORDER.map((s) => [s, []]));
+  const bySection = new Map<string, Doc[]>(
+    SECTION_ORDER.map((s): [string, Doc[]] => [s, []]),
+  );
   for (const doc of docs) {
-    if (!bySection.has(doc.section)) bySection.set(doc.section, []);
-    bySection.get(doc.section).push(doc);
+    let bucket = bySection.get(doc.section);
+    if (!bucket) {
+      bucket = [];
+      bySection.set(doc.section, bucket);
+    }
+    bucket.push(doc);
   }
 
   // ---- llms.txt (curated index) ----
@@ -79,7 +80,9 @@ function build() {
     if (!items.length) continue;
     lines.push(`## ${SECTION_TITLES[section] ?? titleFromSlug(section)}`, "");
     for (const doc of items) {
-      const desc = doc.data.description?.trim() || firstParagraph(doc.content);
+      const desc =
+        (doc.data.description as string | undefined)?.trim() ||
+        firstParagraph(doc.content);
       const url = `${SITE_URL}${doc.href}`;
       lines.push(`- [${docTitle(doc)}](${url})${desc ? `: ${desc}` : ""}`);
     }

@@ -61,7 +61,7 @@ content/
 The original Markdown was imported with:
 
 ```bash
-node scripts/migrate-content.mjs "<path to old documentation repo>"
+npx tsx scripts/migrate-content.ts "<path to old documentation repo>"
 ```
 
 It normalizes frontmatter, converts admonitions and HTML comments, rewrites
@@ -75,7 +75,7 @@ internal links, and copies `static/img` → `public/img`.
 | Config/locales | `src/lib/config.ts`                              |
 | Content loader | `src/lib/content.ts` (fs + gray-matter)          |
 | MDX renderer   | `src/components/docs/Mdx.tsx`                     |
-| Search         | `scripts/build-search-index.mjs` + `src/components/search/*` |
+| Search         | `scripts/build-search-index.ts` + `src/components/search/*` |
 | Routing        | `src/app/[locale]/[...slug]/page.tsx`            |
-| Shared script helpers | `scripts/_content.mjs` (walk/parse, locale + section lists) |
-| Validation     | `scripts/check-content.mjs` (run in CI)          |
+| Shared script helpers | `scripts/_content.ts` (walk/parse, locale + section lists) |
+| Validation     | `scripts/check-content.ts` (run in CI)          |

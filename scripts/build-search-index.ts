@@ -15,11 +15,11 @@ import {
   titleFromSlug,
   toPlainText,
   collectHeadings,
-} from "./_content.mjs";
+} from "./_content";
 
 const OUT_DIR = path.join(ROOT, "public", "search");
 
-function build() {
+function build(): void {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   let total = 0;
   for (const locale of LOCALES) {
@@ -27,10 +27,10 @@ function build() {
       id,
       href: doc.href,
       title:
-        doc.data.title ??
+        (doc.data.title as string | undefined) ??
         titleFromSlug(doc.segments[doc.segments.length - 1] ?? doc.section),
       section: doc.section,
-      description: doc.data.description ?? "",
+      description: (doc.data.description as string | undefined) ?? "",
       // { text, slug }[] — slugs let results deep-link to the matched section.
       headings: collectHeadings(doc.content),
       // Indexed + used for contextual snippets. Generous cap so matches deep in

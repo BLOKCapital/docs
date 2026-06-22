@@ -1,7 +1,7 @@
 /**
  * One-shot migration: Docusaurus content → blok-docs content/<locale>/<section>.
  *
- * Run from blok-docs root:  node scripts/migrate-content.mjs "<absolute path to documentation repo>"
+ * Run from blok-docs root:  tsx scripts/migrate-content.ts "<absolute path to documentation repo>"
  *
  * Transforms per file:
  *  - frontmatter: sidebar_position→position, keep title/description/sidebar_label, drop id
@@ -20,7 +20,7 @@ import matter from "gray-matter";
 
 const SRC = process.argv[2];
 if (!SRC || !fs.existsSync(SRC)) {
-  console.error("Usage: node scripts/migrate-content.mjs <path-to-documentation-repo>");
+  console.error("Usage: tsx scripts/migrate-content.ts <path-to-documentation-repo>");
   process.exit(1);
 }
 const DOCS_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -29,25 +29,27 @@ const CONTENT = path.join(DOCS_ROOT, "content");
 const LOCALES = ["en", "es", "fr"];
 
 /** source dir (relative to SRC) for a (locale, section). */
-function srcDir(locale, section) {
+function srcDir(locale: string, section: string): string {
   if (locale === "en") {
-    return {
+    const map: Record<string, string> = {
       concepts: "educ-docs",
       "smart-contracts": "docs/v1",
       builders: "builders-docs",
       resources: "resources-docs",
-    }[section];
+    };
+    return map[section];
   }
   const base = `i18n/${locale}`;
-  return {
+  const map: Record<string, string> = {
     concepts: `${base}/docusaurus-plugin-content-docs-educ/current`,
     "smart-contracts": `${base}/docusaurus-plugin-content-docs/current/v1`,
     builders: `${base}/docusaurus-plugin-content-docs-builders/current`,
     resources: `${base}/docusaurus-plugin-content-docs-resources/current`,
-  }[section];
+  };
+  return map[section];
 }
 
-const ADMONITION_KIND = {
+const ADMONITION_KIND: Record<string, string> = {
   note: "note",
   tip: "tip",
   info: "info",
@@ -57,15 +59,19 @@ const ADMONITION_KIND = {
   danger: "danger",
 };
 
-const SECTION_OF_PREFIX = {
+const SECTION_OF_PREFIX: Record<string, string> = {
   educ: "concepts",
   v1: "smart-contracts",
   builders: "builders",
   resources: "resources",
 };
 
-function transformBody(body, locale, frontmatter) {
-  let title = frontmatter.title;
+function transformBody(
+  body: string,
+  locale: string,
+  frontmatter: Record<string, unknown>,
+): { body: string; title: string | undefined } {
+  let title = frontmatter.title as string | undefined;
 
   // Derive title from a leading H1 if frontmatter lacks one.
   const lines = body.split("\n");
@@ -86,7 +92,7 @@ function transformBody(body, locale, frontmatter) {
   // Admonitions: :::kind [title]\n … \n:::
   body = body.replace(
     /^:::(\w+)(?:\s+(.+))?\n([\s\S]*?)^:::\s*$/gm,
-    (_m, kind, ttl, inner) => {
+    (_m, kind: string, ttl: string | undefined, inner: string) => {
       const mapped = ADMONITION_KIND[kind.toLowerCase()] ?? "note";
       const titleAttr = ttl ? ` title="${ttl.trim().replace(/"/g, "&quot;")}"` : "";
       return `<Admonition kind="${mapped}"${titleAttr}>\n\n${inner.trim()}\n\n</Admonition>`;
@@ -97,10 +103,10 @@ function transformBody(body, locale, frontmatter) {
   body = body.replace(/^import\s+\w+\s+from\s+['"]@site\/[^'"]+['"];?\s*$/gm, "");
 
   // HTML comments are invalid in MDX — convert to MDX expression comments.
-  body = body.replace(/<!--([\s\S]*?)-->/g, (_m, inner) => `{/*${inner}*/}`);
+  body = body.replace(/<!--([\s\S]*?)-->/g, (_m, inner: string) => `{/*${inner}*/}`);
 
   // Rewrite section-prefixed absolute links and strip .md(x) extensions.
-  body = body.replace(/\]\((\/[^)]+|\.\/?[^)]+)\)/g, (full, url) => {
+  body = body.replace(/\]\((\/[^)]+|\.\/?[^)]+)\)/g, (full, url: string) => {
     // Leave images and anchors and external alone.
     if (/^https?:|^#|\.(png|jpe?g|svg|gif|webp|pdf)(\)|$|#)/i.test(url)) return full;
     let u = url;
@@ -121,12 +127,12 @@ function transformBody(body, locale, frontmatter) {
   return { body: body.trim() + "\n", title };
 }
 
-function migrateFile(srcFile, destFile, locale) {
+function migrateFile(srcFile: string, destFile: string, locale: string): void {
   const raw = fs.readFileSync(srcFile, "utf8");
   const { data, content } = matter(raw);
   const { body, title } = transformBody(content, locale, data);
 
-  const fm = {};
+  const fm: Record<string, unknown> = {};
   if (title) fm.title = title;
   if (data.description) fm.description = data.description;
   if (data.sidebar_label) fm.sidebar_label = data.sidebar_label;
@@ -137,16 +143,16 @@ function migrateFile(srcFile, destFile, locale) {
   fs.writeFileSync(destFile, out);
 }
 
-function copyCategory(srcFile, destFile) {
+function copyCategory(srcFile: string, destFile: string): void {
   const meta = JSON.parse(fs.readFileSync(srcFile, "utf8"));
-  const out = {};
+  const out: Record<string, unknown> = {};
   if (meta.label) out.label = meta.label;
   if (meta.position != null) out.position = meta.position;
   fs.mkdirSync(path.dirname(destFile), { recursive: true });
   fs.writeFileSync(destFile, JSON.stringify(out, null, 2) + "\n");
 }
 
-function walk(srcBase, destBase, locale) {
+function walk(srcBase: string, destBase: string, locale: string): number {
   if (!fs.existsSync(srcBase)) {
     console.warn(`  (missing) ${srcBase}`);
     return 0;
@@ -168,7 +174,7 @@ function walk(srcBase, destBase, locale) {
   return n;
 }
 
-function copyImages() {
+function copyImages(): void {
   const imgSrc = path.join(SRC, "static", "img");
   const imgDest = path.join(DOCS_ROOT, "public", "img");
   if (!fs.existsSync(imgSrc)) return;

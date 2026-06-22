@@ -14,18 +14,18 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, LOCALES, SECTIONS, walkLocale } from "./_content.mjs";
+import { ROOT, LOCALES, SECTIONS, walkLocale, type Doc } from "./_content";
 
-const errors = [];
-const warnings = [];
-const err = (m) => errors.push(m);
-const warn = (m) => warnings.push(m);
+const errors: string[] = [];
+const warnings: string[] = [];
+const err = (m: string) => errors.push(m);
+const warn = (m: string) => warnings.push(m);
 
 // Public asset prefixes that are valid link/image targets (not docs).
 const PUBLIC_PREFIXES = ["/img", "/brand", "/textures", "/search", "/favicon"];
 
 /* 1. Guard against config drift with src/lib/config.ts ------------------- */
-function checkConfigSync() {
+function checkConfigSync(): void {
   const cfg = fs.readFileSync(path.join(ROOT, "src/lib/config.ts"), "utf8");
   const locM = cfg.match(/LOCALES\s*=\s*\[([^\]]*)\]/);
   const cfgLocales = locM
@@ -48,12 +48,14 @@ function checkConfigSync() {
 }
 
 /* 2. Load every doc, keyed by locale ------------------------------------- */
-const byLocale = Object.fromEntries(LOCALES.map((l) => [l, walkLocale(l)]));
+const byLocale: Record<string, Doc[]> = Object.fromEntries(
+  LOCALES.map((l): [string, Doc[]] => [l, walkLocale(l)]),
+);
 const allDocs = Object.values(byLocale).flat();
 
 // Valid link targets: any doc href, plus every ancestor path (navigable
 // category / section roots).
-const validTargets = new Set();
+const validTargets = new Set<string>();
 for (const doc of allDocs) {
   for (let i = 1; i <= doc.segments.length; i++) {
     validTargets.add(`/${doc.locale}/${doc.segments.slice(0, i).join("/")}`);
@@ -64,7 +66,7 @@ for (const doc of allDocs) {
 /* 3. Frontmatter + link checks ------------------------------------------- */
 const LINK_RE = /\]\(([^)\s]+)(?:\s+"[^"]*")?\)|href=["']([^"']+)["']/g;
 
-function isPublicAsset(target) {
+function isPublicAsset(target: string): boolean {
   return PUBLIC_PREFIXES.some((p) => target === p || target.startsWith(p + "/"));
 }
 
@@ -97,9 +99,9 @@ for (const doc of allDocs) {
 }
 
 /* 4. Locale parity ------------------------------------------------------- */
-const keyOf = (d) => `${d.section}/${d.segments.join("/")}`;
-const perLocaleKeys = Object.fromEntries(
-  LOCALES.map((l) => [l, new Set(byLocale[l].map(keyOf))]),
+const keyOf = (d: Doc) => `${d.section}/${d.segments.join("/")}`;
+const perLocaleKeys: Record<string, Set<string>> = Object.fromEntries(
+  LOCALES.map((l): [string, Set<string>] => [l, new Set(byLocale[l].map(keyOf))]),
 );
 const allKeys = new Set(allDocs.map(keyOf));
 for (const key of allKeys) {
@@ -109,14 +111,14 @@ for (const key of allKeys) {
 
 /* 5. Duplicate position within a folder ---------------------------------- */
 for (const locale of LOCALES) {
-  const folders = {};
+  const folders: Record<string, { pos: unknown; file: string }[]> = {};
   for (const doc of byLocale[locale]) {
     if (doc.data.position == null) continue;
     const folder = doc.segments.slice(0, -1).join("/");
     (folders[folder] ??= []).push({ pos: doc.data.position, file: doc.file });
   }
   for (const [folder, items] of Object.entries(folders)) {
-    const seen = new Map();
+    const seen = new Map<unknown, string>();
     for (const it of items) {
       if (seen.has(it.pos))
         warn(

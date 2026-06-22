@@ -2,7 +2,7 @@
  * Shared content helpers for build-time scripts (search index + validation).
  *
  * NOTE: LOCALES and SECTIONS are mirrored in `src/lib/config.ts` (the runtime
- * source of truth). `scripts/check-content.mjs` asserts the two stay in sync,
+ * source of truth). `scripts/check-content.ts` asserts the two stay in sync,
  * so drift is caught in CI rather than silently.
  */
 import fs from "node:fs";
@@ -16,19 +16,34 @@ export const ROOT = path.join(__dirname, "..");
 export const CONTENT = path.join(ROOT, "content");
 
 export const LOCALES = ["en", "es", "fr"];
-export const SECTIONS = [
+
+export type Section = { slug: string; dir: string };
+export const SECTIONS: Section[] = [
   { slug: "concepts", dir: "concepts" },
   { slug: "smart-contracts", dir: "smart-contracts" },
   { slug: "builders", dir: "builders" },
   { slug: "resources", dir: "resources" },
 ];
 
-export function titleFromSlug(slug) {
+export type Heading = { text: string; slug: string };
+
+/** A single content document discovered by {@link walkLocale}. */
+export type Doc = {
+  locale: string;
+  section: string;
+  segments: string[];
+  href: string;
+  file: string;
+  data: Record<string, unknown>;
+  content: string;
+};
+
+export function titleFromSlug(slug: string): string {
   return slug.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 /** Strip MDX/markdown syntax down to plain searchable text. */
-export function toPlainText(body) {
+export function toPlainText(body: string): string {
   return body
     .replace(/```[\s\S]*?```/g, " ") // fenced code
     .replace(/`[^`]*`/g, " ") // inline code
@@ -48,8 +63,8 @@ export function toPlainText(body) {
  * document order — the same way rehype-slug runs per page — so duplicate-slug
  * suffixes (`-1`, `-2`) match the ids actually rendered into the DOM.
  */
-export function collectHeadings(body) {
-  const out = [];
+export function collectHeadings(body: string): Heading[] {
+  const out: Heading[] = [];
   const slugger = new GithubSlugger();
   let inFence = false;
   for (const line of body.split("\n")) {
@@ -72,15 +87,21 @@ export function collectHeadings(body) {
  * Walk content/<locale>/<section>/** and yield a record per doc:
  * { locale, section, segments, href, file, data, content }.
  */
-export function walkLocale(locale) {
-  const out = [];
+export function walkLocale(locale: string): Doc[] {
+  const out: Doc[] = [];
   for (const { slug, dir } of SECTIONS) {
     walk(path.join(CONTENT, locale, dir), slug, [slug], locale, out);
   }
   return out;
 }
 
-function walk(dir, section, parentSegments, locale, out) {
+function walk(
+  dir: string,
+  section: string,
+  parentSegments: string[],
+  locale: string,
+  out: Doc[],
+): void {
   if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name.startsWith(".")) continue;
