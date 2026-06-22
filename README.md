@@ -162,6 +162,11 @@ so `tsc` and the edge middleware resolve it without a prior build.
 | Validation | `scripts/check-content.ts` (run in CI) |
 
 For a deeper, AI-readable overview see [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).
+In-depth engineering docs — [architecture](docs/ARCHITECTURE.md),
+[build & scripts](docs/BUILD_AND_SCRIPTS.md), [CI/CD & operations](docs/CI_CD_AND_OPERATIONS.md),
+[configuration](docs/CONFIGURATION.md), [content authoring](docs/CONTENT_AUTHORING.md),
+[dependencies](docs/DEPENDENCIES.md), [hardening](docs/HARDENING.md), and
+[SEO/AEO](docs/SEO_AEO.md) — live in [`docs/`](docs/README.md).
 
 ## Scripts
 
