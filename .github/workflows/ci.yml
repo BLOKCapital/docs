@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege default token.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -14,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -31,3 +40,10 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Informational for now: a known high-severity advisory lives in a
+      # transitive dep whose fix is a breaking major bump. Make this a hard gate
+      # (drop continue-on-error) once that's resolved. Dependabot tracks fixes.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+        continue-on-error: true

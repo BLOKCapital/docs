@@ -4,7 +4,6 @@
  * Errors (exit 1):
  *   - a doc missing a `title` frontmatter
  *   - an internal link `/{locale}/…` that resolves to no page
- *   - LOCALES / SECTIONS drift between this script and src/lib/config.ts
  *
  * Warnings (non-fatal):
  *   - links missing a locale prefix, or relative links
@@ -12,9 +11,7 @@
  *   - duplicate `position` within a folder
  *   - missing `description`
  */
-import fs from "node:fs";
-import path from "node:path";
-import { ROOT, LOCALES, SECTIONS, walkLocale, type Doc } from "./_content";
+import { LOCALES, walkLocale, isLocale, type Doc } from "./_content";
 
 const errors: string[] = [];
 const warnings: string[] = [];
@@ -24,30 +21,7 @@ const warn = (m: string) => warnings.push(m);
 // Public asset prefixes that are valid link/image targets (not docs).
 const PUBLIC_PREFIXES = ["/img", "/brand", "/textures", "/search", "/favicon"];
 
-/* 1. Guard against config drift with src/lib/config.ts ------------------- */
-function checkConfigSync(): void {
-  const cfg = fs.readFileSync(path.join(ROOT, "src/lib/config.ts"), "utf8");
-  const locM = cfg.match(/LOCALES\s*=\s*\[([^\]]*)\]/);
-  const cfgLocales = locM
-    ? [...locM[1].matchAll(/"([^"]+)"/g)].map((m) => m[1])
-    : [];
-  const cfgSections = [...cfg.matchAll(/\{\s*slug:\s*"([^"]+)",\s*dir:/g)].map(
-    (m) => m[1],
-  );
-  if (cfgLocales.join(",") !== LOCALES.join(",")) {
-    err(
-      `config drift: LOCALES in config.ts [${cfgLocales}] ≠ scripts [${LOCALES}]`,
-    );
-  }
-  const scriptSlugs = SECTIONS.map((s) => s.slug);
-  if (cfgSections.join(",") !== scriptSlugs.join(",")) {
-    err(
-      `config drift: SECTIONS in config.ts [${cfgSections}] ≠ scripts [${scriptSlugs}]`,
-    );
-  }
-}
-
-/* 2. Load every doc, keyed by locale ------------------------------------- */
+/* 1. Load every doc, keyed by locale ------------------------------------- */
 const byLocale: Record<string, Doc[]> = Object.fromEntries(
   LOCALES.map((l): [string, Doc[]] => [l, walkLocale(l)]),
 );
@@ -63,7 +37,7 @@ for (const doc of allDocs) {
   validTargets.add(`/${doc.locale}`);
 }
 
-/* 3. Frontmatter + link checks ------------------------------------------- */
+/* 2. Frontmatter + link checks ------------------------------------------- */
 const LINK_RE = /\]\(([^)\s]+)(?:\s+"[^"]*")?\)|href=["']([^"']+)["']/g;
 
 function isPublicAsset(target: string): boolean {
@@ -85,7 +59,7 @@ for (const doc of allDocs) {
 
     if (target.startsWith("/")) {
       const first = target.split("/")[1];
-      if (!LOCALES.includes(first)) {
+      if (!isLocale(first)) {
         warn(`${doc.file}: link "${raw}" is missing a locale prefix`);
         continue;
       }
@@ -98,7 +72,7 @@ for (const doc of allDocs) {
   }
 }
 
-/* 4. Locale parity ------------------------------------------------------- */
+/* 3. Locale parity ------------------------------------------------------- */
 const keyOf = (d: Doc) => `${d.section}/${d.segments.join("/")}`;
 const perLocaleKeys: Record<string, Set<string>> = Object.fromEntries(
   LOCALES.map((l): [string, Set<string>] => [l, new Set(byLocale[l].map(keyOf))]),
@@ -109,7 +83,7 @@ for (const key of allKeys) {
   if (missing.length) warn(`parity: "${key}" missing in [${missing.join(", ")}]`);
 }
 
-/* 5. Duplicate position within a folder ---------------------------------- */
+/* 4. Duplicate position within a folder ---------------------------------- */
 for (const locale of LOCALES) {
   const folders: Record<string, { pos: unknown; file: string }[]> = {};
   for (const doc of byLocale[locale]) {
@@ -129,9 +103,7 @@ for (const locale of LOCALES) {
   }
 }
 
-/* 6. Report -------------------------------------------------------------- */
-checkConfigSync();
-
+/* 5. Report -------------------------------------------------------------- */
 for (const w of warnings) console.warn(`⚠ ${w}`);
 for (const e of errors) console.error(`✗ ${e}`);
 

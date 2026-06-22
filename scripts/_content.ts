@@ -1,29 +1,22 @@
 /**
  * Shared content helpers for build-time scripts (search index + validation).
  *
- * NOTE: LOCALES and SECTIONS are mirrored in `src/lib/config.ts` (the runtime
- * source of truth). `scripts/check-content.ts` asserts the two stay in sync,
- * so drift is caught in CI rather than silently.
+ * LOCALES and SECTIONS are imported from `src/lib/config.ts` (the runtime
+ * source of truth) and re-exported here, so the build scripts and the app
+ * share exactly one definition — config drift is structurally impossible.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import GithubSlugger from "github-slugger";
+import { LOCALES, SECTIONS, isLocale } from "../src/lib/config";
+
+export { LOCALES, SECTIONS, isLocale };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.join(__dirname, "..");
 export const CONTENT = path.join(ROOT, "content");
-
-export const LOCALES = ["en", "es", "fr"];
-
-export type Section = { slug: string; dir: string };
-export const SECTIONS: Section[] = [
-  { slug: "concepts", dir: "concepts" },
-  { slug: "smart-contracts", dir: "smart-contracts" },
-  { slug: "builders", dir: "builders" },
-  { slug: "resources", dir: "resources" },
-];
 
 export type Heading = { text: string; slug: string };
 

@@ -17,6 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
+import { LOCALES, SECTIONS } from "../src/lib/config";
 
 const SRC = process.argv[2];
 if (!SRC || !fs.existsSync(SRC)) {
@@ -25,8 +26,6 @@ if (!SRC || !fs.existsSync(SRC)) {
 }
 const DOCS_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CONTENT = path.join(DOCS_ROOT, "content");
-
-const LOCALES = ["en", "es", "fr"];
 
 /** source dir (relative to SRC) for a (locale, section). */
 function srcDir(locale: string, section: string): string {
@@ -190,7 +189,7 @@ function copyImages(): void {
 
 let total = 0;
 for (const locale of LOCALES) {
-  for (const section of ["concepts", "smart-contracts", "builders", "resources"]) {
+  for (const { slug: section } of SECTIONS) {
     const sBase = path.join(SRC, srcDir(locale, section));
     const dBase = path.join(CONTENT, locale, section);
     const n = walk(sBase, dBase, locale);
