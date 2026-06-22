@@ -1,0 +1,31 @@
+# Code owners for BLOKCapital/docs
+#
+# Owners listed here are automatically requested for review on PRs that touch
+# matching paths. Later patterns override earlier ones.
+#
+# NOTE: confirm `@0xChintan` is the correct GitHub login and replace if needed.
+# When collaborators/teams are added, use the `@BLOKCapital/<team>` form.
+# CODEOWNERS only *enforces* reviews if a branch ruleset enables
+# "Require review from Code Owners" — leave that off while solo (you can't
+# approve your own PR).
+
+# Default owner for everything in the repo
+*                     @0xChintan
+
+# Documentation content (the product)
+/content/             @0xChintan
+
+# Application code: routes, components, libs
+/src/                 @0xChintan
+
+# Build-time scripts & generators
+/scripts/             @0xChintan
+
+# CI, repo config & governance
+/.github/             @0xChintan
+/AGENTS.md            @0xChintan
+/PROJECT_CONTEXT.md   @0xChintan
+
+# --- Future: per-locale translation ownership (create the teams first) ---
+# /content/es/        @BLOKCapital/translators-es
+# /content/fr/        @BLOKCapital/translators-fr
