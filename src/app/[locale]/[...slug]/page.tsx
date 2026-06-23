@@ -233,7 +233,7 @@ export default async function DocPage({
             <div aria-hidden className="rule-hand my-7" />
             {doc ? (
               <>
-                <div className="doc-prose">
+                <div className="doc-prose" data-slug={slug.join("/")}>
                   <Mdx source={doc.body} />
                 </div>
                 <PrevNext

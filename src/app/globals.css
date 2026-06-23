@@ -278,8 +278,21 @@ body {
   border: 1px solid rgb(var(--rule) / 0.1);
   background: #1d1a14 !important;
 }
+
+/* Pages carrying block-element ASCII-art banners (e.g. the contract style
+   guide's copyright header) opt into line-height:1 so the block glyphs tile
+   seamlessly into solid letters. Scoped by slug so normal code elsewhere keeps
+   its comfortable leading. */
+.doc-prose[data-slug="builders/Guides/contract-style-guide"] pre {
+  line-height: 1;
+}
 .doc-prose pre code {
-  font-family: var(--font-mono);
+  /* Append a real monospace fallback chain after the (latin-subset) webfont so
+     Unicode Block Elements used in ASCII-art banners — absent from JetBrains
+     Mono's latin subset — fall back per-glyph to a cell-sized mono (Menlo,
+     etc.) instead of an oversized sans fallback. */
+  font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, "Cascadia Mono",
+    Consolas, "DejaVu Sans Mono", monospace;
   display: grid;
   background: transparent !important;
   counter-reset: line;

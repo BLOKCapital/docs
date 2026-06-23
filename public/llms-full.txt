@@ -170,7 +170,7 @@ Section: Concepts
 Source: https://docs.blokcapital.io/en/concepts/index-garden/index-garden
 Section: Concepts
 
-<IndexGardenDiagram />
+![Index Garden architecture](/img/IndexGarden.png)
 
 # Garden Protocol: Architecture Overview
 
@@ -270,7 +270,7 @@ If a facet is removed from the Facet Registry, any garden relying on it will bre
 Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/account-abstraction
 Section: Concepts
 
-<AccountAbstractionDiagram />
+![Account abstraction](/img/Frame%2027.png)
 
 Account Abstraction replaces the limitations of traditional Ethereum wallets with programmable smart contract wallets that control how transactions are authorized, executed, and paid for.
 
@@ -376,7 +376,7 @@ Section: Concepts
 
 ### How does Blok Capital manages the atomic asynchronous transaction?
 
-<OracleNetworkDiagram />
+![Decentralised oracle network](/img/Frame%2022.jpg)
 
 ### 1). Contract Layer (Signal Emission):
 
@@ -419,7 +419,7 @@ Section: Concepts
 
 ## Diamond Architecture Overview
 
-<DiamondDiagram />
+![Diamond proxy architecture](/img/Diamond_proxy.png)
 
 The Diamond architecture is a modular smart contract system designed for long-lived, evolving protocols.
 
@@ -509,7 +509,7 @@ Section: Concepts
 Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/proxy-contracts
 Section: Concepts
 
-<ProxyContractDiagram />
+![Proxy contract pattern](/img/Frame%2025.jpg)
 
 ## Proxy Contracts Explained
 
@@ -536,11 +536,72 @@ This allows BLOK Capital to improve index logic, fix issues, and introduce new f
 
 ---
 
+# Rebalancer Network
+Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/rebalancer-network
+Section: Concepts
+
+![Rebalancer network](/img/Rebalancer.png)
+
+## Overview
+
+The Rebalancer is a single smart contract designed for highly efficient, gas-minimized index and yield management.
+
+At its core, the rebalancer moves everyone's funds from a current yield strategy or index composition to a better one. Instead of rebalancing one user at a time, it treats the protocol's total liquidity as one pooled amount and moves it together.
+
+This contract is the execution layer behind two core protocol functions: keeping index gardens aligned with their target weights, and migrating pooled assets into better-performing yield strategies as market conditions change.
+
+---
+
+## How the Rebalancer Thinks About Liquidity
+
+The system does not execute individual transactions for every user or garden within the protocol.
+
+Instead, it acts as a unified aggregator. When an index needs reweighting, or a strategy shift is required, the contract logically bundles the assets of all participating gardens into one collective pool.
+
+When interacting with external protocols, decentralized exchanges, or yield farms, the external environment only sees and interacts with the rebalancer contract. All individual ownership data, shares, and states are maintained internally on the protocol's own ledgers.
+
+By socializing the physical movement of assets on the blockchain, the contract eliminates redundant network fees and avoids triggering complex external state changes for every individual position.
+
+---
+
+## Execution Model
+
+Rebalancing operations are executed in a deliberate, atomic sequence within the contract.
+
+Rather than processing individual withdrawals and deposits for each user, execution follows an aggregated pipeline:
+
+**→ Validation:** The contract evaluates whether the aggregated pool meets the criteria to shift — either an index drifting beyond its target weights, or a yield strategy falling below predefined performance triggers.
+
+**→ Pooled Withdrawal:** Assets belonging to all active gardens are withdrawn simultaneously from the current index allocation or yield strategy in a single transaction.
+
+**→ Single Routing:** If the new allocation or strategy requires different underlying assets, the bundled pool is swapped through a router in exactly one transaction.
+
+**→ Pooled Deposit:** The newly formatted assets are deployed into the next index weighting or yield strategy as a single, unified unit.
+
+**→ Internal Accounting:** The contract updates its internal registries and escrow ledgers to proportionally distribute the new shares to the respective individual gardens.
+
+Each phase is designed to interact with the underlying blockchain exactly once per cycle, regardless of how many gardens are participating in the rebalance.
+
+---
+
+## How BLOK Capital Uses Aggregated Rebalancing
+
+BLOK Capital uses this single contract to efficiently manage wealth across both index-based and yield-based strategies.
+
+Whether reweighting index components to match target allocations, reallocating across different liquidity pools, or moving to higher-yield environments, the rebalancer contract handles the heavy lifting on behalf of all user gardens simultaneously.
+
+This allows BLOK Capital to offer sophisticated index management and yield optimization without the prohibitive gas costs typically associated with active DeFi management.
+
+The rebalancer becomes the invisible engine ensuring that user returns are strictly driven by market and index performance, unburdened by operational friction.
+
+
+---
+
 # Wealth Management
 Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/wealth-management
 Section: Concepts
 
-<WealthManagementDiagram />
+![Wealth management architecture](/img/Wealth_mgmt.png)
 
 ### Introduction
 
@@ -581,7 +642,7 @@ You connect your wallet and choose a garden type. Indexed Gardens follow predefi
 Source: https://docs.blokcapital.io/en/concepts/user-journey
 Section: Concepts
 
-<UserJourneyDiagram />
+![User journey flow](/img/Userflow.png)
 
 ## 1. Sign in and create your smart wallet
 
@@ -1091,7 +1152,7 @@ This is the last layer: you understand how the protocol **talks to the outside 
 Source: https://docs.blokcapital.io/en/smart-contracts/introduction
 Section: Smart Contracts
 
-<SystemOverviewDiagram />
+![System overview](/img/Frame%2021.jpg)
 
 ## **1. System Overview**
 
@@ -2142,7 +2203,7 @@ struct Layout {
 Source: https://docs.blokcapital.io/en/builders/blok-capital-v1
 Section: Builders
 
-<ProtocolV1Diagram />
+![Protocol V1 architecture](/img/architect.png)
 
 ## The core parts of our architecture is as follows :
 
@@ -2184,7 +2245,7 @@ At BLOK Capital, we’re redefining decentralized governance by building a robus
 ### Why Aragon?
 Aragon provides a powerful and flexible toolkit for building modular DAOs, allowing us to create a governance system that adapts to the evolving needs of our ecosystem. With Aragon’s battle-tested infrastructure, we ensure secure and autonomous governance that aligns with the principles of decentralization.
 
-<DaoProposalDiagram />
+![BLOK Capital DAO proposal architecture](/img/daoProposal2.png)
 
 ### The BLOK Capital Proposal System: Power in Your Hands
 Our proposal system is the heartbeat of the BLOK Capital ecosystem, designed to make governance simple yet impactful. Here’s what it brings to the table:
@@ -2221,7 +2282,7 @@ Section: Builders
 At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern. In this section, we’ll explore the architecture of diamonds, a factory-based deployment approach inspired by the Nick Mudge Diamond repository, and how these concepts create a "garden" powering the BLOK architecture.
 
 ### Proxy Contract Flow: 
-<ProxyFlowDiagram />
+![Diamond proxy delegation flow](/img/diamondSchema2.png)
 
 ### What is the Diamond Standard?
 
@@ -2238,7 +2299,7 @@ This modularity makes diamonds ideal for complex decentralized applications (dAp
 ### The Architecture of a Diamond
 
 Imagine the diamond as a central hub (the `Diamond.sol` contract) that routes function calls to specialized facets. Each facet is a separate contract containing a subset of the system’s functionality, such as ownership, token transfers, or governance. The diamond maintains a mapping of **function selectors** (unique identifiers for functions) to facet addresses, allowing it to delegate calls efficiently.
-<DelegationDiagram />
+![Facet delegation](/img/delegation.png)
 
 #### Key Components in the Diamond Architecture
 
@@ -2257,7 +2318,7 @@ Imagine the diamond as a central hub (the `Diamond.sol` contract) that routes fu
     - A 4-byte hash (e.g., `keccak256("functionName()")`) that identifies a function.
     - The diamond maps selectors to facet addresses, ensuring the correct contract handles each call.
 
-<DiamondComponentsDiagram />
+![Diamond facet components](/img/diamondFacet2.png)
 
 Here’s a simplified example of the `Diamond.sol` fallback function, which delegates calls to facets:
 
@@ -2648,17 +2709,6 @@ Section: Resources
 
 ---
 
-# Reports
-Source: https://docs.blokcapital.io/en/resources/audits-and-security/Reports
-Section: Resources
-
-<div className="security-audits-page">
-  <Audit />
-</div>
-
-
----
-
 # Security Overview
 Source: https://docs.blokcapital.io/en/resources/audits-and-security/audits
 Section: Resources
@@ -2678,90 +2728,6 @@ Join us in Making BLOK Capital Safer
 By launching these security initiatives, we are reinforcing our commitment to trust, transparency, and user safety. Stay tuned for updates, and if you're a security researcher, get ready to put your skills to the test and earn rewards while making DeFi safer for everyone!
 
 🚀 Security first. Community-driven. BLOK Capital.
-
-
----
-
-# Luca
-Source: https://docs.blokcapital.io/en/resources/brand-guidelines/Luca
-Section: Resources
-
-<div style={{
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexWrap: 'wrap',
-  marginTop: '2rem'
-}}>
-
-  <div style={{
-    flex: '1 1 50%',
-    maxWidth: '50%',
-    paddingRight: '24px',
-    fontSize: '1.1rem',
-    lineHeight: '1.8'
-  }}>
-    <p>
-      <strong>Luca</strong> is more than just a mascot — he embodies the values of <strong>wisdom</strong>, <strong>clarity</strong>, and <strong>trust</strong> that define BLOK Capital.
-    </p>
-    <p>
-      As our official brand character, <strong>Luca</strong> serves as a guiding figure, representing the core values and mission of our decentralized wealth management platform.
-    </p>
-  </div>
-
-  <div style={{
-    flex: '1 1 50%',
-    maxWidth: '50%',
-    display: 'flex',
-    justifyContent: 'flex-start',
-    paddingLeft: '80px'
-  }}>
-    <img
-      src="/img/luca.png"
-      alt="LUCA the Owl"
-      style={{
-        width: '80%',
-        maxWidth: '320px',
-        height: 'auto',
-        borderRadius: '8px'
-      }}
-    />
-  </div>
-
-</div>
-
-## The Essence of Luca
-
-Luca, depicted as a wise owl in BLOK's signature blue hue, symbolizes knowledge and foresight. His presence reinforces our commitment to empowering users through transparent and intelligent financial solutions. The BLOK monogram emblazoned on his chest signifies his integral role within our ecosystem.
-
-## Luca’s Role in the BLOK Ecosystem
-
-Luca is the heart and guardian of BLOK Capital. They protect the ecosystem, nurture its growth, and help everyone thrive together.
-
-- **Grows the Gardens**: Luca supports both Garden Owners (investors) and Gardeners (wealth managers), helping them grow strong, healthy financial gardens.
-- **Protects the Ecosystem** :Luca watches over BLOKC staking and keeps the system stable, rewarding those who support the network.
-- **Guides the DAO**: Luca stands with the DAO, making sure every member has a voice and the community grows through shared decisions.
-- **Connects Us All** : Luca bridges the roles — investors, managers, stakers, and DAO members — into one connected, growing ecosystem.
-
-*Luca is the quiet force behind BLOK — always growing, always protecting, always connecting.*
-
-
-
-## Luca's Significance
-
-Luca's design and presence encapsulate the following attributes:
-
-- **Wisdom**: Reflecting informed decision-making and strategic foresight.
-- **Trust**: Emphasizing transparency and reliability in financial interactions.
-- **Community**: Encouraging collaboration and shared growth among all ecosystem participants.
-
----
-
-> *"Through Luca, we personify our dedication to creating a protocol that is not only technologically advanced but also deeply human-centric."*
-
-> *"Luca is the embodiment of BLOK Capital's vision—a future where decentralized finance is accessible, transparent, and guided by collective wisdom."* 
-
----
 
 
 ---
@@ -3415,9 +3381,7 @@ A **market-cap weighted index** assigns weights to assets proportional to their 
 **Formula:**
 
 
-$$
-w_i = \dfrac{MC_i}{\sum_{j} MC_j}
-$$
+![Market-cap weighting formula](/img/mcapformula.png)
 
 This ensures that larger companies or tokens (by market value) exert more influence on the index.
 
@@ -3464,7 +3428,7 @@ This ensures that larger companies or tokens (by market value) exert more influe
 
 ### Proposed architecture(WIP)
 
-<GardenIndexDiagram />
+![Garden index weighting](/img/GardenIndex.png)
 
 ### Trade samples
 

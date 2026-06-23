@@ -1,0 +1,58 @@
+---
+title: Rebalancer Network
+description: "The Rebalancer is a single smart contract designed for highly efficient, gas-minimized index and yield management. It treats the protocol's total liquidity as one pooled amount and moves it together…"
+position: 7
+---
+![Rebalancer network](/img/Rebalancer.png)
+
+## Overview
+
+The Rebalancer is a single smart contract designed for highly efficient, gas-minimized index and yield management.
+
+At its core, the rebalancer moves everyone's funds from a current yield strategy or index composition to a better one. Instead of rebalancing one user at a time, it treats the protocol's total liquidity as one pooled amount and moves it together.
+
+This contract is the execution layer behind two core protocol functions: keeping index gardens aligned with their target weights, and migrating pooled assets into better-performing yield strategies as market conditions change.
+
+---
+
+## How the Rebalancer Thinks About Liquidity
+
+The system does not execute individual transactions for every user or garden within the protocol.
+
+Instead, it acts as a unified aggregator. When an index needs reweighting, or a strategy shift is required, the contract logically bundles the assets of all participating gardens into one collective pool.
+
+When interacting with external protocols, decentralized exchanges, or yield farms, the external environment only sees and interacts with the rebalancer contract. All individual ownership data, shares, and states are maintained internally on the protocol's own ledgers.
+
+By socializing the physical movement of assets on the blockchain, the contract eliminates redundant network fees and avoids triggering complex external state changes for every individual position.
+
+---
+
+## Execution Model
+
+Rebalancing operations are executed in a deliberate, atomic sequence within the contract.
+
+Rather than processing individual withdrawals and deposits for each user, execution follows an aggregated pipeline:
+
+**→ Validation:** The contract evaluates whether the aggregated pool meets the criteria to shift — either an index drifting beyond its target weights, or a yield strategy falling below predefined performance triggers.
+
+**→ Pooled Withdrawal:** Assets belonging to all active gardens are withdrawn simultaneously from the current index allocation or yield strategy in a single transaction.
+
+**→ Single Routing:** If the new allocation or strategy requires different underlying assets, the bundled pool is swapped through a router in exactly one transaction.
+
+**→ Pooled Deposit:** The newly formatted assets are deployed into the next index weighting or yield strategy as a single, unified unit.
+
+**→ Internal Accounting:** The contract updates its internal registries and escrow ledgers to proportionally distribute the new shares to the respective individual gardens.
+
+Each phase is designed to interact with the underlying blockchain exactly once per cycle, regardless of how many gardens are participating in the rebalance.
+
+---
+
+## How BLOK Capital Uses Aggregated Rebalancing
+
+BLOK Capital uses this single contract to efficiently manage wealth across both index-based and yield-based strategies.
+
+Whether reweighting index components to match target allocations, reallocating across different liquidity pools, or moving to higher-yield environments, the rebalancer contract handles the heavy lifting on behalf of all user gardens simultaneously.
+
+This allows BLOK Capital to offer sophisticated index management and yield optimization without the prohibitive gas costs typically associated with active DeFi management.
+
+The rebalancer becomes the invisible engine ensuring that user returns are strictly driven by market and index performance, unburdened by operational friction.

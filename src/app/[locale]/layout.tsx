@@ -15,7 +15,18 @@ const newsreader = Newsreader({
   variable: "--font-display",
 });
 const caveat = Caveat({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-script" });
-const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--font-mono" });
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-mono",
+  // next/font's auto metric-adjusted fallback is sans-serif and renders Unicode
+  // Block Elements (used in ASCII-art banners, absent from the latin subset)
+  // oversized. Disable it and fall back to a real monospace so those glyphs are
+  // cell-sized and tile correctly.
+  adjustFontFallback: false,
+  fallback: ["ui-monospace", "SF Mono", "Menlo", "Cascadia Mono", "Consolas", "DejaVu Sans Mono", "monospace"],
+});
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -46,6 +57,15 @@ export default async function LocaleLayout({
         >
           Skip to content
         </a>
+        {/* Agent discovery directive (AFDocs `llms-txt-directive-html`): a
+            visually-hidden pointer near the top of every page so AI crawlers
+            find the Markdown index and per-page Markdown twins. */}
+        <p className="sr-only" data-llms-directive>
+          For AI agents: a documentation index is available at{" "}
+          <a href="/llms.txt">/llms.txt</a>. Every page is also available as
+          Markdown at the same URL with a <code>.md</code> suffix, or by
+          requesting <code>Accept: text/markdown</code>.
+        </p>
         <SearchProvider>
           <Nav locale={loc} />
           <main id="main-content">{children}</main>

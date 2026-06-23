@@ -59,6 +59,13 @@ function toMarkdown(doc: Doc, updated: string): string {
   const canonical = `${SITE.url}${doc.href}`;
   const parts = [`# ${docTitle(doc)}`, ""];
   if (description) parts.push(description, "");
+  // Agent discovery directive (AFDocs `llms-txt-directive-md`): a blockquote
+  // near the top of every Markdown page pointing back to the documentation
+  // index, so a crawler that lands on one `.md` twin can find the rest.
+  parts.push(
+    `> Markdown version of ${canonical}. The full BLOK Capital documentation index is at ${SITE.url}/llms.txt.`,
+    "",
+  );
   // The leading H1 was stripped at migration (the page template renders the
   // title), so prepend it above; the body keeps its H2/H3 hierarchy intact.
   parts.push(doc.content.trim(), "", "---", "");

@@ -10,8 +10,6 @@ import rehypePrettyCode from "rehype-pretty-code";
 import { Admonition } from "@/components/docs/Admonition";
 import { AuditReports } from "@/components/docs/AuditReports";
 import { TokenomicsChart } from "@/components/docs/TokenomicsChart";
-import { Mermaid } from "@/components/docs/Mermaid";
-import * as Diagrams from "@/components/docs/diagrams";
 
 /** Internal links route through next/link; external open in a new tab. */
 function MdxLink({ href = "", ...rest }: AnchorHTMLAttributes<HTMLAnchorElement>) {
@@ -49,9 +47,6 @@ const components = {
   // Dynamic content blocks referenced by JSX tags in migrated MDX.
   Audit: AuditReports,
   Chart: TokenomicsChart,
-  // Themed diagrams (replaced the former /img/*.png|jpg raster diagrams).
-  Mermaid,
-  ...Diagrams,
 };
 
 const prettyCodeOptions = {

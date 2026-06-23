@@ -1,0 +1,58 @@
+---
+title: Réseau de Rééquilibrage
+description: "Le Rééquilibreur est un contrat intelligent unique conçu pour une gestion d'indices et de rendement très efficace et à consommation de gas minimale. Il traite la liquidité totale du protocole comme un montant unique regroupé et la déplace ensemble…"
+position: 7
+---
+![Réseau de rééquilibrage](/img/Rebalancer.png)
+
+## Aperçu
+
+Le Rééquilibreur est un contrat intelligent unique conçu pour une gestion d'indices et de rendement (yield) très efficace et à consommation de gas minimale.
+
+Fondamentalement, le rééquilibreur déplace les fonds de chacun depuis une stratégie de rendement ou une composition d'indice actuelle vers une meilleure. Au lieu de rééquilibrer un utilisateur à la fois, il traite la liquidité totale du protocole comme un montant unique regroupé et la déplace ensemble.
+
+Ce contrat est la couche d'exécution derrière deux fonctions centrales du protocole : maintenir les index gardens alignés sur leurs poids cibles, et migrer les actifs regroupés vers des stratégies de rendement plus performantes à mesure que les conditions du marché évoluent.
+
+---
+
+## Comment le Rééquilibreur conçoit la liquidité
+
+Le système n'exécute pas de transactions individuelles pour chaque utilisateur ou garden au sein du protocole.
+
+Il agit plutôt comme un agrégateur unifié. Lorsqu'un indice doit être repondéré, ou qu'un changement de stratégie est requis, le contrat regroupe logiquement les actifs de tous les gardens participants en un seul ensemble collectif.
+
+Lors des interactions avec des protocoles externes, des échanges décentralisés ou des yield farms, l'environnement externe ne voit et n'interagit qu'avec le contrat du rééquilibreur. Toutes les données de propriété individuelle, les parts et les états sont maintenus en interne dans les registres propres du protocole.
+
+En socialisant le mouvement physique des actifs sur la blockchain, le contrat élimine les frais de réseau redondants et évite de déclencher des changements d'état externes complexes pour chaque position individuelle.
+
+---
+
+## Modèle d'exécution
+
+Les opérations de rééquilibrage sont exécutées dans une séquence délibérée et atomique au sein du contrat.
+
+Plutôt que de traiter des retraits et des dépôts individuels pour chaque utilisateur, l'exécution suit un pipeline agrégé :
+
+**→ Validation :** Le contrat évalue si l'ensemble agrégé remplit les critères pour effectuer le changement — soit un indice qui dérive au-delà de ses poids cibles, soit une stratégie de rendement qui passe sous les déclencheurs de performance prédéfinis.
+
+**→ Retrait groupé :** Les actifs appartenant à tous les gardens actifs sont retirés simultanément de l'allocation d'indice ou de la stratégie de rendement actuelle en une seule transaction.
+
+**→ Routage unique :** Si la nouvelle allocation ou stratégie nécessite des actifs sous-jacents différents, l'ensemble groupé est échangé via un routeur en exactement une transaction.
+
+**→ Dépôt groupé :** Les actifs nouvellement formatés sont déployés dans la pondération d'indice ou la stratégie de rendement suivante en une seule unité unifiée.
+
+**→ Comptabilité interne :** Le contrat met à jour ses registres internes et ses livres d'escrow pour distribuer proportionnellement les nouvelles parts aux gardens individuels respectifs.
+
+Chaque phase est conçue pour interagir avec la blockchain sous-jacente exactement une fois par cycle, quel que soit le nombre de gardens participant au rééquilibrage.
+
+---
+
+## Comment BLOK Capital utilise le rééquilibrage agrégé
+
+BLOK Capital utilise ce contrat unique pour gérer efficacement le patrimoine à travers des stratégies basées sur les indices comme sur le rendement.
+
+Qu'il s'agisse de repondérer les composants d'un indice pour correspondre aux allocations cibles, de réallouer entre différents pools de liquidité, ou de migrer vers des environnements à plus haut rendement, le contrat du rééquilibreur effectue le gros du travail pour le compte de tous les gardens des utilisateurs simultanément.
+
+Cela permet à BLOK Capital d'offrir une gestion d'indices et une optimisation de rendement sophistiquées sans les coûts de gas prohibitifs généralement associés à la gestion active en DeFi.
+
+Le rééquilibreur devient le moteur invisible qui garantit que les rendements des utilisateurs sont strictement déterminés par la performance du marché et de l'indice, sans le fardeau de la friction opérationnelle.

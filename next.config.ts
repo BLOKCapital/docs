@@ -29,13 +29,28 @@ const securityHeaders = [
   },
 ];
 
+// Agent-facing text endpoints (the `.md` twins, llms.txt, llms-full.txt) get a
+// short, revalidating cache so AI crawlers see content updates within the hour
+// rather than holding a day-stale copy — AFDocs `cache-header-hygiene`. The
+// regex params match any path ending in the extension, across all locales.
+const agentTextCache = [
+  {
+    key: "Cache-Control",
+    value: "public, max-age=3600, must-revalidate",
+  },
+];
+
 const config: NextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ["flexsearch"],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/:file(.*\\.md)", headers: agentTextCache },
+      { source: "/:file(.*\\.txt)", headers: agentTextCache },
+    ];
   },
 };
 

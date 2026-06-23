@@ -1,0 +1,58 @@
+---
+title: Red de Rebalanceo
+description: "El Rebalanceador es un único contrato inteligente diseñado para una gestión de índices y rendimiento altamente eficiente y con un consumo mínimo de gas. Trata la liquidez total del protocolo como un único monto agrupado y la mueve en conjunto…"
+position: 7
+---
+![Red de rebalanceo](/img/Rebalancer.png)
+
+## Resumen
+
+El Rebalanceador es un único contrato inteligente diseñado para una gestión de índices y de rendimiento (yield) altamente eficiente y con un consumo mínimo de gas.
+
+En esencia, el rebalanceador mueve los fondos de todos desde una estrategia de rendimiento o composición de índice actual hacia una mejor. En lugar de rebalancear a un usuario a la vez, trata la liquidez total del protocolo como un único monto agrupado y la mueve en conjunto.
+
+Este contrato es la capa de ejecución detrás de dos funciones centrales del protocolo: mantener los index gardens alineados con sus pesos objetivo, y migrar los activos agrupados hacia estrategias de rendimiento con mejor desempeño a medida que cambian las condiciones del mercado.
+
+---
+
+## Cómo concibe la liquidez el Rebalanceador
+
+El sistema no ejecuta transacciones individuales para cada usuario o garden dentro del protocolo.
+
+En cambio, actúa como un agregador unificado. Cuando un índice necesita reponderarse, o se requiere un cambio de estrategia, el contrato agrupa lógicamente los activos de todos los gardens participantes en un único conjunto colectivo.
+
+Al interactuar con protocolos externos, exchanges descentralizados o yield farms, el entorno externo solo ve e interactúa con el contrato del rebalanceador. Todos los datos de propiedad individual, las participaciones y los estados se mantienen internamente en los propios registros del protocolo.
+
+Al socializar el movimiento físico de los activos en la blockchain, el contrato elimina comisiones de red redundantes y evita desencadenar cambios de estado externos complejos para cada posición individual.
+
+---
+
+## Modelo de ejecución
+
+Las operaciones de rebalanceo se ejecutan en una secuencia deliberada y atómica dentro del contrato.
+
+En lugar de procesar retiros y depósitos individuales para cada usuario, la ejecución sigue una canalización agregada:
+
+**→ Validación:** El contrato evalúa si el conjunto agregado cumple los criterios para realizar el cambio: ya sea un índice que se desvía más allá de sus pesos objetivo, o una estrategia de rendimiento que cae por debajo de los disparadores de desempeño predefinidos.
+
+**→ Retiro agrupado:** Los activos pertenecientes a todos los gardens activos se retiran simultáneamente de la asignación de índice o estrategia de rendimiento actual en una única transacción.
+
+**→ Enrutamiento único:** Si la nueva asignación o estrategia requiere activos subyacentes diferentes, el conjunto agrupado se intercambia a través de un router en exactamente una transacción.
+
+**→ Depósito agrupado:** Los activos recién formateados se despliegan en la siguiente ponderación de índice o estrategia de rendimiento como una única unidad unificada.
+
+**→ Contabilidad interna:** El contrato actualiza sus registros internos y libros de escrow para distribuir proporcionalmente las nuevas participaciones a los respectivos gardens individuales.
+
+Cada fase está diseñada para interactuar con la blockchain subyacente exactamente una vez por ciclo, sin importar cuántos gardens participen en el rebalanceo.
+
+---
+
+## Cómo utiliza BLOK Capital el rebalanceo agregado
+
+BLOK Capital utiliza este único contrato para gestionar el patrimonio de forma eficiente tanto en estrategias basadas en índices como en estrategias basadas en rendimiento.
+
+Ya sea reponderando los componentes de un índice para igualar las asignaciones objetivo, reasignando entre diferentes pools de liquidez, o migrando hacia entornos de mayor rendimiento, el contrato del rebalanceador se encarga del trabajo pesado en nombre de todos los gardens de los usuarios simultáneamente.
+
+Esto permite a BLOK Capital ofrecer una gestión de índices y una optimización de rendimiento sofisticadas sin los costos de gas prohibitivos típicamente asociados con la gestión activa en DeFi.
+
+El rebalanceador se convierte en el motor invisible que garantiza que los rendimientos de los usuarios estén impulsados estrictamente por el desempeño del mercado y del índice, sin la carga de la fricción operativa.
