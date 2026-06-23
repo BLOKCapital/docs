@@ -60,13 +60,16 @@ delivers that as a statically-generated Next.js app with built-in SEO, GEO
 ## Features
 
 - **MDX content** under `content/<locale>/<section>/…`, rendered with
-  `next-mdx-remote` (GFM, KaTeX math, Shiki syntax highlighting, Mermaid diagrams).
+  `next-mdx-remote` (GFM, KaTeX math, Shiki syntax highlighting).
 - **Three locales** — `en`, `es`, `fr` — routed as `/<locale>/…` with a language
   switcher and correct `<html lang>` / `hreflang`. `npm run check:content`
   reports locale parity gaps.
 - **Four sections** — Concepts, Smart Contracts, Builders, Resources.
-- **Local search** — a build-time index (`public/search/<locale>.json`) queried
-  client-side with FlexSearch (⌘K / Ctrl-K). No external service.
+- **Local search** — a build-time per-locale index (`public/search/<locale>.json`)
+  queried client-side with FlexSearch (⌘K / Ctrl-K). A custom tokenizer adds
+  diacritic-folding (`oraculo` → `oráculo`), code-symbol indexing
+  (`diamondCut`, `IIndex.sol`), light English stemming, and domain
+  synonym/acronym expansion (`AA` → Account Abstraction). No external service.
 - **Docs shell** — collapsible sidebar, scroll-spy "On this page" rail,
   breadcrumbs, and prev/next pagination, all derived from the filesystem.
 - **Fully prerendered (SSG)** — every page is statically generated via
@@ -119,8 +122,8 @@ public/                  static assets + generated artifacts
   (sidebar order), `sidebar_label` (optional).
 - **Folder ordering/labels** come from `_category.json` (`{ "label", "position" }`).
 - **Admonitions:** `<Admonition kind="note|tip|info|warning|danger">…</Admonition>`.
-- **Dynamic blocks** `<Chart />` (tokenomics) and `<Audit />` (audit reports) are
-  React components registered in `src/components/docs/Mdx.tsx`.
+- **Dynamic block** `<Chart />` (the tokenomics donut) is a React component
+  registered in `src/components/docs/Mdx.tsx`.
 - Keep pages **in parity across locales** (add to `en`, `es`, and `fr`).
 
 ## Agent-friendly docs
@@ -155,18 +158,14 @@ so `tsc` and the edge middleware resolve it without a prior build.
 | Content loader | `src/lib/content.ts` (fs + gray-matter) |
 | MDX renderer | `src/components/docs/Mdx.tsx` |
 | SEO / JSON-LD | `src/lib/seo.tsx` |
-| Search | `scripts/build-search-index.ts` + `src/components/search/*` |
+| Search | `scripts/build-search-index.ts`, `src/lib/search-text.ts` (tokenizer) + `src/lib/search-synonyms.ts`, `src/components/search/*` |
 | Routing | `src/app/[locale]/[...slug]/page.tsx` |
 | Agent endpoints | `scripts/build-llms.ts`, `scripts/build-markdown.ts`, `src/middleware.ts` |
 | Shared script helpers | `scripts/_content.ts` (walk/parse, imports locale + section lists) |
 | Validation | `scripts/check-content.ts` (run in CI) |
 
-For a deeper, AI-readable overview see [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).
-In-depth engineering docs — [architecture](docs/ARCHITECTURE.md),
-[build & scripts](docs/BUILD_AND_SCRIPTS.md), [CI/CD & operations](docs/CI_CD_AND_OPERATIONS.md),
-[configuration](docs/CONFIGURATION.md), [content authoring](docs/CONTENT_AUTHORING.md),
-[dependencies](docs/DEPENDENCIES.md), [hardening](docs/HARDENING.md), and
-[SEO/AEO](docs/SEO_AEO.md) — live in [`docs/`](docs/README.md).
+For a deeper, AI-readable overview see [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
+and [AGENTS.md](AGENTS.md).
 
 ## Scripts
 
