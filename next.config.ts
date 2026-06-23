@@ -52,6 +52,15 @@ const config: NextConfig = {
       { source: "/:file(.*\\.txt)", headers: agentTextCache },
     ];
   },
+  // The bare root must hand back a real HTTP 308 to the default locale. The
+  // former page-level redirect() got statically prerendered into a 200 "soft"
+  // (JS) redirect on Cloudflare Pages — an empty shell with a Location header —
+  // which crawlers (incl. AFDocs / Agent Score) see as a contentless page and
+  // score 0. A config redirect is resolved at the routing layer, before any
+  // render, so it emits a proper 308 that agents and browsers both follow.
+  async redirects() {
+    return [{ source: "/", destination: "/en", permanent: true }];
+  },
 };
 
 export default config;

@@ -35,6 +35,45 @@ export function titleFromSlug(slug: string): string {
   return slug.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
+const TOKEN_DATA = path.join(ROOT, "src", "lib", "data", "tokenData.json");
+const ADMONITION_LABELS: Record<string, string> = {
+  note: "Note",
+  tip: "Tip",
+  info: "Info",
+  warning: "Warning",
+  danger: "Danger",
+};
+
+/**
+ * Expand the few content-bearing MDX components into plain Markdown so a page's
+ * `.md` twin carries the same text its HTML renders (AFDocs
+ * markdown-content-parity). `<Chart />` becomes the token-distribution table it
+ * draws from tokenData.json; `<Admonition>` becomes a titled paragraph. Inline
+ * components (FacetName, MethodName, …) only ever appear inside code fences, so
+ * they render identically in Markdown and HTML and need no expansion.
+ */
+export function expandMdxForText(content: string): string {
+  let out = content;
+  if (/<Chart\s*\/>/.test(out)) {
+    const data = JSON.parse(fs.readFileSync(TOKEN_DATA, "utf8")) as Array<{
+      title: string;
+      value: number;
+      description: string;
+    }>;
+    const rows = data
+      .map((d) => `| ${d.title} | ${d.value}% | ${d.description} |`)
+      .join("\n");
+    const table = `**$BLOKC token distribution**\n\n| Allocation | Share | Purpose |\n| --- | --- | --- |\n${rows}`;
+    out = out.replace(/<Chart\s*\/>/g, table);
+  }
+  out = out.replace(/<Admonition\b([^>]*)>/g, (_m, attrs: string) => {
+    const title = /title="([^"]*)"/.exec(attrs)?.[1];
+    const kind = /kind="([^"]*)"/.exec(attrs)?.[1] ?? "note";
+    return `**${title || ADMONITION_LABELS[kind] || "Note"}**\n\n`;
+  });
+  return out.replace(/<\/Admonition>/g, "");
+}
+
 /** Strip MDX/markdown syntax down to plain searchable text. */
 export function toPlainText(body: string): string {
   return body

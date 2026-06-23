@@ -13,7 +13,17 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, walkLocale, titleFromSlug, toPlainText, type Doc } from "./_content";
+import {
+  ROOT,
+  walkLocale,
+  titleFromSlug,
+  toPlainText,
+  expandMdxForText,
+  type Doc,
+} from "./_content";
+import { SECTION_BLURB } from "../src/lib/config";
+
+const SECTION_BLURB_EN = SECTION_BLURB.en as Record<string, string>;
 
 const SITE_URL = "https://docs.blokcapital.io";
 const SITE_NAME = "BLOK Capital Docs";
@@ -84,7 +94,13 @@ function build(): void {
       (d) => d.segments.length > 1,
     );
     if (!items.length) continue;
-    lines.push(`## ${SECTION_TITLES[section] ?? titleFromSlug(section)}`, "");
+    const sectionTitle = SECTION_TITLES[section] ?? titleFromSlug(section);
+    lines.push(`## ${sectionTitle}`, "");
+    // The section landing page is in the sitemap but has no Markdown twin, so
+    // link its HTML URL — keeps llms.txt coverage at 100% (llms-txt-coverage).
+    lines.push(
+      `- [${sectionTitle} overview](${SITE_URL}/en/${section}): ${SECTION_BLURB_EN[section] ?? ""}`,
+    );
     for (const doc of items) {
       const desc =
         (doc.data.description as string | undefined)?.trim() ||
@@ -100,6 +116,7 @@ function build(): void {
   lines.push(
     "## Optional",
     "",
+    `- [Documentation home](${SITE_URL}/en): Start here — overview and the four documentation sections.`,
     `- [Website](https://blokcapital.io): The BLOK Capital product site.`,
     `- [Full documentation corpus](${SITE_URL}/llms-full.txt): Every page concatenated as Markdown.`,
     "",
@@ -120,7 +137,7 @@ function build(): void {
         `Source: ${SITE_URL}${doc.href}`,
         `Section: ${SECTION_TITLES[section] ?? titleFromSlug(section)}`,
         "",
-        doc.content.trim(),
+        expandMdxForText(doc.content).trim(),
         "",
       );
     }

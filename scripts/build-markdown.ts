@@ -21,7 +21,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ROOT, LOCALES, walkLocale, titleFromSlug, type Doc } from "./_content";
+import {
+  ROOT,
+  LOCALES,
+  walkLocale,
+  titleFromSlug,
+  expandMdxForText,
+  type Doc,
+} from "./_content";
 import { SITE } from "../src/lib/config";
 
 const PUBLIC = path.join(ROOT, "public");
@@ -68,7 +75,9 @@ function toMarkdown(doc: Doc, updated: string): string {
   );
   // The leading H1 was stripped at migration (the page template renders the
   // title), so prepend it above; the body keeps its H2/H3 hierarchy intact.
-  parts.push(doc.content.trim(), "", "---", "");
+  // Content-bearing components (<Chart/>, <Admonition>) are expanded to text so
+  // the twin matches the rendered HTML (markdown-content-parity).
+  parts.push(expandMdxForText(doc.content).trim(), "", "---", "");
   const stamp = updated ? `Last updated: ${updated.slice(0, 10)}. ` : "";
   parts.push(
     `_${stamp}Canonical: ${canonical} · Docs index: ${SITE.url}/llms.txt_`,

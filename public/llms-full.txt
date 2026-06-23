@@ -2661,7 +2661,23 @@ Our token will be used for the following:
 Source: https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart
 Section: Resources
 
-<Chart />
+**$BLOKC token distribution**
+
+| Allocation | Share | Purpose |
+| --- | --- | --- |
+| IDO | 20% | Initial DEX offering |
+| Product Development | 15% | Technical development |
+| Team | 20% | Vested Over 3 Years |
+| Treasury | 12.5% | Platform development and maintenance |
+| Marketing And PR | 10% | Growth and awareness |
+| Liquidity | 10% | Market stability |
+| Seed | 5% | Vested Over 3 Years |
+| Influencers | 3% | Marketing and promotion |
+| Bug Bounty | 3% | Security and improvements |
+| Presale | 3% | Early supporters |
+| Advisors | 3% | Strategic guidance |
+| Community | 2% | Community development |
+| Air Drop | 1% | Community rewards and engagement |
 
 
 ---
@@ -3472,11 +3488,7 @@ Swap size = \$400.
 * **Case 2:** Significant deviation → swap performed.
 * **Case 3:** Deviation exists but below tolerance → no action.
 
-<Admonition kind="warning" title="This architecture is still under development and will be introduced in a future release. The information provided here is preliminary and may change without notice.">
-
-
-
-</Admonition>
+**This architecture is still under development and will be introduced in a future release. The information provided here is preliminary and may change without notice.**
 
 
 ---

@@ -6,6 +6,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 
 ## Concepts
 
+- [Concepts overview](https://docs.blokcapital.io/en/concepts): Protocol fundamentals: account abstraction, Diamonds, oracles, and wealth management.
 - [BLOK Capital Overview](https://docs.blokcapital.io/en/concepts/blok-c-overview.md): What is BLOK Capital? BLOK Capital lets you grow your crypto wealth without ever giving up control. You can follow professionally selected crypto indices…
 - [Glossary](https://docs.blokcapital.io/en/concepts/glossary/glossary.md): Core Architecture (Diamond Pattern / EIP-2535) Term Definition ------ ----------- Diamond The main upgradeable proxy contract (Garden) that routes…
 - [Index Garden](https://docs.blokcapital.io/en/concepts/index-garden/index-garden.md): Garden Protocol: Architecture Overview --- Garden Creation Every garden is deployed through the Garden Factory no exceptions. Direct deployment is not…
@@ -19,6 +20,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 
 ## Smart Contracts
 
+- [Smart Contracts overview](https://docs.blokcapital.io/en/smart-contracts): The V1 on-chain architecture: entry points, facets, the registry, and indices.
 - [The Diamond Controller](https://docs.blokcapital.io/en/smart-contracts/entry-point.md): Entry Point: The Diamond Controller ( ) File: This is the main controller contract and the only contract address that end‑users and most integrations…
 - [Facet Registry](https://docs.blokcapital.io/en/smart-contracts/facet-registry.md): Facet Registry (Governance & Approval Layer) Location: Key files: - — Manages facet registration and version tracking - — Public interface --- What It…
 - [Facet Architecture](https://docs.blokcapital.io/en/smart-contracts/facets.md): Facet Architecture (Grouped by Responsibility) The facets are split into two main groups: 1. Base facets – the core of the Diamond. 2. Feature facets –…
@@ -28,6 +30,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 
 ## Builders
 
+- [Builders overview](https://docs.blokcapital.io/en/builders): Hands-on guides for building on BLOK Capital: Gardens, facets, and governance.
 - [Guide: Creating a New Diamond Facet](https://docs.blokcapital.io/en/builders/Guides/Facets.md): Overview In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets,…
 - [Smart contract style guide](https://docs.blokcapital.io/en/builders/Guides/contract-style-guide.md): Naming conventions 1. Architectural Overview Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain…
 - [Cut](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/cut.md): This module manages state upgrades within the Diamond but enforces Blok Capital's strict "Registry-First" security model. This is the internal engine for…
@@ -47,6 +50,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 
 ## Resources
 
+- [Resources overview](https://docs.blokcapital.io/en/resources): Tokenomics, audits, FAQs, brand assets, and contract addresses.
 - [FAQs](https://docs.blokcapital.io/en/resources/FAQs/FAQs.md): Frequently asked questions about BLOK Capital.
 - [Behavioural Economics](https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics.md): The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time…
 - [The Token](https://docs.blokcapital.io/en/resources/Tokenomics/the-token.md): Key details of the BLOKC token—built on Arbitrum, designed for utility, governance, and long-term ecosystem alignment.
@@ -63,5 +67,6 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 
 ## Optional
 
+- [Documentation home](https://docs.blokcapital.io/en): Start here — overview and the four documentation sections.
 - [Website](https://blokcapital.io): The BLOK Capital product site.
 - [Full documentation corpus](https://docs.blokcapital.io/llms-full.txt): Every page concatenated as Markdown.
