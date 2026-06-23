@@ -51,6 +51,37 @@ export function toPlainText(body: string): string {
 }
 
 /**
+ * Extract code identifiers so devs can search for symbols (`diamondCut`,
+ * `IIndex.sol`, `LibDiamond`, contract addresses) — `toPlainText` strips all
+ * code, so without this they'd be unsearchable. Pulls tokens out of fenced and
+ * inline code plus any PascalCase / dotted / `.sol` identifiers in prose, keeps
+ * only symbol-shaped ones (mixed case, underscore, dot, or hex address), dedupes
+ * and caps. The client encoder later splits each into searchable subwords.
+ */
+export function collectSymbols(body: string): string[] {
+  const regions: string[] = [];
+  for (const m of body.matchAll(/```[\s\S]*?```|`[^`]+`/g)) regions.push(m[0]);
+  // Symbol-shaped tokens still in prose (component names, FileNames.sol, addresses).
+  for (const m of body.matchAll(/\b[A-Za-z_$][A-Za-z0-9_$]*\.sol\b|\b0x[0-9a-fA-F]{6,}\b|\b[A-Z][a-zA-Z0-9]*[a-z][A-Z][A-Za-z0-9]*\b/g))
+    regions.push(m[0]);
+
+  const out = new Set<string>();
+  const blob = regions.join(" ");
+  for (const m of blob.matchAll(/0x[0-9a-fA-F]{6,}|[A-Za-z_$][A-Za-z0-9_$.]*/g)) {
+    const tok = m[0].replace(/^\.+|\.+$/g, "");
+    if (tok.length < 2 || tok.length > 48) continue;
+    const symbolic =
+      /[a-z][A-Z]|[A-Z].*[A-Z]/.test(tok) || // camelCase / PascalCase / ALLCAPS
+      tok.includes("_") ||
+      tok.includes(".") ||
+      /^0x/.test(tok);
+    if (symbolic) out.add(tok);
+    if (out.size >= 120) break;
+  }
+  return [...out];
+}
+
+/**
  * Collect h2/h3 headings with their anchor slugs so search can deep-link to a
  * section. A single GithubSlugger is advanced over *every* heading (h1–h6) in
  * document order — the same way rehype-slug runs per page — so duplicate-slug

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import FlexSearch from "flexsearch";
 import { UI, type Locale, type SectionSlug } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { makeEncoder, queryTerms, foldKeepLen } from "@/lib/search-text";
+import { expandQuery } from "@/lib/search-synonyms";
 
 type Heading = { text: string; slug: string };
 
@@ -16,6 +18,7 @@ type Record = {
   section: SectionSlug;
   description: string;
   headings: Heading[];
+  symbols: string[];
   text: string;
 };
 
@@ -32,45 +35,65 @@ type Hit = {
 };
 
 // --- query helpers ---------------------------------------------------------
+// `terms` are folded (diacritic-stripped, lowercased — see search-text). We
+// match them against a same-length folded copy of each string so accented or
+// cased text still matches, then render slices of the ORIGINAL text by position.
 
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/** Distinct, lowercased query terms of length ≥ 2. */
-function queryTerms(q: string): string[] {
-  return Array.from(
-    new Set(q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 2)),
-  );
+/** Merged [start, end) ranges where any folded term occurs in `text`. */
+function matchRanges(text: string, terms: string[]): Array<[number, number]> {
+  if (!terms.length || !text) return [];
+  const f = foldKeepLen(text);
+  const ranges: Array<[number, number]> = [];
+  for (const t of terms) {
+    for (let i = f.indexOf(t); i !== -1; i = f.indexOf(t, i + t.length)) {
+      ranges.push([i, i + t.length]);
+    }
+  }
+  if (!ranges.length) return [];
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: Array<[number, number]> = [ranges[0]];
+  for (const [s, e] of ranges.slice(1)) {
+    const last = merged[merged.length - 1];
+    if (s <= last[1]) last[1] = Math.max(last[1], e);
+    else merged.push([s, e]);
+  }
+  return merged;
 }
 
-/** Wrap each occurrence of a query term in <mark>. */
+/** Wrap each folded-term occurrence in <mark>, rendering the original text. */
 function Highlight({ text, terms }: { text: string; terms: string[] }) {
-  if (!terms.length || !text) return <>{text}</>;
-  const re = new RegExp(`(${terms.map(escapeRe).join("|")})`, "giu");
-  const parts = text.split(re); // odd indices are the captured matches
-  return (
-    <>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <mark key={i} className="rounded-[3px] bg-ochre/30 px-px text-ink">
-            {part}
-          </mark>
-        ) : (
-          <span key={i}>{part}</span>
-        ),
-      )}
-    </>
-  );
+  const ranges = matchRanges(text, terms);
+  if (!ranges.length) return <>{text}</>;
+  const out: ReactNode[] = [];
+  let cursor = 0;
+  ranges.forEach(([s, e], i) => {
+    if (s > cursor) out.push(<span key={`t${i}`}>{text.slice(cursor, s)}</span>);
+    out.push(
+      <mark key={`m${i}`} className="rounded-[3px] bg-ochre/30 px-px text-ink">
+        {text.slice(s, e)}
+      </mark>,
+    );
+    cursor = e;
+  });
+  if (cursor < text.length) out.push(<span key="tail">{text.slice(cursor)}</span>);
+  return <>{out}</>;
+}
+
+/** Earliest folded-term position in `text`, or -1. */
+function firstMatch(text: string, terms: string[]): number {
+  const f = foldKeepLen(text);
+  let pos = -1;
+  for (const t of terms) {
+    const i = f.indexOf(t);
+    if (i !== -1 && (pos === -1 || i < pos)) pos = i;
+  }
+  return pos;
 }
 
 /** A snippet windowed around the earliest matching term. */
 function snippet(text: string, terms: string[], len = 180): string {
   if (!text) return "";
-  const lower = text.toLowerCase();
-  let pos = -1;
-  for (const t of terms) {
-    const i = lower.indexOf(t);
-    if (i !== -1 && (pos === -1 || i < pos)) pos = i;
-  }
+  const pos = firstMatch(text, terms);
   if (pos === -1) return text.slice(0, len).trimEnd();
 
   const start = Math.max(0, pos - 70);
@@ -82,12 +105,7 @@ function snippet(text: string, terms: string[], len = 180): string {
 
 /** First heading whose text contains a query term. */
 function bestHeading(headings: Heading[], terms: string[]): Heading | null {
-  return (
-    headings.find((h) => {
-      const lower = h.text.toLowerCase();
-      return terms.some((t) => lower.includes(t));
-    }) ?? null
-  );
+  return headings.find((h) => firstMatch(h.text, terms) !== -1) ?? null;
 }
 
 /**
@@ -98,14 +116,14 @@ function bestHeading(headings: Heading[], terms: string[]): Heading | null {
  */
 function buildSnippet(record: Record, terms: string[], heading: Heading | null): string {
   if (heading) {
-    const hi = record.text.toLowerCase().indexOf(heading.text.toLowerCase());
+    const hi = foldKeepLen(record.text).indexOf(foldKeepLen(heading.text));
     if (hi !== -1) {
       const after = record.text.slice(hi + heading.text.length).trimStart();
       const s = snippet(after, terms);
       if (s) return s;
     }
   }
-  if (terms.some((t) => record.text.toLowerCase().includes(t))) {
+  if (firstMatch(record.text, terms) !== -1) {
     return snippet(record.text, terms);
   }
   return record.description || `${record.text.slice(0, 160).trimEnd()}…`;
@@ -121,9 +139,8 @@ function rank(records: Map<number, Record>, ids: number[], terms: string[]): Rec
       const r = records.get(id);
       if (!r) return null;
       let score = 0;
-      if (terms.some((t) => r.title.toLowerCase().includes(t))) score += 3;
-      if (r.headings.some((h) => terms.some((t) => h.text.toLowerCase().includes(t))))
-        score += 2;
+      if (firstMatch(r.title, terms) !== -1) score += 3;
+      if (r.headings.some((h) => firstMatch(h.text, terms) !== -1)) score += 2;
       return { r, score, order };
     })
     .filter((x): x is { r: Record; score: number; order: number } => x !== null)
@@ -156,12 +173,17 @@ export function SearchDialog({
       .then((r) => r.json())
       .then((data: Record[]) => {
         if (cancelled) return;
-        const idx = new FlexSearch.Index({ tokenize: "forward", cache: true });
+        const idx = new FlexSearch.Index({
+          tokenize: "forward",
+          encode: makeEncoder(locale),
+          cache: true,
+        });
         for (const rec of data) {
           const headings = rec.headings.map((h) => h.text).join(" ");
+          const symbols = rec.symbols.join(" ");
           idx.add(
             rec.id,
-            `${rec.title} ${rec.title} ${rec.description} ${headings} ${headings} ${rec.text}`,
+            `${rec.title} ${rec.title} ${rec.description} ${headings} ${headings} ${rec.text} ${symbols}`,
           );
         }
         indexRef.current = idx;
@@ -183,12 +205,28 @@ export function SearchDialog({
   }, []);
 
   const results = useMemo<Hit[]>(() => {
-    const terms = queryTerms(query);
-    if (!terms.length || !indexRef.current) return [];
-    const ids = indexRef.current.search(query, { limit: 12, suggest: true }) as number[];
+    if (!query.trim() || !indexRef.current) return [];
+    // Expand the query through domain synonyms, search each variant, and union
+    // the ids (dedup, first-seen order). Highlight/snippet use the folded terms
+    // of the original query *and* its expansions so synonym hits show context.
+    const variants = expandQuery(query);
+    const terms = Array.from(new Set(variants.flatMap(queryTerms)));
+    if (!terms.length) return [];
+    const seen = new Set<number>();
+    const ids: number[] = [];
+    for (const v of variants) {
+      const part = indexRef.current.search(v, { limit: 12, suggest: true }) as number[];
+      for (const id of part) {
+        if (!seen.has(id)) {
+          seen.add(id);
+          ids.push(id);
+        }
+      }
+      if (ids.length >= 30) break;
+    }
     const byId = new Map(records.map((r) => [r.id, r]));
-    return rank(byId, ids, terms).map((record) => {
-      const titleHit = terms.some((tm) => record.title.toLowerCase().includes(tm));
+    return rank(byId, ids, terms).slice(0, 12).map((record) => {
+      const titleHit = firstMatch(record.title, terms) !== -1;
       const heading = titleHit ? null : bestHeading(record.headings, terms);
       return {
         record,

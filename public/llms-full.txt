@@ -270,7 +270,7 @@ If a facet is removed from the Facet Registry, any garden relying on it will bre
 Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/account-abstraction
 Section: Concepts
 
-![Account abstraction](/img/Frame%2027.png)
+![Account abstraction](/img/Frame-27.png)
 
 Account Abstraction replaces the limitations of traditional Ethereum wallets with programmable smart contract wallets that control how transactions are authorized, executed, and paid for.
 
@@ -376,7 +376,7 @@ Section: Concepts
 
 ### How does Blok Capital manages the atomic asynchronous transaction?
 
-![Decentralised oracle network](/img/Frame%2022.jpg)
+![Decentralised oracle network](/img/Frame-22.jpg)
 
 ### 1). Contract Layer (Signal Emission):
 
@@ -509,7 +509,7 @@ Section: Concepts
 Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/proxy-contracts
 Section: Concepts
 
-![Proxy contract pattern](/img/Frame%2025.jpg)
+![Proxy contract pattern](/img/Frame-25.jpg)
 
 ## Proxy Contracts Explained
 
@@ -1152,7 +1152,7 @@ This is the last layer: you understand how the protocol **talks to the outside 
 Source: https://docs.blokcapital.io/en/smart-contracts/introduction
 Section: Smart Contracts
 
-![System overview](/img/Frame%2021.jpg)
+![System overview](/img/Frame-21.jpg)
 
 ## **1. System Overview**
 

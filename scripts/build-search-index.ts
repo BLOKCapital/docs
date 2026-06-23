@@ -15,6 +15,7 @@ import {
   titleFromSlug,
   toPlainText,
   collectHeadings,
+  collectSymbols,
 } from "./_content";
 
 const OUT_DIR = path.join(ROOT, "public", "search");
@@ -33,9 +34,11 @@ function build(): void {
       description: (doc.data.description as string | undefined) ?? "",
       // { text, slug }[] — slugs let results deep-link to the matched section.
       headings: collectHeadings(doc.content),
+      // Code identifiers (diamondCut, IIndex.sol, addresses) for symbol search.
+      symbols: collectSymbols(doc.content),
       // Indexed + used for contextual snippets. Generous cap so matches deep in
-      // a page are searchable (the old 1200 limit silently dropped them).
-      text: toPlainText(doc.content).slice(0, 4000),
+      // a page are searchable (covers the longest pages without truncating).
+      text: toPlainText(doc.content).slice(0, 12000),
     }));
     fs.writeFileSync(
       path.join(OUT_DIR, `${locale}.json`),
