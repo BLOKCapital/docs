@@ -105,6 +105,15 @@ export const UI: Record<
     home: string;
     helpTranslate: string;
     lastUpdated: string;
+    menu: string;
+    footer: {
+      tagline: string;
+      blurb: string;
+      protocol: string;
+      community: string;
+      website: string;
+      whitepaper: string;
+    };
   }
 > = {
   en: {
@@ -124,6 +133,16 @@ export const UI: Record<
     home: "Home",
     helpTranslate: "Help us translate",
     lastUpdated: "Last updated",
+    menu: "Menu",
+    footer: {
+      tagline: "It's crypto, but different.",
+      blurb:
+        "Documentation for the BLOK Capital protocol concepts, smart contracts, builder guides, and resources.",
+      protocol: "Protocol",
+      community: "Community",
+      website: "Website",
+      whitepaper: "Whitepaper",
+    },
   },
   es: {
     sections: {
@@ -142,6 +161,16 @@ export const UI: Record<
     home: "Inicio",
     helpTranslate: "Ayúdanos a traducir",
     lastUpdated: "Última actualización",
+    menu: "Menú",
+    footer: {
+      tagline: "Cripto, pero diferente.",
+      blurb:
+        "Documentación de los conceptos del protocolo BLOK Capital, contratos inteligentes, guías para desarrolladores y recursos.",
+      protocol: "Protocolo",
+      community: "Comunidad",
+      website: "Sitio web",
+      whitepaper: "Whitepaper",
+    },
   },
   fr: {
     sections: {
@@ -160,6 +189,16 @@ export const UI: Record<
     home: "Accueil",
     helpTranslate: "Aidez-nous à traduire",
     lastUpdated: "Dernière mise à jour",
+    menu: "Menu",
+    footer: {
+      tagline: "La crypto, autrement.",
+      blurb:
+        "Documentation des concepts du protocole BLOK Capital, des contrats intelligents, des guides pour développeurs et des ressources.",
+      protocol: "Protocole",
+      community: "Communauté",
+      website: "Site web",
+      whitepaper: "Livre blanc",
+    },
   },
 };
 

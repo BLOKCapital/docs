@@ -218,6 +218,14 @@ function buildTree(
         ...parentSegments,
         entry.name,
       ]);
+      // A folder holding exactly one doc (no landing) would render as a
+      // redundant collapsible group whose label duplicates its only child
+      // (e.g. "GLOSSARY ▸ Glossary"). Collapse it to a single link, inheriting
+      // the folder's ordering position.
+      if (items.length === 1 && items[0].type === "doc") {
+        nodes.push({ ...items[0], position: meta.position ?? items[0].position });
+        continue;
+      }
       // Does this folder have an index page (landing)?
       const indexHref = items.length
         ? undefined

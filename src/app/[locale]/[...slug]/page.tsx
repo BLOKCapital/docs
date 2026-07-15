@@ -18,6 +18,7 @@ import {
 } from "@/lib/config";
 import { Mdx } from "@/components/docs/Mdx";
 import { Sidebar } from "@/components/docs/Sidebar";
+import { MobileNav } from "@/components/docs/MobileNav";
 import { SectionIndex } from "@/components/docs/SectionIndex";
 import { TableOfContents } from "@/components/docs/TableOfContents";
 import { PrevNext } from "@/components/docs/PrevNext";
@@ -39,19 +40,6 @@ import {
 export const dynamicParams = false;
 
 const SECTION_SLUGS = SECTIONS.map((s) => s.slug) as SectionSlug[];
-
-/** Localized, human-readable date from an ISO 8601 string. */
-function formatDate(iso: string, locale: string): string {
-  try {
-    return new Date(iso).toLocaleDateString(locale, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return iso.slice(0, 10);
-  }
-}
 
 function isSectionRoot(slug: string[]): slug is [SectionSlug] {
   return slug.length === 1 && SECTION_SLUGS.includes(slug[0] as SectionSlug);
@@ -205,7 +193,7 @@ export default async function DocPage({
             sidebar-fade masks the top/bottom edges so items glide behind the
             translucent navbar instead of butting up against it. */}
         <aside className="hidden w-60 shrink-0 border-r border-ink/10 lg:block">
-          <div className="sidebar-fade sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto pb-10 pr-4 pt-7">
+          <div className="sidebar-fade sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto pb-10 pr-4 pt-7">
             <Sidebar nav={nav} />
           </div>
         </aside>
@@ -213,6 +201,14 @@ export default async function DocPage({
         {/* Main column */}
         <div className="flex min-w-0 flex-1 gap-10 py-10">
           <article className="min-w-0 flex-1">
+            <div className="mb-4 lg:hidden">
+              <MobileNav
+                nav={nav}
+                toc={toc}
+                menuLabel={t.menu}
+                onThisPage={t.onThisPage}
+              />
+            </div>
             <Breadcrumbs items={crumbs} />
             <h1 className="display text-[34px] leading-[1.1] text-ink sm:text-[40px]">
               {title}
@@ -220,14 +216,6 @@ export default async function DocPage({
             {description && (
               <p className="mt-3 text-[17px] leading-relaxed text-ink-muted">
                 {description}
-              </p>
-            )}
-            {doc?.updatedAt && (
-              <p className="mt-3 text-sm text-ink-muted">
-                {t.lastUpdated}:{" "}
-                <time dateTime={doc.updatedAt}>
-                  {formatDate(doc.updatedAt, loc)}
-                </time>
               </p>
             )}
             <div aria-hidden className="rule-hand my-7" />
@@ -251,7 +239,7 @@ export default async function DocPage({
           {/* Right TOC rail — only for doc pages with headings */}
           {doc && (
             <aside className="hidden w-56 shrink-0 xl:block">
-              <div className="sidebar-fade sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto pb-10 pt-7">
+              <div className="sidebar-fade sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto pb-10 pt-7">
                 <TableOfContents items={toc} label={t.onThisPage} />
               </div>
             </aside>
