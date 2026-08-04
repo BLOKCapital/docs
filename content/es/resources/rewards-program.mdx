@@ -1,0 +1,63 @@
+---
+title: Recompensas para Colaboradores
+description: "Cómo BLOK Capital distribuye las recompensas en $BLOKC a los colaboradores mediante un proceso de tres capas que combina puntuación impulsada por IA, aprobación multi-firmante y ejecución on-chain."
+position: 6
+---
+
+<img
+  src="/img/rewards.png"
+  alt="Programa de Recompensas para Colaboradores"
+  style={{
+    width: '100%',
+    maxWidth: '360px',
+    height: 'auto',
+    display: 'block',
+    margin: '0 auto 1.5rem'
+  }}
+/>
+
+BLOK Capital utiliza un proceso de recompensas estructurado en tres capas para distribuir tokens $BLOKC a los colaboradores, combinando puntuación impulsada por IA, aprobación humana y ejecución on-chain en un solo flujo sin necesidad de confianza.
+
+---
+
+## Puntuación y Propuesta
+
+Al final de cada época de recompensas, un sistema de IA evalúa la actividad de los colaboradores fuera de la cadena (off-chain) en las categorías de contribución definidas por el protocolo. Luego envía una propuesta de distribución on-chain: una lista de direcciones de colaboradores junto con los montos de recompensa en $BLOKC correspondientes a esa época.
+
+La propuesta es validada por el contrato distribuidor antes de ser almacenada. Si se detecta un error antes de que comience la aprobación, quien propone puede cancelarla y volver a enviarla dentro de la misma época.
+
+---
+
+## Aprobación Multi-Firmante
+
+Los sistemas de puntuación por IA pueden alucinar, atribuyendo mal las contribuciones, inflando montos u omitiendo colaboradores por completo. La capa de aprobación multi-firmante existe específicamente para detectar esto antes de que se muevan los tokens. Cada firmante designado revisa de forma independiente la distribución propuesta y debe aprobarla antes de que pueda proceder la ejecución.
+
+Si un firmante identifica un error, como un monto incorrecto, un colaborador faltante o un lote que no refleja el trabajo realmente realizado, retiene su aprobación. La propuesta queda detenida, los firmantes comunican su retroalimentación al proponente de IA, y este cancela el lote y envía uno corregido. Este ciclo de rechazo y reenvío continúa hasta que la distribución refleje con precisión el resultado del trabajo de los colaboradores y todos los firmantes estén satisfechos.
+
+Esto no es un multisig por umbral: todos los firmantes deben aprobar, o la distribución no se ejecuta. El contrato registra las aprobaciones por firmante y evita las aprobaciones duplicadas. Ninguna entidad individual, ni el proponente de IA, ni un firmante en particular, ni el equipo del protocolo, puede mover los tokens de recompensa unilateralmente. Los colaboradores pueden confiar en que las recompensas que reciben han pasado una revisión humana final, no solo un cálculo automatizado.
+
+---
+
+## Ejecución sin Permisos
+
+Una vez que todos los firmantes han aprobado, cualquiera puede activar la ejecución. El contrato realiza una validación final (la propuesta existe, no ha sido ejecutada previamente, se alcanzó el número de aprobaciones requerido) y luego transfiere $BLOKC a la dirección de cuenta prevista de cada colaborador en una sola transacción.
+
+El estado se actualiza antes de que ocurran las transferencias, siguiendo el patrón checks-effects-interactions para prevenir la reentrancia.
+
+---
+
+## Cuentas de Colaboradores
+
+Los tokens se depositan en cuentas individuales de colaboradores: contratos inteligentes dedicados, desplegados como clones proxy mínimos ERC-1167 mediante direccionamiento determinista CREATE2. El estándar ERC-1167 define una implementación de bytecode mínima que delega todas las llamadas a un contrato de implementación fijo, lo que hace que cada clon sea económico de desplegar mientras comparte una lógica auditada entre todas las cuentas.
+
+Debido a que CREATE2 genera una dirección predecible a partir de un conjunto fijo de datos de entrada (el contrato de implementación, la dirección de la billetera del colaborador y la dirección de la fábrica), el distribuidor envía los tokens a esa dirección prevista en el momento de la ejecución, incluso antes de que el colaborador haya desplegado su cuenta.
+
+Cuando el colaborador despliega posteriormente su cuenta llamando a la fábrica, los tokens ya están allí. Esto elimina cualquier dependencia de secuencia entre la distribución y la configuración de la cuenta, permitiendo que el protocolo distribuya a cualquier número de colaboradores en una sola transacción.
+
+---
+
+## Bloqueo de Tokens y Gobernanza
+
+Los tokens permanecen bloqueados en la cuenta del colaborador hasta una fecha de desbloqueo fija, compartida por todas las cuentas. Durante el período de bloqueo, el poder de voto se delega al colaborador: los $BLOKC bloqueados cuentan para la gobernanza desde el primer día.
+
+Después del desbloqueo, el colaborador puede retirar un monto específico a cualquier dirección, o transferir el saldo completo a su propia billetera. No se requiere ninguna intervención del protocolo al momento del retiro.

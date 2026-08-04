@@ -1,0 +1,63 @@
+---
+title: Contributor Rewards
+description: "How BLOK Capital distributes $BLOKC rewards to contributors through a three-layer pipeline combining AI-driven scoring, multi-signer approval, and on-chain execution."
+position: 6
+---
+
+<img
+  src="/img/rewards.png"
+  alt="Contributor Rewards Program"
+  style={{
+    width: '100%',
+    maxWidth: '360px',
+    height: 'auto',
+    display: 'block',
+    margin: '0 auto 1.5rem'
+  }}
+/>
+
+BLOK Capital uses a structured, three-layer reward pipeline to distribute $BLOKC tokens to contributors, combining AI-driven scoring, human approval, and on-chain execution into a single trustless flow.
+
+---
+
+## Scoring and Proposal
+
+At the end of each reward epoch, an AI system evaluates contributor activity off-chain across the protocol's defined contribution categories. It then submits a distribution proposal on-chain: a list of contributor addresses paired with their $BLOKC reward amounts for that epoch.
+
+The proposal is validated by the distributor contract before being stored. If an error is detected before approval begins, the proposer can cancel and resubmit within the same epoch.
+
+---
+
+## Multi-Signer Approval
+
+AI scoring systems can hallucinate, misattributing contributions, inflating amounts, or omitting contributors entirely. The multi-signer approval layer exists specifically to catch this before any tokens move. Every designated signer independently reviews the proposed distribution and must approve it before execution can proceed.
+
+If a signer identifies an error, such as an incorrect amount, a missing contributor, or a batch that doesn't reflect the actual work done, they withhold approval. The proposal stalls, signers communicate their feedback to the AI proposer, and the proposer cancels the batch and submits a corrected one. This rejection and resubmission cycle continues until the distribution accurately reflects contributor output and all signers are satisfied.
+
+This is not a threshold multisig: every signer approves, or the distribution does not execute. The contract tracks approvals per signer and prevents double-approvals. No single entity, not the AI proposer, not any one signer, not the protocol team, can unilaterally move reward tokens. Contributors can be confident that the rewards they receive have passed a final human review, not just automated computation.
+
+---
+
+## Permissionless Execution
+
+Once every signer has approved, anyone can trigger execution. The contract performs a final validation (proposal exists, not already executed, approval count met), then transfers $BLOKC to each contributor's predicted account address in a single transaction.
+
+State is updated before transfers occur, following the checks-effects-interactions pattern to prevent reentrancy.
+
+---
+
+## Contributor Accounts
+
+Tokens go into individual contributor accounts, dedicated smart contracts deployed as ERC-1167 minimal proxy clones using CREATE2 deterministic addressing. ERC-1167 defines a minimal bytecode implementation that delegates all calls to a fixed implementation contract, making each clone cheap to deploy while sharing audited logic across all accounts.
+
+Because CREATE2 produces a predictable address from a fixed set of inputs (the implementation contract, the contributor's wallet address, and the factory address), the distributor sends tokens to that predicted address at execution time, even before the contributor has deployed their account.
+
+When the contributor later deploys their account by calling the factory, the tokens are already there. This eliminates any sequencing dependency between distribution and account setup, allowing the protocol to distribute to any number of contributors in a single transaction.
+
+---
+
+## Token Lock and Governance
+
+Tokens remain locked in the contributor account until a fixed unlock timestamp shared across all accounts. During the lock period, voting power is delegated to the contributor: locked $BLOKC counts toward governance from day one.
+
+After unlock, the contributor can withdraw a specific amount to any address, or sweep the full balance to their own wallet. No protocol involvement is required at withdrawal time.

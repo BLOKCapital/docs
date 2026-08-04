@@ -1,0 +1,63 @@
+---
+title: Récompenses des Contributeurs
+description: "Comment BLOK Capital distribue les récompenses en $BLOKC aux contributeurs via un pipeline en trois couches combinant notation par IA, approbation multi-signataires et exécution on-chain."
+position: 6
+---
+
+<img
+  src="/img/rewards.png"
+  alt="Programme de Récompenses des Contributeurs"
+  style={{
+    width: '100%',
+    maxWidth: '360px',
+    height: 'auto',
+    display: 'block',
+    margin: '0 auto 1.5rem'
+  }}
+/>
+
+BLOK Capital utilise un pipeline de récompenses structuré en trois couches pour distribuer des tokens $BLOKC aux contributeurs, combinant notation pilotée par IA, approbation humaine et exécution on-chain en un seul flux sans confiance (trustless).
+
+---
+
+## Notation et Proposition
+
+À la fin de chaque époque de récompenses, un système d'IA évalue l'activité des contributeurs hors chaîne (off-chain) selon les catégories de contribution définies par le protocole. Il soumet ensuite une proposition de distribution on-chain : une liste d'adresses de contributeurs associées à leurs montants de récompense en $BLOKC pour cette époque.
+
+La proposition est validée par le contrat distributeur avant d'être stockée. Si une erreur est détectée avant le début de l'approbation, le proposant peut l'annuler et la soumettre à nouveau au sein de la même époque.
+
+---
+
+## Approbation Multi-Signataires
+
+Les systèmes de notation par IA peuvent halluciner, en attribuant mal des contributions, en gonflant des montants ou en omettant complètement des contributeurs. La couche d'approbation multi-signataires existe précisément pour détecter cela avant que des tokens ne bougent. Chaque signataire désigné examine indépendamment la distribution proposée et doit l'approuver avant que l'exécution puisse avoir lieu.
+
+Si un signataire identifie une erreur, comme un montant incorrect, un contributeur manquant ou un lot qui ne reflète pas le travail réellement effectué, il refuse son approbation. La proposition est alors bloquée, les signataires communiquent leurs retours au proposant IA, et celui-ci annule le lot et en soumet un corrigé. Ce cycle de rejet et de nouvelle soumission se poursuit jusqu'à ce que la distribution reflète fidèlement le travail des contributeurs et que tous les signataires soient satisfaits.
+
+Il ne s'agit pas d'un multisig à seuil : chaque signataire doit approuver, sinon la distribution ne s'exécute pas. Le contrat suit les approbations par signataire et empêche les doubles approbations. Aucune entité seule, ni le proposant IA, ni un signataire en particulier, ni l'équipe du protocole, ne peut déplacer unilatéralement les tokens de récompense. Les contributeurs peuvent avoir confiance que les récompenses qu'ils reçoivent ont fait l'objet d'une révision humaine finale, et pas seulement d'un calcul automatisé.
+
+---
+
+## Exécution Permissionless
+
+Une fois que tous les signataires ont approuvé, n'importe qui peut déclencher l'exécution. Le contrat effectue une validation finale (la proposition existe, elle n'a pas déjà été exécutée, le nombre d'approbations requis est atteint), puis transfère les $BLOKC à l'adresse de compte prévue de chaque contributeur en une seule transaction.
+
+L'état est mis à jour avant que les transferts n'aient lieu, en suivant le modèle checks-effects-interactions afin de prévenir la réentrance.
+
+---
+
+## Comptes des Contributeurs
+
+Les tokens sont déposés dans des comptes individuels de contributeurs : des smart contracts dédiés, déployés comme des clones proxy minimaux ERC-1167 via un adressage déterministe CREATE2. La norme ERC-1167 définit une implémentation en bytecode minimal qui délègue tous les appels à un contrat d'implémentation fixe, ce qui rend chaque clone peu coûteux à déployer tout en partageant une logique auditée entre tous les comptes.
+
+Comme CREATE2 génère une adresse prévisible à partir d'un ensemble fixe d'entrées (le contrat d'implémentation, l'adresse du portefeuille du contributeur et l'adresse de la factory), le distributeur envoie les tokens à cette adresse prévue au moment de l'exécution, même avant que le contributeur n'ait déployé son compte.
+
+Lorsque le contributeur déploie ensuite son compte en appelant la factory, les tokens s'y trouvent déjà. Cela élimine toute dépendance de séquencement entre la distribution et la mise en place du compte, permettant au protocole de distribuer à un nombre quelconque de contributeurs en une seule transaction.
+
+---
+
+## Verrouillage des Tokens et Gouvernance
+
+Les tokens restent verrouillés dans le compte du contributeur jusqu'à un horodatage de déverrouillage fixe, partagé par tous les comptes. Pendant la période de verrouillage, le pouvoir de vote est délégué au contributeur : les $BLOKC verrouillés comptent pour la gouvernance dès le premier jour.
+
+Après le déverrouillage, le contributeur peut retirer un montant spécifique vers n'importe quelle adresse, ou transférer la totalité du solde vers son propre portefeuille. Aucune intervention du protocole n'est requise au moment du retrait.
