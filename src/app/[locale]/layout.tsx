@@ -48,7 +48,7 @@ export default async function LocaleLayout({
       lang={loc}
       className={`${inter.variable} ${newsreader.variable} ${caveat.variable} ${jetbrains.variable} bg-paper text-ink`}
     >
-      <body className="min-h-screen antialiased" suppressHydrationWarning>
+      <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {/* Site-wide entity graph: Organization + WebSite (with SearchAction). */}
         <JsonLd data={[organizationLd(), websiteLd(loc)]} />
         <a
@@ -68,8 +68,8 @@ export default async function LocaleLayout({
         </p>
         <SearchProvider>
           <Nav locale={loc} />
-          <main id="main-content">{children}</main>
-          <Footer />
+          <main id="main-content" className="flex-1">{children}</main>
+          <Footer locale={loc} />
         </SearchProvider>
       </body>
     </html>

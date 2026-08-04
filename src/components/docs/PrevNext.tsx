@@ -38,7 +38,7 @@ export function PrevNext({
       {next ? (
         <Link
           href={next.href}
-          className="group/n flex flex-col rounded-xl border border-ink/10 bg-paper-warm px-4 py-3 text-right transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-moss/30 sm:items-end"
+          className="group/n flex flex-col rounded-xl border border-ink/10 bg-paper-warm px-4 py-3 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-moss/30 sm:items-end sm:text-right"
         >
           <span className="text-[11px] font-medium uppercase tracking-wider text-ink-subtle">
             {nextLabel} →
