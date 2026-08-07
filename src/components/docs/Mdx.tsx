@@ -11,7 +11,6 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
 import { Admonition } from "@/components/docs/Admonition";
-import { AuditReports } from "@/components/docs/AuditReports";
 import { TokenomicsChart } from "@/components/docs/TokenomicsChart";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { DocImage } from "@/components/docs/DocImage";
@@ -74,7 +73,6 @@ export function Mdx({
     Admonition,
     Figure,
     // Dynamic content blocks referenced by JSX tags in migrated MDX.
-    Audit: () => <AuditReports locale={locale} />,
     Chart: TokenomicsChart,
   };
 

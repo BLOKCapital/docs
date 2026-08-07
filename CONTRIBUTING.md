@@ -36,8 +36,7 @@ sidebar_label: Short Label       # optional, defaults to title
 
 - Use the registered MDX components instead of raw HTML where possible:
   `<Admonition kind="note|tip|info|warning|danger">…</Admonition>`, `<Figure>`,
-  `<Chart>`, `<Audit>`, and the named diagram components (see
-  `src/components/docs/Mdx.tsx`).
+  and `<Chart>` (see `src/components/docs/Mdx.tsx`).
 - Prefer absolute internal links (`/<locale>/<section>/…`); `check:content`
   validates them.
 - **Add new pages to all three locales** (or expect a parity warning).

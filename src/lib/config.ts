@@ -128,7 +128,6 @@ export type UIStrings = {
   /** Shown in the locale menu for a page with no translation yet. */
   notTranslated: string;
   notFound: { title: string; body: string; cta: string };
-  audits: { heading: string; auditor: string; date: string; viewReport: string };
   /** [singular, plural] — selected by `plural()` below. */
   results: [string, string];
   footer: {
@@ -180,12 +179,6 @@ export const UI: Record<Locale, UIStrings> = {
       body: "This page may have moved, or it doesn’t exist in this language yet.",
       cta: "Back to docs home",
     },
-    audits: {
-      heading: "Security audits",
-      auditor: "Auditor",
-      date: "Date",
-      viewReport: "View audit report",
-    },
     results: ["result", "results"],
     footer: {
       tagline: "It's crypto, but different.",
@@ -234,12 +227,6 @@ export const UI: Record<Locale, UIStrings> = {
       title: "Página no encontrada",
       body: "Es posible que esta página se haya movido o que aún no exista en este idioma.",
       cta: "Volver al inicio de la documentación",
-    },
-    audits: {
-      heading: "Auditorías de seguridad",
-      auditor: "Auditor",
-      date: "Fecha",
-      viewReport: "Ver informe de auditoría",
     },
     results: ["resultado", "resultados"],
     footer: {
@@ -290,12 +277,6 @@ export const UI: Record<Locale, UIStrings> = {
       body: "Cette page a peut-être été déplacée, ou elle n’existe pas encore dans cette langue.",
       cta: "Retour à l’accueil de la documentation",
     },
-    audits: {
-      heading: "Audits de sécurité",
-      auditor: "Auditeur",
-      date: "Date",
-      viewReport: "Voir le rapport d’audit",
-    },
     results: ["résultat", "résultats"],
     footer: {
       tagline: "La crypto, autrement.",
@@ -315,19 +296,19 @@ export const SECTION_BLURB: Record<Locale, Record<SectionSlug, string>> = {
     concepts: "Protocol fundamentals: account abstraction, Diamonds, oracles, and wealth management.",
     "smart-contracts": "The V1 on-chain architecture: entry points, facets, the registry, and indices.",
     builders: "Hands-on guides for building on BLOK Capital: Gardens, facets, and governance.",
-    resources: "Tokenomics, audits, FAQs, brand assets, and contract addresses.",
+    resources: "Tokenomics, security, FAQs, brand assets, and contract addresses.",
   },
   es: {
     concepts: "Fundamentos del protocolo: abstracción de cuentas, Diamonds, oráculos y gestión patrimonial.",
     "smart-contracts": "La arquitectura on-chain de V1: puntos de entrada, facets, el registro e índices.",
     builders: "Guías prácticas para construir sobre BLOK Capital: Gardens, facets y gobernanza.",
-    resources: "Tokenomics, auditorías, preguntas frecuentes, recursos de marca y direcciones de contratos.",
+    resources: "Tokenomics, seguridad, preguntas frecuentes, recursos de marca y direcciones de contratos.",
   },
   fr: {
     concepts: "Fondamentaux du protocole : abstraction de compte, Diamonds, oracles et gestion de patrimoine.",
     "smart-contracts": "L'architecture on-chain V1 : points d'entrée, facets, le registre et les index.",
     builders: "Guides pratiques pour construire sur BLOK Capital : Gardens, facets et gouvernance.",
-    resources: "Tokenomics, audits, FAQ, ressources de marque et adresses de contrats.",
+    resources: "Tokenomics, sécurité, FAQ, ressources de marque et adresses de contrats.",
   },
 };
 
