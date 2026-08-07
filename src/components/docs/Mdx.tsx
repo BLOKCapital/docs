@@ -1,15 +1,22 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
 import Link from "next/link";
-import type { ImgHTMLAttributes, AnchorHTMLAttributes } from "react";
+import type {
+  ImgHTMLAttributes,
+  AnchorHTMLAttributes,
+  HTMLAttributes,
+  TableHTMLAttributes,
+} from "react";
 import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
 import { Admonition } from "@/components/docs/Admonition";
 import { AuditReports } from "@/components/docs/AuditReports";
 import { TokenomicsChart } from "@/components/docs/TokenomicsChart";
+import { CodeBlock } from "@/components/docs/CodeBlock";
+import { DocImage } from "@/components/docs/DocImage";
+import { Figure } from "@/components/docs/Figure";
+import { UI, DEFAULT_LOCALE, type Locale } from "@/lib/config";
 
 /** Internal links route through next/link; external open in a new tab. */
 function MdxLink({ href = "", ...rest }: AnchorHTMLAttributes<HTMLAnchorElement>) {
@@ -20,52 +27,72 @@ function MdxLink({ href = "", ...rest }: AnchorHTMLAttributes<HTMLAnchorElement>
   return <Link href={href} {...rest} />;
 }
 
-/**
- * Content images live in /public with arbitrary, unknown dimensions, so we
- * render a plain lazy <img> rather than next/image — which would require fixed
- * width/height and distort non-16:10 art. Browser-native lazy loading keeps
- * off-screen images cheap.
+/*
+ * Note on `<details>`/`<summary>` anchors: MDX passes literal JSX through
+ * untouched — the `components` map below only applies to elements *generated*
+ * from markdown — so a component override for `summary` would never fire.
+ * The FAQ pages therefore carry explicit `id` attributes on each `<summary>`,
+ * slugged with the same `github-slugger` algorithm that `collectHeadings` uses
+ * for the search index, so deep links from search resolve.
  */
-function MdxImage({ src, alt = "", ...rest }: ImgHTMLAttributes<HTMLImageElement>) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src as string}
-      alt={alt}
-      loading="lazy"
-      decoding="async"
-      className="h-auto w-full"
-      {...rest}
-    />
-  );
-}
-
-const components = {
-  a: MdxLink,
-  img: MdxImage,
-  Admonition,
-  // Dynamic content blocks referenced by JSX tags in migrated MDX.
-  Audit: AuditReports,
-  Chart: TokenomicsChart,
-};
 
 const prettyCodeOptions = {
-  theme: "github-dark",
+  // `github-dark`'s comment colour (#6A737D) renders at 3.60:1 on our code
+  // surface — below the 4.5:1 AA floor, and comments are the single largest
+  // token class in these snippets. `github-dark-default` uses #8b949e (5.64:1).
+  theme: "github-dark-default",
   keepBackground: true,
   defaultLang: "text",
 };
 
-export function Mdx({ source }: { source: string }) {
+export function Mdx({
+  source,
+  locale = DEFAULT_LOCALE,
+}: {
+  source: string;
+  locale?: Locale;
+}) {
+  const t = UI[locale];
+
+  const components = {
+    a: MdxLink,
+    img: (props: ImgHTMLAttributes<HTMLImageElement>) => (
+      <DocImage {...props} enlargeLabel={t.enlargeImage} closeLabel={t.close} />
+    ),
+    // Fenced code blocks get a copy button.
+    pre: (props: HTMLAttributes<HTMLPreElement>) => (
+      <CodeBlock {...props} copyLabel={t.copy} copiedLabel={t.copied} />
+    ),
+    // Wide tables scroll inside a focusable container. Scrolling must NOT be put
+    // on the <table> itself via `display: block` — that strips the table role in
+    // several browser/AT pairings, costing screen readers row/column context.
+    table: (props: TableHTMLAttributes<HTMLTableElement>) => (
+      <div className="table-scroll" tabIndex={0} role="region" aria-label={props.summary ?? "Table"}>
+        <table {...props} />
+      </div>
+    ),
+    Admonition,
+    Figure,
+    // Dynamic content blocks referenced by JSX tags in migrated MDX.
+    Audit: () => <AuditReports locale={locale} />,
+    Chart: TokenomicsChart,
+  };
+
   return (
     <MDXRemote
       source={source}
       components={components}
       options={{
         mdxOptions: {
-          remarkPlugins: [remarkGfm, remarkMath],
+          // No remark-math / rehype-katex: no page in any locale contains math,
+          // and having them on made `$` a math delimiter — so every currency
+          // figure in the content had to be hand-escaped as `\$`. Dropping them
+          // removes 23 KB of KaTeX CSS from every page and lets authors write
+          // `$20,000` normally. (`\$` still renders as `$`, so existing content
+          // is unaffected.) Re-add both together if math is ever needed.
+          remarkPlugins: [remarkGfm],
           rehypePlugins: [
             rehypeSlug,
-            [rehypeKatex, { strict: false }],
             [rehypePrettyCode, prettyCodeOptions],
             [
               rehypeAutolinkHeadings,

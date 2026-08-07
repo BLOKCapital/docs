@@ -441,7 +441,7 @@ The Diamond becomes not just a contract, but the **stable identity of the system
 Source: https://docs.blokcapital.io/en/concepts/protocol-concepts/ercs-and-eips
 Section: Concepts
 
-### Which ERCs and EIPs back the protocol?
+## Which ERCs and EIPs back the protocol?
 
 - **[ERC-20](https://eips.ethereum.org/EIPS/eip-20)** – Standard for fungible tokens, ensuring your assets work everywhere in DeFi.
 
@@ -560,7 +560,7 @@ Section: Concepts
 
 ![Wealth management architecture](/img/Wealth_mgmt.png)
 
-### Introduction
+## Introduction
 
 Decentralized wealth management solves a long-standing problem in investing: getting structured portfolio management without giving up control of your assets. In traditional systems, users hand their funds to intermediaries who make decisions off-chain and report results after the fact.
 
@@ -570,7 +570,7 @@ Nothing moves unless the smart contract allows it. The rules are transparent, ve
 
 Instead of trusting someone’s judgment, you choose how much automation you want.
 
-### Why Wealth Management Exists
+## Why Wealth Management Exists
 
 Most users want diversified exposure and periodic rebalancing without constantly tracking markets or managing positions manually. That’s where structured portfolio management becomes useful.
 
@@ -578,7 +578,7 @@ Traditionally, this convenience comes with tradeoffs. Assets are handed over to 
 
 BLOK Capital removes this tradeoff by making structured management optional rather than mandatory.
 
-### What BLOK Capital Does
+## What BLOK Capital Does
 
 BLOK Capital supports **two modes of portfolio management**, depending on the type of garden a user selects.
 
@@ -588,7 +588,7 @@ BLOK Capital supports **two modes of portfolio management**, depending on the ty
 
 In both cases, assets remain non-custodial. All movements are executed by smart contracts, no external party can withdraw funds, and every action is recorded on-chain. Governance of protocol upgrades and parameters is handled by the BLOK Capital DAO, ensuring transparent and accountable evolution.
 
-### How It Works
+## How It Works
 
 You connect your wallet and choose a garden type. Indexed Gardens follow predefined index rules and rebalance automatically. Self-Managed Gardens give you direct control over portfolio actions. All execution happens on-chain through smart contracts. For deeper architectural and contract-level details, refer to the technical documentation.
 
@@ -1155,424 +1155,210 @@ The diagram provided above is the authoritative map for these layers; this docum
 
 ---
 
-# Cut
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/cut
+# Guide: Creating a New Diamond Facet
+Source: https://docs.blokcapital.io/en/builders/Guides/Facets
 Section: Builders
 
-This module manages state upgrades within the Diamond but enforces Blok Capital's strict "Registry-First" security model.
+## Overview 
+In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic. For example, “A Facets can be compared to an implementation contract… [it] holds the external function logic the proxy (Diamond) will call”. Facets allow us to split functionality into separate contracts that can be upgraded independently. Each facet has its own isolated state (using the Diamond Storage pattern) to avoid storage conflicts. This guide explains our conventions for adding a new facet, including folder structure, contract layout, and testing.
 
-## `DiamondCutBase.sol`
+## Folder Structure
+Each new facet has its own subfolder under src/facets/, containing five Solidity files, plus corresponding tests under test/facets/. For example, a Transfer facet would use:
+- `src/facets/transfer/TransferFacet.sol` – the public facet contract.
+- `src/facets/transfer/TransferBase.sol` – an abstract contract with internal logic.
+- `src/facets/transfer/TransferStorage.sol` – a library (or contract) defining the storage layout.
+- `src/facets/transfer/ITransfer.sol` – interface for external (public) functions.
+- `src/facets/transfer/ITransferBase.sol` – interface for internal types (errors, structs, events).
 
-This is the internal engine for all upgrades. Unlike standard Diamonds that accept arbitrary facet addresses, Blok Capital's `DiamondCutBase` forces every upgrade to be validated against the global `FacetRegistry`.
+Tests mirror this structure in `test/facets/transfer/`. You should create:
 
-**Key Builder Takeaway:** A Garden cannot add a facet unless it is globally whitelisted and its module is explicitly allowed for that specific Garden Type.
+- `test/facets/transfer/transfer.sol` – an abstract test contract(TransferFacetTest) that sets up the diamond with this facet and a helper(TransferFacetHelper) that provides facet address, selectors, etc.
+- A behavior/ subfolder for unit tests (one Solidity contract per facet method, named `<Facet>_<method>.t.sol`).
 
-**Crucial Snippet: Registry Security Check**
 
-```solidity
-// From addFunctions() in DiamondCutBase.sol
-// Ensure facet's module is allowed for this garden's type
-bytes32 gardenType = ld.gardenType;
-if (gardenType != bytes32(0)) {
-    bytes32 moduleId = IFacetRegistry(facetRegistry).getFacetModule(_facetAddress);
-    if (!IFacetRegistry(facetRegistry).isModuleAllowedForGardenType(gardenType, moduleId)) {
-        revert DiamondCut_ModuleNotAllowedForGardenType(gardenType, moduleId);
+This naming convention ensures clarity and allows isolating tests via Foundry’s `--match-contract` flag.
+
+## Facet Contract Layout
+Within each facet folder, we follow a strict contract layout:
+
+- `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Declare a `bytes32 constant STORAGE_SLOT = keccak256("blokc.<facet>.storage")`, a struct Layout with all facet state variables, and a function (often named layout()) that returns a pointer to that storage slot using inline assembly. For example:
+
+```js
+library TransferStorage {
+    bytes32 internal constant STORAGE_SLOT = keccak256("blokc.transfer.storage");
+
+    struct Layout {
+        // Add required variables
+        uint256 lastTransferBlock;
     }
-}
-```
 
-## `DiamondCutFacet.sol` (The Shield)
-
-In a standard EIP-2535 implementation, the `diamondCut` function is callable by the owner to upgrade the contract. **In Blok Capital, this function is intentionally blocked.** This facet is included to satisfy the interface requirements of EIP-2535, but it forces all actual upgrades to go through a custom, highly controlled upgrade flow (likely via an `UpgradeFacet` not shown here) to prevent ambiguity and human error.
-
-**Crucial Snippet: The Intentional Revert**
-
-```solidity
-/// @inheritdoc IDiamondCut
-function diamondCut(
-    FacetCut[] memory _diamondCut,
-    address _init,
-    bytes calldata _calldata
-)
-    external
-    override
-    onlyGardenOwner
-    ifIndexNotConnected
-{
-    // Blocked intentionally to force controlled upgrade paths
-    revert DiamondCutFacet_DiamondCutNotAllowed();
-}
-```
-
-## `DiamondCutStorage.sol`
-
-Defines the standard EIP-2535 storage layout required to track facet addresses and their associated function selectors.
-
-- **Storage Pattern:** Uses `LibStorageSlot.deriveStorageSlot(type(DiamondCutStorage).name)` to guarantee the storage layout never collides with other facets.
-
-
----
-
-# Loupe
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/loupe
-Section: Builders
-
-The Loupe module is entirely read-only. It provides the introspection functions required by EIP-2535, allowing block explorers, frontends, and indexing bots to "see" inside the Garden and map out its capabilities.
-
-## `DiamondLoupeBase.sol` & `DiamondLoupeFacet.sol`
-
-These contracts implement the standard `IDiamondLoupe` interface. Because a Garden's capabilities can change over time (via upgrades), UIs should use these functions to verify if a Garden supports a specific action before sending a transaction.
-
-It also implements `IERC165`, allowing other contracts to query `supportsInterface(bytes4)`.
-
-**Key Introspection Functions for Builders:**
-
-- `facets()`: Returns all active facet addresses and their bundled function selectors.
-- `facetFunctionSelectors(address _facet)`: Returns all functions bundled in a specific facet.
-- `facetAddress(bytes4 _functionSelector)`: Returns the exact facet address handling a specific function.
-
-**Crucial Snippet: Querying a Selector**
-
-Builders can use this to dynamically check if a Garden has a specific feature installed:
-
-```solidity
-// From DiamondLoupeBase.sol
-/// @notice Retrieves the facet that supports the given function selector
-function _facetAddress(bytes4 _functionSelector) internal view returns (address facetAddress_) {
-    // Looks up the specific routing mapping in Diamond Storage
-    facetAddress_ = DiamondCutStorage.layout().selectorToFacetAndPosition[_functionSelector].facetAddress;
-}
-```
-
-## `DiamondLoupeStorage.sol`
-
-Stores the mappings for ERC-165 interface detection (`mapping(bytes4 => bool) supportedInterfaces`). This is initialized when the Garden is first deployed.
-
-
----
-
-# Ownership
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/ownership
-Section: Builders
-
-The ownership module provides standard ERC-173 administrative control but stores the state securely within the Diamond Storage pattern to prevent collisions during upgrades.
-
-## Core Concept: ERC-173 Standard Integration
-
-This module provides the baseline access control for the Garden. The owner (usually the user or a DAO) holds the right to manage the Garden when it is operating independently.
-
-## `OwnershipFacet.sol` & `OwnershipBase.sol`
-
-- `OwnershipFacet` exposes the external `transferOwnership(address)` and `owner()` functions.
-- The `transferOwnership` function is guarded by the `onlyGardenOwner` modifier, ensuring only the current administrator can pass the baton.
-
-## `OwnershipStorage.sol`
-
-Like all state variables in Blok Capital, the owner address is stored at a deterministic slot to guarantee it survives upgrades without memory corruption.
-
-**Crucial Builder Snippet: Ownership Storage Layout**
-
-```solidity
-/// @dev Storage slot is derived from keccak256(bytes("OwnershipStorage"))
-struct Layout {
-    /// @notice Address of the owner. When zero, no owner is set (renounced).
-    address owner;
-}
-
-function layout() internal pure returns (Layout storage l) {
-    bytes32 position = LibStorageSlot.deriveStorageSlot(type(OwnershipStorage).name);
-    assembly {
-        l.slot := position
-    }
-}
-```
-
-
----
-
-# Upgrade
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/upgrade
-Section: Builders
-
-As `diamondCut` is blocked in the Base Facets, the **Upgrade Module** is the only authorized way to alter a Garden's logic. It relies on a deterministic, version-controlled sync with the global `FacetRegistry`.
-
-## Main focus: Hash-Verified Upgrades
-
-Instead of passing an array of arbitrary function selectors and addresses, a caller must provide a `_hashData` payload. The `UpgradeBase` (internal logic) compares this hash against the official `FacetRegistry`. If the hash matches the authorized module versions for that Garden Type, the upgrade is pulled and executed securely.
-
-## `UpgradeFacet.sol` (The Executor)
-
-This facet exposes the external interface for upgrading the Garden and checking installed module versions.
-
-**Crucial Builder Snippet: The Smart Upgrade Modifier**
-
-Notice the `onlyOwnerUnlessIndexConnected` modifier. This is a brilliant architectural decision for automated portfolio management.
-
-If the Garden is connected to an Index, *anyone* (including an automated bot) can trigger the `upgrade` function. Because the upgrade relies on a strict hash verified by the global Facet Registry, it is immune to malicious injection. This allows the protocol to automatically patch connected Gardens without requiring manual user signatures.
-
-```solidity
-/// @inheritdoc IUpgrade
-function upgrade(bytes32 _hashData) external onlyOwnerUnlessIndexConnected nonReentrant {
-    // Executes the registry-verified upgrade using the provided hash
-    _upgrade(_hashData);
-}
-
-/// @inheritdoc IUpgrade
-function upgradeDetails() external view returns (IDiamondCut.FacetCut[] memory facetCuts, bytes32 hashData) {
-    // Returns the pending cuts and the hash required to execute them
-    (facetCuts, hashData) = _upgradeDetails();
-}
-```
-
-## `UpgradeStorage.sol`
-
-Rather than tracking every single function selector (which is handled by `DiamondCutStorage`), this specific storage layout tracks **Module Versions**.
-
-**Crucial Builder Snippet: Version Tracking**
-
-By tracking versions, the protocol knows exactly which components of the Garden are out of date compared to the global registry, allowing for precise, modular updates.
-
-```solidity
-/// @dev Tracks per-module versions only. Upgrade logic is driven by module versions;
-///      the garden installs only modules allowed for its type
-struct Layout {
-    // Maps the Module ID (e.g., keccak256("DEX")) to its currently installed version
-    mapping(bytes32 => uint256) moduleVersions;
-}
-```
-
-
----
-
-# Facet.sol
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/facet
-Section: Builders
-
-## Access Layer: `Facet.sol`
-
-- `Facet.sol` acts as the **base contract** for all logic modules in the Garden.
-- It defines the **core access control rules** that every module follows.
-- Its primary role is to **protect the system from unauthorized or unsafe actions**, especially during sensitive operations.
-
----
-
-## Main idea: Restricted Interactions During Index Connection
-
-- When a Garden is connected to an Index, certain operations become **more restrictive**.
-- **Direct user interaction is limited** during automated processes like rebalancing.
-- This helps prevent:
-  - **Front-running** (users exploiting timing for profit)
-  - **State inconsistencies** caused by unexpected external actions
-
----
-
-## DEX Caller Restriction
-
-- During a rebalance, **swap functions can only be executed by the Garden contract itself**.
-- **External users or contracts are not allowed** to trigger these swaps.
-- This restriction ensures:
-  - Controlled execution of trades
-  - No external interference
-  - Consistent and predictable system behavior
-
-```solidity
-/// @notice Checks if the caller is the garden itself when connected to an index
-function _onlyGardenCanCallDexWhenIndexConnected() internal view {
-    LibDiamond.Layout storage ld = LibDiamond.layout();
-    if (ld.isConnectedToIndex) {
-        // Enforce Diamond self-calls only
-        if (msg.sender != address(this)) {
-            revert Garden_OnlyGardenCanCallDexWhenIndexConnected();
-        }
-    } else {
-        // If not connected to an index, fallback to owner validation
-        if (msg.sender != OwnershipStorage.layout().owner) {
-            revert Garden_UnauthorizedCaller();
+    function layout() internal pure returns (Layout storage l) {
+        bytes32 slot = STORAGE_SLOT;
+        assembly {
+            l.slot := slot
         }
     }
 }
 ```
+This isolates the facet’s state so that each facet “can be understood as its own unit”.
 
+- `<FacetName>Base.sol`: An abstract contract defining internal functions and logic. This contract imports the storage library and any required interfaces, and implements internal (or internal view) functions. It may also read/write storage via Layout `storage s = <FacetName>Storage.layout()`. For example, a Transfer facet’s base might have:
+```js
+abstract contract TransferBase is ITransferBase {
+    using SafeERC20 for IERC20;
 
----
-
-# Base.sol & Facet.sol
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/base-and-facet
-Section: Builders
-
-These files house the core business logic for portfolio rebalancing. The process is divided into two distinct transactions to guarantee security.
-
-## Core Concept: The Two-Step Pipeline
-
-1. **`_rebalanceIntent()`:** Locks in the current market prices and calculates the target allocations based on the Index weights. It stores the block number.
-2. **`_rebalance(SwapStep[])`:** Executes the actual trades based on the CRE's instructions.
-
-## Crucial Builder Snippet: Flash Loan & Slippage Protection
-
-The `_rebalance` function contains the most critical security checks in the protocol. It prevents flash loan attacks by requiring block delays and strictly checks the portfolio value after the swaps are complete.
-
-```solidity
-function _rebalance(SwapStep[] calldata steps) internal {
-    IndexStorage.Layout storage s = IndexStorage.layout();
-
-    // Flash loan protection: intent and rebalance must be in different blocks
-    if (block.number <= s.lastIntentBlock) {
-        revert IndexFacet_IntentBlockDelayNotPassed();
+    function _transferEth(address payable to, uint256 amount) internal {
+        if (amount > address(this).balance) revert Transfer_Failed();
+        (bool success,) = to.call{ value: amount }("");
+        if (!success) revert Transfer_Failed();
+        TransferStorage.layout().lastTransferBlock = block.timestamp;
+        emit ETHTransferExecuted(msg.sender, to, amount);
     }
 
-    // Capture portfolio value BEFORE swaps
-    uint256 valueBefore = _calculateTotalValue(componentRegistry);
+    function _erc20Transfer(address token, address to, uint256 amount) internal {
+        IERC20(token).safeTransfer(to, amount);
+        TransferStorage.layout().lastTransferBlock = block.timestamp;
+        emit ERC20TransferExecuted(token, msg.sender, to, amount);
+    }
 
-    // Execute internal DEX swaps via self-calls
-    _executeSwapSteps(steps);
-
-    // Verify individual token balances match targets within 2% threshold
-    uint256 valueAfter = _verifyBalancesMatchTargets(componentRegistry);
-
-    // Guardrail: Ensure total portfolio value did not drop beyond 0.5%
-    uint256 minAcceptableValue = Math.mulDiv(
-        valueBefore,
-        10_000 - IndexStorage.MAX_VALUE_LOSS_BPS,
-        10_000,
-        Math.Rounding.Floor
-    );
-
-    if (valueAfter < minAcceptableValue) {
-        revert IndexFacet_ExcessiveValueLoss(valueBefore, valueAfter);
+    function _erc20TransferFrom(address token, address from, address to, uint256 amount) internal {
+        IERC20(token).safeTransferFrom(from, to, amount);
+        TransferStorage.layout().lastTransferBlock = block.timestamp;
+        emit ERC20TransferExecuted(token, from, to, amount);
     }
 }
 ```
 
+The `<FacetName>Base` contract also implements any internal helpers and emits events defined in its interface.
 
----
+- `<FacetName>Facet.sol`: The public-facing facet contract. It inherits from the Base abstract, the external interface, and a generic Facet marker (provided by our framework). This contract defines the external functions that users or the Diamond owner can call. It should include an initializer (if needed) and apply access control (e.g. onlyDiamondOwner) on mutating calls. In code:
+```js
+contract TransferFacet is ITransfer, TransferBase {
+    function transferEth(address payable to, uint256 amount) external override {
+        _transferEth(to, amount);
+    }
 
-# IIndex.sol
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/i-index
-Section: Builders
+    function erc20Transfer(address token, address to, uint256 amount) external override {
+        _erc20Transfer(token, to, amount);
+    }
 
-This interface defines the essential data structures passed between the off-chain Centralized Relayer Engine (CRE) and the on-chain protocol.
-
-## Core Concept: Swap Instructions & Intents
-
-To execute a rebalance, the CRE must provide an array of `SwapStep` instructions. The protocol compares the outcome of these steps against the locked `PendingIntent`.
-
-## Crucial Builder Snippet: The Execution Types
-
-```solidity
-/// @notice A single swap step provided by the CRE to rebalance the garden.
-struct SwapStep {
-    bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
-    SwapInstruction instruction; // Contains tokens, pools, and amounts
+    function erc20TransferFrom(address token, address from, address to, uint256 amount) external override {
+        _erc20TransferFrom(token, from, to, amount);
+    }
 }
+```
+Here, `ITransfer` defines the external API, and onlyDiamondOwner (from Facet) protects state-changing calls. The initialize method (if any) is called when the facet is first added. As recommended: “compose initializer and protect external calls in `<FacetName>Facet`”.
 
-/// @notice Pending rebalance intent data (slimmed for gas efficiency)
-struct PendingIntent {
-    bool active;
-    uint256 totalValueUsd; // Portfolio value at intent creation
-    bytes32[] symbols;
-    uint256[] targetValues; // Desired USD value per token
+- `I<FacetName>.sol`: A Solidity interface defining only the external (public/external) functions of the facet. This is what clients of the diamond will use to interact with the facet. It should match the external methods in `<FacetName>Facet.sol`.
+```js
+interface ITransfer {
+    function transferEth(address payable to, uint256 amount) external;
+    function erc20Transfer(address token, address to, uint256 amount) external;
+    function erc20TransferFrom(address token, address from, address to, uint256 amount) external;
+}
+```
+- `I<FacetName>Base.sol`: A Solidity interface (or abstract interface) that contains all the internal types: custom errors, event declarations, enums, and struct definitions used by the facet. The `<FacetName>Base` contract and `<FacetName>Facet` can both use these definitions. This separation (external vs base interface) keeps the external interface clean while centralizing internal definitions for reuse. Custom errors should follow the naming convention `FacetName_Error`, such as `DiamondCut_InvalidFacet()` or `Lending_Unauthorized()` for clarity and consistency.
+
+```js
+interface ITransferBase {
+    error Transfer_Failed();
+
+    event ETHTransferExecuted(address indexed from, address indexed to, uint256 amount);
+    event ERC20TransferExecuted(address indexed token, address indexed from, address indexed to, uint256 amount);
+}
+```
+## Testing Facets
+We test facets by deploying them into a Diamond using the provided Foundry test framework. The key conventions are:
+- **Helper Contract** (`<FacetName>Helper`): Write a helper that creates the facet, and returns its address, selectors array, initializer function, and supported interface IDs. This is used by tests to assemble the Diamond configuration. For example, a TransferFacetHelper might implement facet() (return the facet address) and selectors() (array of function selectors to add).
+```js
+contract TransferFacetHelper is FacetHelper {
+    TransferFacet public transferFacet;
+
+    constructor() {
+        transferFacet = new TransferFacet();
+    }
+
+    function facet() public view override returns (address) {
+        return address(transferFacet);
+    }
+
+    function selectors() public view override returns (bytes4[] memory selectors_) {
+        selectors_ = new bytes4 ;
+        selectors_[0] = transferFacet.transferEth.selector;
+        selectors_[1] = transferFacet.erc20Transfer.selector;
+        selectors_[2] = transferFacet.erc20TransferFrom.selector;
+    }
+
+    function initializer() public view override returns (bytes4) {
+        return bytes4(0); // No initializer for TransferFacet
+    }
+
+    function supportedInterfaces() public pure override returns (bytes4[] memory interfaces) {
+        interfaces = new bytes4 ;
+        interfaces[0] = type(ITransfer).interfaceId;
+    }
+
+    function creationCode() public pure override returns (bytes memory) {
+        return type(TransferFacet).creationCode;
+    }
+}
+```
+- **Abstract Test** (`<FacetName>FacetTest`): Write an abstract test contract extending the base `FacetTest`. In `setUp()`, deploy the helper; override `diamondInitParams()` to return a `Diamond.InitParams` struct that includes adding your facet (via `helper.makeFacetCut(...)`) and any init calls. This attaches the facet’s interface to the Diamond. For example, see how a Uniswap facet is tested:
+```js
+abstract contract TransferFacetTest is FacetTest, ITransfer {
+    TransferFacetHelper public transferFacetHelper;
+
+    function setUp() public virtual override {
+        super.setUp();
+        transferFacetHelper = new TransferFacetHelper();
+    }
+
+    function diamondInitParams() public override returns (Diamond.InitParams memory) {
+        FacetCut ;
+        baseFacets[0] = transferFacetHelper.makeFacetCut(FacetCutAction.Add);
+
+        MultiInit ;
+        diamondInitData[0] = transferFacetHelper.makeInitData("");
+
+        return Diamond.InitParams({
+            baseFacets: baseFacets,
+            init: address(0),
+            initData: ""
+        });
+    }
 }
 ```
 
+- **Unit Tests**: For each external function in the facet, create a separate test contract named `<FacetName>_<MethodName>.t.sol` (following Foundry’s naming convention) inside the behavior/ folder. In these, use the Diamond’s address to call the facet functions via the interface (`ITransfer(address(diamond))`). Tests should call `I<FacetName>` functions and check state or revert reasons. By reusing `I<FacetName>Base` types, you can also assert on custom errors or events. Naming one contract per method allows running specific tests with -`-match-contract`.
+```js
+contract TransferFacet_Behavior is TransferFacetTest {
+    MockERC20 token;
+    address user = address(0x123);
+    address recipient = address(0x456);
 
----
+    function setUp() public override {
+        super.setUp();
+        token = new MockERC20();
+        token.setBalance(address(this), 100 ether);
+        token.setAllowance(address(this), address(this), 100 ether);
+    }
 
-# IndexStorage.sol
-Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/index-storage
-Section: Builders
-
-As the Diamond pattern relies on `delegatecall`, state must be carefully managed to avoid storage collisions. Blok Capital uses the **Diamond Storage** pattern.
-
-## Main Focus: Protocol Guardrails
-
-This library defines the exact Arbitrum One Mainnet addresses for oracles and sets the strict financial boundaries for rebalancing operations.
-
-## Crucial Builder Snippet: Financial Limits & Storage Layout
-
-Builders must understand these hardcoded thresholds. For example, a swap route that loses more than 50 basis points (0.5%) of the total portfolio value will automatically revert.
-
-```solidity
-// Rebalancing Parameters
-uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
-uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
-uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
-uint256 internal constant INTENT_EXPIRY = 10 minutes;
-
-// Diamond Storage Layout
-struct Layout {
-    address indexAddress;
-    uint256 lastRebalanceTimestamp;
-    uint256 lastIntentTimestamp;
-    bool rebalancing; // Custom reentrancy guard
-    PendingIntent pendingIntent;
-    uint256 lastIntentBlock; // Flash loan protection
+    function test_Transfer_Success() public {
+        uint256 amount = 1 ether;
+        vm.expectEmit(address(this));
+        emit ITransfer.TransferExecuted(address(token), address(this), recipient, amount);
+        transferFacetHelper.facet().call(
+            abi.encodeWithSelector(
+                ITransfer.erc20Transfer.selector,
+                address(token),
+                recipient,
+                amount
+            )
+        );
+        assertEq(token.balanceOf(recipient), amount);
+    }
 }
 ```
-
-
----
-
-# Protocol Architecture V1
-Source: https://docs.blokcapital.io/en/builders/blok-capital-v1
-Section: Builders
-
-![Protocol V1 architecture](/img/architect.png)
-
-## The core parts of our architecture is as follows :
-
-### Wallet Infrastructure
-Onboarding new users is hindered by the complexity and risk of seed-phrase management. By integrating Web3Auth’s MPC solution, we eliminate seed phrases while preserving EOA security and offer advanced users the option to connect their own keys. Future upgrades will track Ethereum’s EIP-3074 and ERC-4337 account-abstraction standards—phasing out our MPC layer once native support matures. This hybrid approach delivers familiar Web2-style signup and wallet experiences, ensures secure key custody without single-point-of-failure, and paves the way for broader decentralized adoption.
-
-### Protocol Infrastructure
-
-- Gardens : Smart contract acting as portfolio for the users. Gardens are deployed by the GardenFactory contract. A single user can own multiple Gardens.
-- Gardeners : Wealth managers who will be able to manage Gardens i.e. portfolio of users.
-- Garden Administration contracts : These contracts are responsible for maintaining proper admin checks and allow the Garden to access to power of DeFi protocol securely as voted on by the community.
-- Protocol registries : These registries are administered by the community through DAO votes and checks and balances used by the Garden Administration contracts to ensure that only community verified actions on DeFi protocols can be carried out.
-- DeFi integration contracts : Implementation contracts for different DeFi protocol integrations such as DEXs, Lending protocols, Staking etc.
-
-### BLOK Capital Subgraphs
-We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our gov-
-ernance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
-
-### DAO architecture with Aragon
-We leverage the Aragon protocol to build and manage our DAO, benefiting from its highly customizable and modular governance infrastructure. Aragon provides the flexibility needed to tailor the DAO to our protocol’s specific requirements. The DAO governs key decisions and operations, ensuring that protocol development and
-resource allocation are driven by the community in a transparent, decentralized manner. This structure promotes accountability, resilience, and long-term sustain-
-ability.
-
-### DeFi Protocol Integrations
-Integrating different DeFi protocols would allow users to utilize their features without having to leave the BLOK Capital interface. The list of integrations would grow as the community grows with time.
-- Lending Protocols: Users can deposit crypto assets into integrated lending protocols like AAVE to earn interest and grow their portfolio—all within a unified interface.
-8
-- DEXs (Decentralized Exchanges): Users can swap or purchase tokens of their choice through integrated platforms like Uniswap, ensuring flexibility and ease of asset management.
-
-
----
-
-# Governance with Aragon
-Source: https://docs.blokcapital.io/en/builders/dao-governance/blokc-proposal
-Section: Builders
-
-At BLOK Capital, we’re redefining decentralized governance by building a robust and modular DAO proposal system, seamlessly powered by Aragon OSX. By tapping into Aragon’s cutting-edge framework, we’re empowering our community with a governance process that’s transparent, scalable, and—most importantly—community-driven. This isn’t just about technology; it’s about creating a future where every voice in the BLOK Capital ecosystem matters.
-
-### Why Aragon?
-Aragon provides a powerful and flexible toolkit for building modular DAOs, allowing us to create a governance system that adapts to the evolving needs of our ecosystem. With Aragon’s battle-tested infrastructure, we ensure secure and autonomous governance that aligns with the principles of decentralization.
-
-![BLOK Capital DAO proposal architecture](/img/daoProposal2.png)
-
-### The BLOK Capital Proposal System: Power in Your Hands
-Our proposal system is the heartbeat of the BLOK Capital ecosystem, designed to make governance simple yet impactful. Here’s what it brings to the table:
-
-- Upgrade Smart Contracts with Ease: Stay ahead in DeFi with smooth, secure updates to our protocols.
-- Add New DEXs & Liquidity Pools: Expand opportunities by integrating new trading venues and liquidity sources effortlessly.
-- Community-Driven Decisions: Every proposal, every vote reflects the collective will of our DAO members.
-
-### Modular, Scalable, and Transparent
-By partnering with Aragon, we’re future-proofing our governance. Whether it’s onboarding new DeFi integrations, enhancing capital efficiency, or refining existing protocols, our system is built to evolve. It’s transparent, accessible, and designed to put the community first—because at BLOK Capital, decentralization isn’t just a buzzword, it’s our mission.
-
-Join us as we revolutionize DAO governance with a transparent, efficient, and community-first approach.
-- [Discover BLOK Capital's vision](https://blokcapital.io/)
-- [Learn more about Aragon](https://docs.aragon.org/)
 
 
 ---
@@ -1581,8 +1367,8 @@ Join us as we revolutionize DAO governance with a transparent, efficient, and co
 Source: https://docs.blokcapital.io/en/builders/Guides/contract-style-guide
 Section: Builders
 
-### Naming conventions
-#### 1. Architectural Overview
+## Naming conventions
+### 1. Architectural Overview
 Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access control). Facets expose external interfaces, delegate logic to internal base contracts, and use storage libraries for state management. This pattern enables upgradability, separation of concerns, and clear boundaries between protocol features.
 Example: Uniswap Facet
 - **External Facet**: `UniswapFacet` exposes swap and TWAP functions.
@@ -1591,7 +1377,7 @@ Example: Uniswap Facet
 - **Storage Library**: `UniswapStorage` manages persistent state.
 - **Error Library**: `IUniswapBase` defines errors and events.
 
-#### 2. Naming Conventions
+### 2. Naming Conventions
 
 **Contracts & Facets**
 - **Facet Contracts**: Suffix with Facet (e.g., `UniswapFacet`).
@@ -1627,7 +1413,7 @@ Example: Uniswap Facet
 
 ---
 
-### Copyright Header
+## Copyright Header
 
 ```md
 /*###############################################################################
@@ -1644,7 +1430,7 @@ Example: Uniswap Facet
 ################################################################################*/
 ```
 
-### Order of Layout of smart contract elements
+## Order of Layout of smart contract elements
 
 **Contract elements should be laid out in the following order:**
 
@@ -1665,9 +1451,9 @@ Example: Uniswap Facet
 5. Modifiers
 6. Functions
 
-Follow the official solidity guide for more : [link](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
+Follow the official solidity guide for more : [official Solidity style guide](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
 
-### Order of Functions
+## Order of Functions
 
 Ordering helps readers identify which functions they can call and to find the constructor and fallback definitions easier.
 
@@ -1722,7 +1508,7 @@ contract A {
 }
 ```
 
-### Sample contract
+## Sample contract
 ```js
 // SPDX-License-Identifier: GPL-3.0
 /*###############################################################################
@@ -1930,7 +1716,7 @@ contract ProtocolTemplate {
 }
 ```
 
-### Contract Template
+## Contract Template
 ```js
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
@@ -2013,210 +1799,416 @@ contract ProtocolTemplate {
 
 ---
 
-# Guide: Creating a New Diamond Facet
-Source: https://docs.blokcapital.io/en/builders/Guides/Facets
+# Cut
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/cut
 Section: Builders
 
-### Overview 
-In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic. For example, “A Facets can be compared to an implementation contract… [it] holds the external function logic the proxy (Diamond) will call”. Facets allow us to split functionality into separate contracts that can be upgraded independently. Each facet has its own isolated state (using the Diamond Storage pattern) to avoid storage conflicts. This guide explains our conventions for adding a new facet, including folder structure, contract layout, and testing.
+## `DiamondCutBase.sol`
 
-### Folder Structure
-Each new facet has its own subfolder under src/facets/, containing five Solidity files, plus corresponding tests under test/facets/. For example, a Transfer facet would use:
-- `src/facets/transfer/TransferFacet.sol` – the public facet contract.
-- `src/facets/transfer/TransferBase.sol` – an abstract contract with internal logic.
-- `src/facets/transfer/TransferStorage.sol` – a library (or contract) defining the storage layout.
-- `src/facets/transfer/ITransfer.sol` – interface for external (public) functions.
-- `src/facets/transfer/ITransferBase.sol` – interface for internal types (errors, structs, events).
+This is the internal engine for all upgrades. Unlike standard Diamonds that accept arbitrary facet addresses, Blok Capital's `DiamondCutBase` forces every upgrade to be validated against the global `FacetRegistry`.
 
-Tests mirror this structure in `test/facets/transfer/`. You should create:
+**Key Builder Takeaway:** A Garden cannot add a facet unless it is globally whitelisted and its module is explicitly allowed for that specific Garden Type.
 
-- `test/facets/transfer/transfer.sol` – an abstract test contract(TransferFacetTest) that sets up the diamond with this facet and a helper(TransferFacetHelper) that provides facet address, selectors, etc.
-- A behavior/ subfolder for unit tests (one Solidity contract per facet method, named `<Facet>_<method>.t.sol`).
+**Crucial Snippet: Registry Security Check**
 
-
-This naming convention ensures clarity and allows isolating tests via Foundry’s `--match-contract` flag.
-
-### Facet Contract Layout
-Within each facet folder, we follow a strict contract layout:
-
-- `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Declare a `bytes32 constant STORAGE_SLOT = keccak256("blokc.<facet>.storage")`, a struct Layout with all facet state variables, and a function (often named layout()) that returns a pointer to that storage slot using inline assembly. For example:
-
-```js
-library TransferStorage {
-    bytes32 internal constant STORAGE_SLOT = keccak256("blokc.transfer.storage");
-
-    struct Layout {
-        // Add required variables
-        uint256 lastTransferBlock;
+```solidity
+// From addFunctions() in DiamondCutBase.sol
+// Ensure facet's module is allowed for this garden's type
+bytes32 gardenType = ld.gardenType;
+if (gardenType != bytes32(0)) {
+    bytes32 moduleId = IFacetRegistry(facetRegistry).getFacetModule(_facetAddress);
+    if (!IFacetRegistry(facetRegistry).isModuleAllowedForGardenType(gardenType, moduleId)) {
+        revert DiamondCut_ModuleNotAllowedForGardenType(gardenType, moduleId);
     }
+}
+```
 
-    function layout() internal pure returns (Layout storage l) {
-        bytes32 slot = STORAGE_SLOT;
-        assembly {
-            l.slot := slot
+## `DiamondCutFacet.sol` (The Shield)
+
+In a standard EIP-2535 implementation, the `diamondCut` function is callable by the owner to upgrade the contract. **In Blok Capital, this function is intentionally blocked.** This facet is included to satisfy the interface requirements of EIP-2535, but it forces all actual upgrades to go through a custom, highly controlled upgrade flow (likely via an `UpgradeFacet` not shown here) to prevent ambiguity and human error.
+
+**Crucial Snippet: The Intentional Revert**
+
+```solidity
+/// @inheritdoc IDiamondCut
+function diamondCut(
+    FacetCut[] memory _diamondCut,
+    address _init,
+    bytes calldata _calldata
+)
+    external
+    override
+    onlyGardenOwner
+    ifIndexNotConnected
+{
+    // Blocked intentionally to force controlled upgrade paths
+    revert DiamondCutFacet_DiamondCutNotAllowed();
+}
+```
+
+## `DiamondCutStorage.sol`
+
+Defines the standard EIP-2535 storage layout required to track facet addresses and their associated function selectors.
+
+- **Storage Pattern:** Uses `LibStorageSlot.deriveStorageSlot(type(DiamondCutStorage).name)` to guarantee the storage layout never collides with other facets.
+
+
+---
+
+# Loupe
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/loupe
+Section: Builders
+
+It provides the introspection functions required by EIP-2535, allowing block explorers, frontends, and indexing bots to "see" inside the Garden and map out its capabilities.
+
+## `DiamondLoupeBase.sol` & `DiamondLoupeFacet.sol`
+
+These contracts implement the standard `IDiamondLoupe` interface. Because a Garden's capabilities can change over time (via upgrades), UIs should use these functions to verify if a Garden supports a specific action before sending a transaction.
+
+It also implements `IERC165`, allowing other contracts to query `supportsInterface(bytes4)`.
+
+**Key Introspection Functions for Builders:**
+
+- `facets()`: Returns all active facet addresses and their bundled function selectors.
+- `facetFunctionSelectors(address _facet)`: Returns all functions bundled in a specific facet.
+- `facetAddress(bytes4 _functionSelector)`: Returns the exact facet address handling a specific function.
+
+**Crucial Snippet: Querying a Selector**
+
+Builders can use this to dynamically check if a Garden has a specific feature installed:
+
+```solidity
+// From DiamondLoupeBase.sol
+/// @notice Retrieves the facet that supports the given function selector
+function _facetAddress(bytes4 _functionSelector) internal view returns (address facetAddress_) {
+    // Looks up the specific routing mapping in Diamond Storage
+    facetAddress_ = DiamondCutStorage.layout().selectorToFacetAndPosition[_functionSelector].facetAddress;
+}
+```
+
+## `DiamondLoupeStorage.sol`
+
+Stores the mappings for ERC-165 interface detection (`mapping(bytes4 => bool) supportedInterfaces`). This is initialized when the Garden is first deployed.
+
+
+---
+
+# Ownership
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/ownership
+Section: Builders
+
+## Core Concept: ERC-173 Standard Integration
+
+This module provides the baseline access control for the Garden. The owner (usually the user or a DAO) holds the right to manage the Garden when it is operating independently.
+
+## `OwnershipFacet.sol` & `OwnershipBase.sol`
+
+- `OwnershipFacet` exposes the external `transferOwnership(address)` and `owner()` functions.
+- The `transferOwnership` function is guarded by the `onlyGardenOwner` modifier, ensuring only the current administrator can pass the baton.
+
+## `OwnershipStorage.sol`
+
+Like all state variables in Blok Capital, the owner address is stored at a deterministic slot to guarantee it survives upgrades without memory corruption.
+
+**Crucial Builder Snippet: Ownership Storage Layout**
+
+```solidity
+/// @dev Storage slot is derived from keccak256(bytes("OwnershipStorage"))
+struct Layout {
+    /// @notice Address of the owner. When zero, no owner is set (renounced).
+    address owner;
+}
+
+function layout() internal pure returns (Layout storage l) {
+    bytes32 position = LibStorageSlot.deriveStorageSlot(type(OwnershipStorage).name);
+    assembly {
+        l.slot := position
+    }
+}
+```
+
+
+---
+
+# Upgrade
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/upgrade
+Section: Builders
+
+As `diamondCut` is blocked in the Base Facets, the **Upgrade Module** is the only authorized way to alter a Garden's logic. It relies on a deterministic, version-controlled sync with the global `FacetRegistry`.
+
+## Main focus: Hash-Verified Upgrades
+
+Instead of passing an array of arbitrary function selectors and addresses, a caller must provide a `_hashData` payload. The `UpgradeBase` (internal logic) compares this hash against the official `FacetRegistry`. If the hash matches the authorized module versions for that Garden Type, the upgrade is pulled and executed securely.
+
+## `UpgradeFacet.sol` (The Executor)
+
+This facet exposes the external interface for upgrading the Garden and checking installed module versions.
+
+**Crucial Builder Snippet: The Smart Upgrade Modifier**
+
+Notice the `onlyOwnerUnlessIndexConnected` modifier. This is a brilliant architectural decision for automated portfolio management.
+
+If the Garden is connected to an Index, *anyone* (including an automated bot) can trigger the `upgrade` function. Because the upgrade relies on a strict hash verified by the global Facet Registry, it is immune to malicious injection. This allows the protocol to automatically patch connected Gardens without requiring manual user signatures.
+
+```solidity
+/// @inheritdoc IUpgrade
+function upgrade(bytes32 _hashData) external onlyOwnerUnlessIndexConnected nonReentrant {
+    // Executes the registry-verified upgrade using the provided hash
+    _upgrade(_hashData);
+}
+
+/// @inheritdoc IUpgrade
+function upgradeDetails() external view returns (IDiamondCut.FacetCut[] memory facetCuts, bytes32 hashData) {
+    // Returns the pending cuts and the hash required to execute them
+    (facetCuts, hashData) = _upgradeDetails();
+}
+```
+
+## `UpgradeStorage.sol`
+
+Rather than tracking every single function selector (which is handled by `DiamondCutStorage`), this specific storage layout tracks **Module Versions**.
+
+**Crucial Builder Snippet: Version Tracking**
+
+By tracking versions, the protocol knows exactly which components of the Garden are out of date compared to the global registry, allowing for precise, modular updates.
+
+```solidity
+/// @dev Tracks per-module versions only. Upgrade logic is driven by module versions;
+///      the garden installs only modules allowed for its type
+struct Layout {
+    // Maps the Module ID (e.g., keccak256("DEX")) to its currently installed version
+    mapping(bytes32 => uint256) moduleVersions;
+}
+```
+
+
+---
+
+# Facet.sol
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/facet
+Section: Builders
+
+## Access Layer: `Facet.sol`
+
+- `Facet.sol` acts as the **base contract** for all logic modules in the Garden.
+- It defines the **core access control rules** that every module follows.
+- Its primary role is to **protect the system from unauthorized or unsafe actions**, especially during sensitive operations.
+
+---
+
+## Main idea: Restricted Interactions During Index Connection
+
+- When a Garden is connected to an Index, certain operations become **more restrictive**.
+- **Direct user interaction is limited** during automated processes like rebalancing.
+- This helps prevent:
+  - **Front-running** (users exploiting timing for profit)
+  - **State inconsistencies** caused by unexpected external actions
+
+---
+
+## DEX Caller Restriction
+
+- During a rebalance, **swap functions can only be executed by the Garden contract itself**.
+- **External users or contracts are not allowed** to trigger these swaps.
+- This restriction ensures:
+  - Controlled execution of trades
+  - No external interference
+  - Consistent and predictable system behavior
+
+```solidity
+/// @notice Checks if the caller is the garden itself when connected to an index
+function _onlyGardenCanCallDexWhenIndexConnected() internal view {
+    LibDiamond.Layout storage ld = LibDiamond.layout();
+    if (ld.isConnectedToIndex) {
+        // Enforce Diamond self-calls only
+        if (msg.sender != address(this)) {
+            revert Garden_OnlyGardenCanCallDexWhenIndexConnected();
+        }
+    } else {
+        // If not connected to an index, fallback to owner validation
+        if (msg.sender != OwnershipStorage.layout().owner) {
+            revert Garden_UnauthorizedCaller();
         }
     }
 }
 ```
-This isolates the facet’s state so that each facet “can be understood as its own unit”.
 
-- `<FacetName>Base.sol`: An abstract contract defining internal functions and logic. This contract imports the storage library and any required interfaces, and implements internal (or internal view) functions. It may also read/write storage via Layout `storage s = <FacetName>Storage.layout()`. For example, a Transfer facet’s base might have:
-```js
-abstract contract TransferBase is ITransferBase {
-    using SafeERC20 for IERC20;
 
-    function _transferEth(address payable to, uint256 amount) internal {
-        if (amount > address(this).balance) revert Transfer_Failed();
-        (bool success,) = to.call{ value: amount }("");
-        if (!success) revert Transfer_Failed();
-        TransferStorage.layout().lastTransferBlock = block.timestamp;
-        emit ETHTransferExecuted(msg.sender, to, amount);
+---
+
+# Base.sol & Facet.sol
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/base-and-facet
+Section: Builders
+
+## Core Concept: The Two-Step Pipeline
+
+1. **`_rebalanceIntent()`:** Locks in the current market prices and calculates the target allocations based on the Index weights. It stores the block number.
+2. **`_rebalance(SwapStep[])`:** Executes the actual trades based on the CRE's instructions.
+
+## Crucial Builder Snippet: Flash Loan & Slippage Protection
+
+The `_rebalance` function contains the most critical security checks in the protocol. It prevents flash loan attacks by requiring block delays and strictly checks the portfolio value after the swaps are complete.
+
+```solidity
+function _rebalance(SwapStep[] calldata steps) internal {
+    IndexStorage.Layout storage s = IndexStorage.layout();
+
+    // Flash loan protection: intent and rebalance must be in different blocks
+    if (block.number <= s.lastIntentBlock) {
+        revert IndexFacet_IntentBlockDelayNotPassed();
     }
 
-    function _erc20Transfer(address token, address to, uint256 amount) internal {
-        IERC20(token).safeTransfer(to, amount);
-        TransferStorage.layout().lastTransferBlock = block.timestamp;
-        emit ERC20TransferExecuted(token, msg.sender, to, amount);
-    }
+    // Capture portfolio value BEFORE swaps
+    uint256 valueBefore = _calculateTotalValue(componentRegistry);
 
-    function _erc20TransferFrom(address token, address from, address to, uint256 amount) internal {
-        IERC20(token).safeTransferFrom(from, to, amount);
-        TransferStorage.layout().lastTransferBlock = block.timestamp;
-        emit ERC20TransferExecuted(token, from, to, amount);
-    }
-}
-```
+    // Execute internal DEX swaps via self-calls
+    _executeSwapSteps(steps);
 
-The `<FacetName>Base` contract also implements any internal helpers and emits events defined in its interface.
+    // Verify individual token balances match targets within 2% threshold
+    uint256 valueAfter = _verifyBalancesMatchTargets(componentRegistry);
 
-- `<FacetName>Facet.sol`: The public-facing facet contract. It inherits from the Base abstract, the external interface, and a generic Facet marker (provided by our framework). This contract defines the external functions that users or the Diamond owner can call. It should include an initializer (if needed) and apply access control (e.g. onlyDiamondOwner) on mutating calls. In code:
-```js
-contract TransferFacet is ITransfer, TransferBase {
-    function transferEth(address payable to, uint256 amount) external override {
-        _transferEth(to, amount);
-    }
+    // Guardrail: Ensure total portfolio value did not drop beyond 0.5%
+    uint256 minAcceptableValue = Math.mulDiv(
+        valueBefore,
+        10_000 - IndexStorage.MAX_VALUE_LOSS_BPS,
+        10_000,
+        Math.Rounding.Floor
+    );
 
-    function erc20Transfer(address token, address to, uint256 amount) external override {
-        _erc20Transfer(token, to, amount);
-    }
-
-    function erc20TransferFrom(address token, address from, address to, uint256 amount) external override {
-        _erc20TransferFrom(token, from, to, amount);
-    }
-}
-```
-Here, `ITransfer` defines the external API, and onlyDiamondOwner (from Facet) protects state-changing calls. The initialize method (if any) is called when the facet is first added. As recommended: “compose initializer and protect external calls in `<FacetName>Facet`”.
-
-- `I<FacetName>.sol`: A Solidity interface defining only the external (public/external) functions of the facet. This is what clients of the diamond will use to interact with the facet. It should match the external methods in `<FacetName>Facet.sol`.
-```js
-interface ITransfer {
-    function transferEth(address payable to, uint256 amount) external;
-    function erc20Transfer(address token, address to, uint256 amount) external;
-    function erc20TransferFrom(address token, address from, address to, uint256 amount) external;
-}
-```
-- `I<FacetName>Base.sol`: A Solidity interface (or abstract interface) that contains all the internal types: custom errors, event declarations, enums, and struct definitions used by the facet. The `<FacetName>Base` contract and `<FacetName>Facet` can both use these definitions. This separation (external vs base interface) keeps the external interface clean while centralizing internal definitions for reuse. Custom errors should follow the naming convention `FacetName_Error`, such as `DiamondCut_InvalidFacet()` or `Lending_Unauthorized()` for clarity and consistency.
-
-```js
-interface ITransferBase {
-    error Transfer_Failed();
-
-    event ETHTransferExecuted(address indexed from, address indexed to, uint256 amount);
-    event ERC20TransferExecuted(address indexed token, address indexed from, address indexed to, uint256 amount);
-}
-```
-### Testing Facets
-We test facets by deploying them into a Diamond using the provided Foundry test framework. The key conventions are:
-- **Helper Contract** (`<FacetName>Helper`): Write a helper that creates the facet, and returns its address, selectors array, initializer function, and supported interface IDs. This is used by tests to assemble the Diamond configuration. For example, a TransferFacetHelper might implement facet() (return the facet address) and selectors() (array of function selectors to add).
-```js
-contract TransferFacetHelper is FacetHelper {
-    TransferFacet public transferFacet;
-
-    constructor() {
-        transferFacet = new TransferFacet();
-    }
-
-    function facet() public view override returns (address) {
-        return address(transferFacet);
-    }
-
-    function selectors() public view override returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4 ;
-        selectors_[0] = transferFacet.transferEth.selector;
-        selectors_[1] = transferFacet.erc20Transfer.selector;
-        selectors_[2] = transferFacet.erc20TransferFrom.selector;
-    }
-
-    function initializer() public view override returns (bytes4) {
-        return bytes4(0); // No initializer for TransferFacet
-    }
-
-    function supportedInterfaces() public pure override returns (bytes4[] memory interfaces) {
-        interfaces = new bytes4 ;
-        interfaces[0] = type(ITransfer).interfaceId;
-    }
-
-    function creationCode() public pure override returns (bytes memory) {
-        return type(TransferFacet).creationCode;
-    }
-}
-```
-- **Abstract Test** (`<FacetName>FacetTest`): Write an abstract test contract extending the base `FacetTest`. In `setUp()`, deploy the helper; override `diamondInitParams()` to return a `Diamond.InitParams` struct that includes adding your facet (via `helper.makeFacetCut(...)`) and any init calls. This attaches the facet’s interface to the Diamond. For example, see how a Uniswap facet is tested:
-```js
-abstract contract TransferFacetTest is FacetTest, ITransfer {
-    TransferFacetHelper public transferFacetHelper;
-
-    function setUp() public virtual override {
-        super.setUp();
-        transferFacetHelper = new TransferFacetHelper();
-    }
-
-    function diamondInitParams() public override returns (Diamond.InitParams memory) {
-        FacetCut ;
-        baseFacets[0] = transferFacetHelper.makeFacetCut(FacetCutAction.Add);
-
-        MultiInit ;
-        diamondInitData[0] = transferFacetHelper.makeInitData("");
-
-        return Diamond.InitParams({
-            baseFacets: baseFacets,
-            init: address(0),
-            initData: ""
-        });
+    if (valueAfter < minAcceptableValue) {
+        revert IndexFacet_ExcessiveValueLoss(valueBefore, valueAfter);
     }
 }
 ```
 
-- **Unit Tests**: For each external function in the facet, create a separate test contract named `<FacetName>_<MethodName>.t.sol` (following Foundry’s naming convention) inside the behavior/ folder. In these, use the Diamond’s address to call the facet functions via the interface (`ITransfer(address(diamond))`). Tests should call `I<FacetName>` functions and check state or revert reasons. By reusing `I<FacetName>Base` types, you can also assert on custom errors or events. Naming one contract per method allows running specific tests with -`-match-contract`.
-```js
-contract TransferFacet_Behavior is TransferFacetTest {
-    MockERC20 token;
-    address user = address(0x123);
-    address recipient = address(0x456);
 
-    function setUp() public override {
-        super.setUp();
-        token = new MockERC20();
-        token.setBalance(address(this), 100 ether);
-        token.setAllowance(address(this), address(this), 100 ether);
-    }
+---
 
-    function test_Transfer_Success() public {
-        uint256 amount = 1 ether;
-        vm.expectEmit(address(this));
-        emit ITransfer.TransferExecuted(address(token), address(this), recipient, amount);
-        transferFacetHelper.facet().call(
-            abi.encodeWithSelector(
-                ITransfer.erc20Transfer.selector,
-                address(token),
-                recipient,
-                amount
-            )
-        );
-        assertEq(token.balanceOf(recipient), amount);
-    }
+# IIndex.sol
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/i-index
+Section: Builders
+
+## Core Concept: Swap Instructions & Intents
+
+To execute a rebalance, the CRE must provide an array of `SwapStep` instructions. The protocol compares the outcome of these steps against the locked `PendingIntent`.
+
+## Crucial Builder Snippet: The Execution Types
+
+```solidity
+/// @notice A single swap step provided by the CRE to rebalance the garden.
+struct SwapStep {
+    bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
+    SwapInstruction instruction; // Contains tokens, pools, and amounts
+}
+
+/// @notice Pending rebalance intent data (slimmed for gas efficiency)
+struct PendingIntent {
+    bool active;
+    uint256 totalValueUsd; // Portfolio value at intent creation
+    bytes32[] symbols;
+    uint256[] targetValues; // Desired USD value per token
 }
 ```
+
+
+---
+
+# IndexStorage.sol
+Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/index-storage
+Section: Builders
+
+As the Diamond pattern relies on `delegatecall`, state must be carefully managed to avoid storage collisions. Blok Capital uses the **Diamond Storage** pattern.
+
+## Main Focus: Protocol Guardrails
+
+This library defines the exact Arbitrum One Mainnet addresses for oracles and sets the strict financial boundaries for rebalancing operations.
+
+## Crucial Builder Snippet: Financial Limits & Storage Layout
+
+Builders must understand these hardcoded thresholds. For example, a swap route that loses more than 50 basis points (0.5%) of the total portfolio value will automatically revert.
+
+```solidity
+// Rebalancing Parameters
+uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
+uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
+uint256 internal constant INTENT_EXPIRY = 10 minutes;
+
+// Diamond Storage Layout
+struct Layout {
+    address indexAddress;
+    uint256 lastRebalanceTimestamp;
+    uint256 lastIntentTimestamp;
+    bool rebalancing; // Custom reentrancy guard
+    PendingIntent pendingIntent;
+    uint256 lastIntentBlock; // Flash loan protection
+}
+```
+
+
+---
+
+# Protocol Architecture V1
+Source: https://docs.blokcapital.io/en/builders/blok-capital-v1
+Section: Builders
+
+![Protocol V1 architecture](/img/architect.png)
+
+## The core parts of our architecture is as follows :
+
+### Wallet Infrastructure
+Onboarding new users is hindered by the complexity and risk of seed-phrase management. By integrating Web3Auth’s MPC solution, we eliminate seed phrases while preserving EOA security and offer advanced users the option to connect their own keys. Future upgrades will track Ethereum’s EIP-3074 and ERC-4337 account-abstraction standards—phasing out our MPC layer once native support matures. This hybrid approach delivers familiar Web2-style signup and wallet experiences, ensures secure key custody without single-point-of-failure, and paves the way for broader decentralized adoption.
+
+### Protocol Infrastructure
+
+- Gardens : Smart contract acting as portfolio for the users. Gardens are deployed by the GardenFactory contract. A single user can own multiple Gardens.
+- Gardeners : Wealth managers who will be able to manage Gardens i.e. portfolio of users.
+- Garden Administration contracts : These contracts are responsible for maintaining proper admin checks and allow the Garden to access to power of DeFi protocol securely as voted on by the community.
+- Protocol registries : These registries are administered by the community through DAO votes and checks and balances used by the Garden Administration contracts to ensure that only community verified actions on DeFi protocols can be carried out.
+- DeFi integration contracts : Implementation contracts for different DeFi protocol integrations such as DEXs, Lending protocols, Staking etc.
+
+### BLOK Capital Subgraphs
+We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our gov-
+ernance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
+
+### DAO architecture with Aragon
+We leverage the Aragon protocol to build and manage our DAO, benefiting from its highly customizable and modular governance infrastructure. Aragon provides the flexibility needed to tailor the DAO to our protocol’s specific requirements. The DAO governs key decisions and operations, ensuring that protocol development and
+resource allocation are driven by the community in a transparent, decentralized manner. This structure promotes accountability, resilience, and long-term sustain-
+ability.
+
+### DeFi Protocol Integrations
+Integrating different DeFi protocols would allow users to utilize their features without having to leave the BLOK Capital interface. The list of integrations would grow as the community grows with time.
+- Lending Protocols: Users can deposit crypto assets into integrated lending protocols like AAVE to earn interest and grow their portfolio—all within a unified interface.
+8
+- DEXs (Decentralized Exchanges): Users can swap or purchase tokens of their choice through integrated platforms like Uniswap, ensuring flexibility and ease of asset management.
+
+
+---
+
+# Governance with Aragon
+Source: https://docs.blokcapital.io/en/builders/dao-governance/blokc-proposal
+Section: Builders
+
+By tapping into Aragon’s cutting-edge framework, we’re empowering our community with a governance process that’s transparent, scalable, and—most importantly—community-driven. This isn’t just about technology; it’s about creating a future where every voice in the BLOK Capital ecosystem matters.
+
+## Why Aragon?
+Aragon provides a powerful and flexible toolkit for building modular DAOs, allowing us to create a governance system that adapts to the evolving needs of our ecosystem. With Aragon’s battle-tested infrastructure, we ensure secure and autonomous governance that aligns with the principles of decentralization.
+
+![BLOK Capital DAO proposal architecture](/img/daoProposal2.png)
+
+## The BLOK Capital Proposal System: Power in Your Hands
+Our proposal system is the heartbeat of the BLOK Capital ecosystem, designed to make governance simple yet impactful. Here’s what it brings to the table:
+
+- Upgrade Smart Contracts with Ease: Stay ahead in DeFi with smooth, secure updates to our protocols.
+- Add New DEXs & Liquidity Pools: Expand opportunities by integrating new trading venues and liquidity sources effortlessly.
+- Community-Driven Decisions: Every proposal, every vote reflects the collective will of our DAO members.
+
+## Modular, Scalable, and Transparent
+By partnering with Aragon, we’re future-proofing our governance. Whether it’s onboarding new DeFi integrations, enhancing capital efficiency, or refining existing protocols, our system is built to evolve. It’s transparent, accessible, and designed to put the community first—because at BLOK Capital, decentralization isn’t just a buzzword, it’s our mission.
+
+Join us as we revolutionize DAO governance with a transparent, efficient, and community-first approach.
+- [Discover BLOK Capital's vision](https://blokcapital.io/)
+- [Learn more about Aragon](https://docs.aragon.org/)
 
 
 ---
@@ -2225,7 +2217,7 @@ contract TransferFacet_Behavior is TransferFacetTest {
 Source: https://docs.blokcapital.io/en/builders/intro
 Section: Builders
 
-The Builders Section is designed for developers and technical contributors who want to dive deep into the architecture, smart contracts, and governance logic of the Blok Capital ecosystem. This section covers core components like the Blok Capital V1 protocol, contract structures, DAO governance mechanisms, and advanced testing/debugging workflows. It provides the technical foundation and implementation details necessary to build, audit, or extend the protocol with confidence.
+This section covers core components like the Blok Capital V1 protocol, contract structures, DAO governance mechanisms, and advanced testing/debugging workflows. It provides the technical foundation and implementation details necessary to build, audit, or extend the protocol with confidence.
 
 
 ---
@@ -2234,14 +2226,14 @@ The Builders Section is designed for developers and technical contributors who w
 Source: https://docs.blokcapital.io/en/builders/smart-contracts/gardens-and-diamonds
 Section: Builders
 
-### The Architecture of Diamonds & Gardens
+## The Architecture of Diamonds & Gardens
 
 At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern. In this section, we’ll explore the architecture of diamonds, a factory-based deployment approach inspired by the Nick Mudge Diamond repository, and how these concepts create a "garden" powering the BLOK architecture.
 
-### Proxy Contract Flow: 
+## Proxy Contract Flow: 
 ![Diamond proxy delegation flow](/img/diamondSchema2.png)
 
-### What is the Diamond Standard?
+## What is the Diamond Standard?
 
 The Diamond Standard, proposed by Nick Mudge in EIP-2535, helps to address the problem of how to create upgradable, modular contracts without hitting gas limits or size constraints. Traditional contracts are monolithic, with all logic packed into a single address, making upgrades super hard and risky. Diamonds, by contrast, are like gardens: they consist of a single **Diamond contract** (for e.g. the soil) that delegates functionality to multiple **facets** ( e.g. the plants), each containing specific logic.
 
@@ -2253,12 +2245,12 @@ A diamond is a proxy contract that uses a unique architecture to:
 
 This modularity makes diamonds ideal for complex decentralized applications (dApps) that need to evolve/upgrade over time, much like a garden that can be replanted or expanded.
 
-### The Architecture of a Diamond
+## The Architecture of a Diamond
 
 Imagine the diamond as a central hub (the `Diamond.sol` contract) that routes function calls to specialized facets. Each facet is a separate contract containing a subset of the system’s functionality, such as ownership, token transfers, or governance. The diamond maintains a mapping of **function selectors** (unique identifiers for functions) to facet addresses, allowing it to delegate calls efficiently.
 ![Facet delegation](/img/delegation.png)
 
-#### Key Components in the Diamond Architecture
+### Key Components in the Diamond Architecture
 
 1. **Diamond Contract** (`Diamond.sol`):
     - Acts as the entry point for all interactions.
@@ -2306,7 +2298,7 @@ contract Diamond {
 
 This code shows how the diamond routes incoming calls (`msg.sig`) to the appropriate facet, enabling modularity.
 
-### The Garden: Modular and Scalable Systems
+## The Garden: Modular and Scalable Systems
 
 Why call this a "garden"? In a garden, each plant (facet) serves a purpose, some provide structure (like `DiamondCutFacet`), others add beauty (like `DiamondLoupeFacet`), and some bear fruit (like custom facets for your dApp’s logic). The Diamond Standard allows you to cultivate a garden of smart contracts that:
 
@@ -2316,11 +2308,11 @@ Why call this a "garden"? In a garden, each plant (facet) serves a purpose, some
 
 This modularity is particularly powerful for dApps like DAOs, DeFi protocols, or NFT platforms, where new features (e.g., governance, staking) can be added without redeploying the entire system.
 
-### Factory-Based Deployment with `DiamondFactory.sol`
+## Factory-Based Deployment with `DiamondFactory.sol`
 
 Deploying diamonds manually can be tricky, especially for systems requiring multiple instances (e.g., a marketplace with many user-specific diamonds). The `diamond-foundry` repository introduces `DiamondFactory.sol`, a factory contract that automates diamond deployment and facet initialization, acting like a gardener planting new plots.
 
-#### How `DiamondFactory.sol` Works
+### How `DiamondFactory.sol` Works
 
 The factory deploys a new `Diamond` contract and initializes it with specified facets. Here’s a simplified version of `DiamondFactory.sol`:
 ```js
@@ -2374,7 +2366,7 @@ The factory:
 
 This factory pattern enables scalable deployment, allowing you to plant multiple diamonds in your garden with minimal effort.
 
-#### Deployment Example
+### Deployment Example
 
 Here’s how you might deploy a diamond using Foundry’s scripting:
 ```js
@@ -2409,7 +2401,7 @@ Run this script with:
 forge script script/DeployDiamond.s.sol --fork-url http://localhost:8545 --broadcast
 ```
 
-### Testing the Garden
+## Testing the Garden
 
 To ensure your diamond garden thrives, you need robust tests. Foundry’s Solidity-based testing makes this straightforward. Below is a test suite verifying the factory deployment and diamond functionality:
 ```js
@@ -2459,7 +2451,7 @@ Run tests with:
 forge test
 ```
 
-### Benefits of the Diamond Garden
+## Benefits of the Diamond Garden
 
 The Diamond Standard, paired with a factory-based deployment, offers:
 
@@ -2468,7 +2460,7 @@ The Diamond Standard, paired with a factory-based deployment, offers:
 - **Upgradability**: Update functionality without breaking existing contracts.
 - **Gas Efficiency**: Keep the diamond contract lightweight by offloading logic to facets.
 
-### Conclusion
+## Conclusion
 
 The Diamond Standard is a powerful tool for building modular, upgradable smart contract systems, akin to cultivating a garden where each plant (facet) contributes to a thriving ecosystem. By using `DiamondFactory.sol`, you can automate diamond deployment, making it easy to scale your garden across multiple instances. Whether you’re building a DeFi protocol, a DAO, or an NFT marketplace, the Diamond Standard offers the flexibility to grow and adapt.
 
@@ -2508,14 +2500,14 @@ New Gardens are created by the Garden Factory (itself a Diamond facet). When a u
 Source: https://docs.blokcapital.io/en/builders/smart-contracts/transparent-proxy
 Section: Builders
 
-### 1. ERC-1967: Preventing Storage Collisions
+## 1. ERC-1967: Preventing Storage Collisions
 
 The **Transparent Proxy** implementation follows [EIP-1967](https://eips.ethereum.org/EIPS/eip-1967), which standardizes how proxies store the **implementation contract address**.
 
 * **Without a standard:** Each project could use arbitrary storage slots, and upgrading or composing contracts could lead to **storage collisions**, breaking state variables.
 * **With ERC-1967:** The implementation address is always stored in a deterministic storage slot (`bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`). This prevents collisions, makes the storage layout predictable, and allows tooling to rely on a shared convention.
 
-### 2. Visibility on Blockscanners
+## 2. Visibility on Blockscanners
 
 Since ERC-1967 is a widely recognized standard, **block explorers** (such as Etherscan, Basescan, and Polygonscan) automatically detect it.
 
@@ -2523,7 +2515,7 @@ Since ERC-1967 is a widely recognized standard, **block explorers** (such as Eth
 * This transparency allows our community to verify which code is running and ensures confidence in upgrades.
 * Builders and auditors benefit because they can inspect the exact implementation contract behind each proxy.
 
-### 3. Transparent vs. UUPS and Other Patterns
+## 3. Transparent vs. UUPS and Other Patterns
 
 When choosing a proxy pattern, we evaluated **Transparent Proxy** against **UUPS (EIP-1822)** and other upgradeable models.
 
@@ -2541,13 +2533,13 @@ When choosing a proxy pattern, we evaluated **Transparent Proxy** against **UUPS
 
 Given our need for **long-term stability and trustworthiness** in registry contracts, Transparent Proxy was the clear choice.
 
-### 4. Why Different from Diamonds
+## 4. Why Different from Diamonds
 
 * For **registry contracts**, we prioritize **maturity, visibility, and safety**—Transparent Proxy is perfect here.
 * For **Garden contracts** (multi-feature accounts), we use the **Diamond Standard (EIP-2535)**, which supports modular and expandable logic.
 * Each choice fits its purpose: Transparent Proxy for stability and clarity, Diamonds for flexibility and composability.
 
-### 5. References
+## 5. References
 
 * [EIP-1967: Standard Proxy Storage Slots](https://eips.ethereum.org/EIPS/eip-1967)
 * [OpenZeppelin Transparent Proxy Docs](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent)
@@ -2557,16 +2549,184 @@ Given our need for **long-term stability and trustworthiness** in registry contr
 
 ---
 
+# FAQs
+Source: https://docs.blokcapital.io/en/resources/FAQs/FAQs
+Section: Resources
+
+<details open>
+<summary id="how-does-blok-capital-work">How does BLOK Capital work?</summary>
+
+BLOK Capital enables investors to maintain full control of their crypto assets while allowing wealth managers(Gardeners) to manage these assets under predefined terms set via smart contracts. Investors' assets remain in their personal smart wallets, and wealth managers are granted permission to trade or swap assets without the ability to transfer them out, ensuring security and transparency.
+
+</details>
+
+<details>
+<summary id="what-cryptocurrencies-does-blok-capital-support">What cryptocurrencies does BLOK Capital support?</summary>
+
+BLOK Capital runs on EVM chains, so a Garden can hold ERC-20 assets that the protocol's price oracles and rebalancer support on that chain — the worked examples in [Garden Indices](/en/resources/garden-index) use assets such as WETH and ARB. The definitive per-chain asset list is published alongside the V1 deployment; see [Smart Contract Addresses](/en/resources/smart-contract-address).
+
+</details>
+
+<details>
+<summary id="are-there-any-fees-for-using-blok-capital">Are there any fees for using BLOK Capital?</summary>
+
+There are no fees for using BLOK Capital as of now. All transactions on our platform are gasless, so keep Gardening and grow your gardens :)
+
+</details>
+
+<details>
+<summary id="how-can-i-contact-blok-capital-support">How can I contact BLOK Capital support?</summary>
+
+You can reach out to BLOK Capital through their official communication channels:
+- **Telegram** — [join the BLOK Capital Telegram community](https://t.me/BLOKCapital) for instant engagement.
+- **X (Twitter)** — [message @blok_cap on X](https://x.com/blok_cap) when in doubt.
+- **Farcaster** — [follow BLOK Capital on Farcaster](https://warpcast.com/blokc).
+
+</details>
+
+<details>
+<summary id="what-are-the-benefits-of-using-blok-capital">What are the benefits of using BLOK Capital?</summary>
+
+- **Full Asset Control**: Investors retain complete custody of their assets, enhancing security.
+- **Transparency**: All transactions and terms are governed by smart contracts, ensuring clear and immutable agreements.
+- **Expert Management**: Access to professional wealth managers who can implement strategies to grow your investments with Gardeners(coming soon)
+- **Community Engagement**: Join a thriving community to share insights and learn from experts, use your BLOKC to vote on proposals and much more!
+
+</details>
+
+<details>
+<summary id="does-blok-capital-offer-rewards">Does BLOK Capital offer rewards?</summary>
+
+BLOK Capital rewards loyal users with BLOKC, which has a lot of perks alongwith governance powers.
+
+</details>
+
+<details>
+<summary id="how-do-i-recover-my-blok-capital-account-if-i-lose-access">How do I recover my BLOK Capital account if I lose access?</summary>
+
+As BLOK Capital emphasizes self-custody, it's crucial to securely store your wallet’s recovery phrases. If you lose access, recovery depends on these credentials. BLOK Capital may not have access to your private information, so ensure you follow best practices for securing and backing up your wallet information.
+
+</details>
+
+<details>
+<summary id="what-security-measures-does-blok-capital-have-in-place">What security measures does BLOK Capital have in place?</summary>
+
+- **Self-Custody**: Investors maintain control over their assets, reducing the risk associated with third-party custody.
+- **Smart Contracts**: Utilizes audited and secure smart contracts to manage transactions and agreements.
+- **Transparency**: All operations are conducted on the blockchain, providing an immutable and transparent record.
+
+</details>
+
+<details>
+<summary id="is-there-a-minimum-deposit-required-to-use-blok-capital">Is there a minimum deposit required to use BLOK Capital?</summary>
+
+There is no minimum deposit requirement while using BLOK Capital, users can deposit as little as 10USDC to their gardens.
+
+</details>
+
+<details>
+<summary id="are-there-any-geographic-restrictions-for-using-blok-capital">Are there any geographic restrictions for using BLOK Capital?</summary>
+
+There are no geographic restrictions for using BLOK Capital. We are fully decentralized and welcome our users beyond any geographic boundaries.
+
+</details>
+
+
+---
+
+# Behavioural Economics
+Source: https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics
+Section: Resources
+
+The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time poor and need professional help to try and invest in the complexities of Crypto Assets.
+
+Indeed, in the market sizing section, we make it absolutely clear we are going for this market and not professional high velocity traders or more risk ready investors. We shall leave this to other protocols. We believe focus is everything and we also believe this is an incredibly big market for the protocol to serve.
+
+Using the BLOKC Token we shall reward investors for good investment behavior and equally not reward them for bad behavior.
+Some examples:
+- An investor who doesn’t touch this investment for 1 year will receive BLOKC tokens as a reward for good behavior.
+- An investor who sells or changes advisors throughout the year will receive no incentivisation.
+
+We shall employ the services of an advisor experienced in Behavioral economics and tokenomics so we can keep a constant eye on the behavior of our protocol users to ensure we are aligning incentives across all stakeholders to hold the token and be long term investors / users of the protocol. This was explained more in the Flywheel section above.
+
+Rewarding Good behavior, punishing poor behavior forces our users to become rewarded happy protocol users.
+
+
+---
+
+# The Token
+Source: https://docs.blokcapital.io/en/resources/Tokenomics/the-token
+Section: Resources
+
+| Field            | Value                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| **Token Name**   | BLOKC Coin                                                                         |
+| **Total Supply** | 10,000,000,000 BLOKC                                                               |
+| **Blockchain**   | Arbitrum                                                                           |
+| **Symbol**       | BLOKC                                                                              |
+| **Standard**     | ERC-20                                                                             |
+| **Contract**     | [Arbscan.io](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
+
+
+---
+
+# Token Utility
+Source: https://docs.blokcapital.io/en/resources/Tokenomics/token-utility
+Section: Resources
+
+Our token will be used for the following:
+
+- Governance of the Blok Capital Platform
+- Medium of exchange on the platform between investors and wealth managers to handle payment of fees.
+- Platform fees payable by both investors and wealth managers and other future actors involved with the platform.
+- Rewards for the introduction of new clients by existing investors to the platform or by any actor introducing an investor to the platform.
+- Rewards for being a certain level of Investor or Wealth Manager. Bronze, Silver, Gold and Diamond by staking the token.
+- Rewards opportunities via activities such as staking to help secure the platform and make it more stable.
+
+
+---
+
+# Tokenomics Chart
+Source: https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart
+Section: Resources
+
+**$BLOKC token distribution**
+
+| Allocation | Share | Purpose |
+| --- | --- | --- |
+| IDO | 20% | Initial DEX offering |
+| Product Development | 15% | Technical development |
+| Team | 20% | Vested Over 3 Years |
+| Treasury | 12.5% | Platform development and maintenance |
+| Marketing And PR | 10% | Growth and awareness |
+| Liquidity | 10% | Market stability |
+| Seed | 5% | Vested Over 3 Years |
+| Influencers | 3% | Marketing and promotion |
+| Bug Bounty | 3% | Security and improvements |
+| Presale | 3% | Early supporters |
+| Advisors | 3% | Strategic guidance |
+| Community | 2% | Community development |
+| Air Drop | 1% | Community rewards and engagement |
+
+
+---
+
 # Security Overview
 Source: https://docs.blokcapital.io/en/resources/audits-and-security/audits
 Section: Resources
 
-At BLOK Capital, security isn’t just a feature, it’s our foundation. We are committed to ensuring that our smart contracts are as secure, reliable, and resilient as possible. To achieve this, we are taking a proactive approach by launching a bug bounty program on Immunefi and audit contests on Cantina and Code4rena.
+To achieve this, our contracts are independently audited, and we are extending that with a bug bounty program on Immunefi and audit contests on Cantina and Code4rena.
 
-### Why This Matters?
+## Completed audits
+
+The BLOK Capital protocol has been audited by [CredShields](https://credshields.com/), and the account-abstraction layer it builds on — ZeroDev's Kernel smart wallet — carries its own independent audits. Every report is published in full below; all reported issues have been resolved.
+
+<Audit />
+
+## Why This Matters?
 Smart contracts are powerful, but they must be battle-tested against vulnerabilities. By inviting top-tier security researchers and auditors to review our code, we aim to identify and eliminate potential risks before they can impact our users.
 
-### What’s Coming?
+## What’s Coming?
 - **Bug Bounty**– Ethical hackers and security researchers will have the chance to test our contracts and earn rewards for uncovering vulnerabilities.
 - **Audit Contests** – Some of the best security minds in Web3 will compete to find and fix issues in our smart contracts, ensuring maximum protection. 
 
@@ -2584,7 +2744,7 @@ By launching these security initiatives, we are reinforcing our commitment to tr
 Source: https://docs.blokcapital.io/en/resources/brand-guidelines/color-palette
 Section: Resources
 
-At BLOK Capital, our color palette is carefully curated to reflect both our technological innovation and our community-first approach. Each color has been chosen with intentional symbolism, supporting our brand narrative and enhancing visual coherence across all platforms.
+Each color has been chosen with intentional symbolism, supporting our brand narrative and enhancing visual coherence across all platforms.
 
 Our visual identity bridges the world of blockchain with the elegance of being easier, safer, and smarter. The use of colors in our illustrations, UI elements, and overall website design aims to express this balance, creating an environment that feels secure, vibrant, and forward-thinking.
 
@@ -2617,13 +2777,12 @@ This palette is modern, modular, and meaningful. Each color aligns with a part o
 Source: https://docs.blokcapital.io/en/resources/brand-guidelines/logo-design
 Section: Resources
 
-The BLOK Capital logo is a foundational element of our visual identity.
 It features a custom-designed symbol paired with a distinctive logotype, crafted for flexibility across diverse applications and environments. This section outlines the official logo formats, usage guidelines, and visual standards to ensure consistent and impactful representation of the BLOK Capital brand.
 
 {/* For full brand guidelines please see <a href="https://drive.google.com/file/d/1kJIUS7sVRpXlJOmYu7-L4MpeiuN80cMl/view?usp=sharing" class="brand-link">BLOK Capital Brand Guidelines</a>. */}
 
 
-### Primary Logo
+## Primary Logo
 
 The primary logo should be used whenever possible to maintain brand consistency. It includes the logo mark and the logotype in a balanced composition.
 
@@ -2667,7 +2826,7 @@ The primary logo should be used whenever possible to maintain brand consistency.
 </div>
 ---
 
-### Mono Color Logo
+## Mono Color Logo
 
 In cases where full color printing is not feasible (e.g., due to production cost constraints), a mono color version of the logo should be used. The logo should either be in a dark color on a light background or in a light color on a dark background. Avoid any loss of contrast.
 
@@ -2717,7 +2876,7 @@ In cases where full color printing is not feasible (e.g., due to production cost
 </div>
 ---
 
-### Mark Construction
+## Mark Construction
 
 The BLOK mark is built using a precise grid and geometric shapes. This ensures balance, clarity, and consistency across all uses.
 
@@ -2734,7 +2893,7 @@ The BLOK mark is built using a precise grid and geometric shapes. This ensures b
 />
 
 
-### Horizontal Logo
+## Horizontal Logo
 
 This version is used when the layout demands a wide and short form factor. Ideal for horizontal spaces like website headers or letterheads.
 
@@ -2752,7 +2911,7 @@ This version is used when the layout demands a wide and short form factor. Ideal
 />
 ---
 
-### Vertical Logo
+## Vertical Logo
 
 When a square or compact format is required (e.g., cover pages, profile icons), the vertical version should be used. It stacks the logo mark and logotype vertically.
 
@@ -2770,7 +2929,7 @@ When a square or compact format is required (e.g., cover pages, profile icons), 
 />
 ---
 
-### Logo on Various Backgrounds
+## Logo on Various Backgrounds
 
 Here are approved color combinations for placing the logo on different backgrounds. Ensure proper contrast and avoid overly complex backdrops.
 
@@ -2840,7 +2999,7 @@ Here are approved color combinations for placing the logo on different backgroun
 
 ---
 
-### Logo Safe Zone
+## Logo Safe Zone
 
 To maintain clarity and impact, preserve adequate whitespace around the logo. No other design elements or text should enter this area.
 
@@ -2858,7 +3017,7 @@ To maintain clarity and impact, preserve adequate whitespace around the logo. No
 />
 ---
 
-### Improper Logo Usage
+## Improper Logo Usage
 
 To protect brand integrity, never alter the logo. Here are examples of incorrect uses that should be avoided:
 
@@ -3013,8 +3172,6 @@ To protect brand integrity, never alter the logo. Here are examples of incorrect
 Source: https://docs.blokcapital.io/en/resources/brand-guidelines/token-design
 Section: Resources
 
-At BLOK Capital, our token transcends mere functionality—it embodies our commitment to decentralized wealth management and community-driven governance.
-
 ## Design Philosophy
 
 The BLOK token is a tangible representation of our dual commitment
@@ -3053,7 +3210,7 @@ Below is a visual representation of both sides of the BLOK token
 Source: https://docs.blokcapital.io/en/resources/create-video
 Section: Resources
 
-BLOKC thrives on open contributions, and our documentation is no exception. Whether you're a developer, designer, or community member, your input helps make our docs more helpful and inclusive for everyone.
+Whether you're a developer, designer, or community member, your input helps make our docs more helpful and inclusive for everyone.
 This guide walks you through the basic setup and knowledge you’ll need to start contributing to the BLOKC documentation hosted on [GitHub](https://github.com/BLOKCapital/documentation).
 
 ## Prerequisites
@@ -3213,59 +3370,10 @@ Prefer a visual guide? Watch this quick video where we walk you through the enti
 
 ---
 
-# FAQs
-Source: https://docs.blokcapital.io/en/resources/FAQs/FAQs
-Section: Resources
-
-### How does BLOK Capital work?
-BLOK Capital enables investors to maintain full control of their crypto assets while allowing wealth managers(Gardeners) to manage these assets under predefined terms set via smart contracts. Investors' assets remain in their personal smart wallets, and wealth managers are granted permission to trade or swap assets without the ability to transfer them out, ensuring security and transparency.
-
-### What cryptocurrencies does BLOK Capital support?
-Specific details about the cryptocurrencies supported by BLOK Capital are not provided in the available information. For comprehensive details, please refer to the official documentation or contact BLOK Capital support.
-
-### Are there any fees for using BLOK Capital?
-There are no fees for using BLOK Capital as of now. All transactions on our platform are gasless, so keep Gardening and grow your gardens :) 
-
-### How can I contact BLOK Capital support?
-You can reach out to BLOK Capital through their official communication channels:
-- **Telegram**: Join our community for instant engagement. [link](https://t.me/BLOKCapital)
-- **X (Twitter)** : When in doubt feel free to DM us! [link](https://x.com/blok_cap)
-- **Farcaster** : Engage with our community on Farcaster [link](https://warpcast.com/blokc)
-
-
-### What are the benefits of using BLOK Capital?
-- **Full Asset Control**: Investors retain complete custody of their assets, enhancing security.
-- **Transparency**: All transactions and terms are governed by smart contracts, ensuring clear and immutable agreements.
-- **Expert Management**: Access to professional wealth managers who can implement strategies to grow your investments with Gardeners(coming soon)
-- **Community Engagement**: Join a thriving community to share insights and learn from experts, use your BLOKC to vote on proposals and much more!
-
-
-
-### Does BLOK Capital offer rewards?
-BLOK Capital rewards loyal users with BLOKC, which has a lot of perks alongwith governance powers.
-
-### How do I recover my BLOK Capital account if I lose access?
-As BLOK Capital emphasizes self-custody, it's crucial to securely store your wallet’s recovery phrases. If you lose access, recovery depends on these credentials. BLOK Capital may not have access to your private information, so ensure you follow best practices for securing and backing up your wallet information.
-
-### What security measures does BLOK Capital have in place?
-- **Self-Custody**: Investors maintain control over their assets, reducing the risk associated with third-party custody.
-- **Smart Contracts**: Utilizes audited and secure smart contracts to manage transactions and agreements.
-- **Transparency**: All operations are conducted on the blockchain, providing an immutable and transparent record.
-
-### Is there a minimum deposit required to use BLOK Capital?
-There is no minimum deposit requirement while using BLOK Capital, users can deposit as little as 10USDC to their gardens.
-
-### Are there any geographic restrictions for using BLOK Capital?
-There are no geographic restrictions for using BLOK Capital. We are fully decentralized and welcome our users beyond any geographic boundaries.
-
-
----
-
 # Garden Indices
 Source: https://docs.blokcapital.io/en/resources/garden-index
 Section: Resources
 
-A market-cap weighted index assigns weights to assets proportional to their market capitalization relative to the total market capitalization of the portfolio (or basket).
 Here’s a structured **overview of market-cap weighted indexes**, based on the content of the document you uploaded.
 
 ---
@@ -3420,7 +3528,7 @@ Swap size = \$400.
 Source: https://docs.blokcapital.io/en/resources/intro
 Section: Resources
 
-The Resources Section provides essential materials and references for users, developers, and contributors. It includes security audits, brand usage guidelines, official smart contract addresses, blog articles, frequently asked questions, and a pathway to contribute to our documentation. This section ensures transparency, consistency, and encourages community collaboration.
+It includes security audits, brand usage guidelines, official smart contract addresses, blog articles, frequently asked questions, and a pathway to contribute to our documentation. This section ensures transparency, consistency, and encourages community collaboration.
 
 
 ---
@@ -3487,6 +3595,78 @@ Tokens remain locked in the contributor account until a fixed unlock timestamp s
 
 After unlock, the contributor can withdraw a specific amount to any address, or sweep the full balance to their own wallet. No protocol involvement is required at withdrawal time.
 
+---
+
+## How Rewards Are Earned
+
+The sections above describe how settled rewards are secured and distributed on-chain. This section describes the earning side that comes first: who can take part, what counts as a contribution, how each post is scored, and how a provisional score becomes a settled reward that feeds the distribution proposal.
+
+Today, contributions are public posts on X (Twitter) about BLOK Capital. The scoring and settlement described here happen off-chain; only settled rewards are ever proposed on-chain.
+
+### Who Can Earn
+
+Taking part is self-serve, and approval is automatic once both accounts are connected and pass the checks:
+
+- **Sign in** with Google. This creates your contributor identity and a smart account used for reward attribution.
+- **Connect Discord.** You must be a member of the official BLOK Capital Discord server.
+- **Connect X.** Your X account must have at least 250 followers.
+- Both your X account and your Discord account must have been created before 2026.
+
+You must also be of the age of majority in your jurisdiction and legally permitted to receive $BLOKC. Approval is required before any post can earn, and posts published before you were approved do not earn.
+
+### What Earns Rewards
+
+- **Original public posts on X** that mention **$BLOKC** or **@blok_cap**.
+- **Replies and reposts do not count.**
+- **Up to two posts per day** earn rewards, counted by the UTC day the post was published. Any further posts that day are recorded but score zero.
+- The **full text** of long posts and any **attached images** (charts, screenshots, diagrams) are read and judged.
+- **Likes, views, reposts, and follower count are not scored.** Reach is not part of the score, so it cannot be bought or farmed for a higher reward.
+
+### How Each Post Is Scored
+
+Posts are scored daily. An AI judge reads each post and checks every claim it makes against the official BLOK Capital documentation at docs.blokcapital.io. Each claim is marked as supported, contradicted, unsupported, or not applicable, and the score is derived from those verdicts together with how substantive the claims are, the originality of the writing, and the overall quality.
+
+Posts that **score well**:
+
+- Original posts that explain how BLOK Capital works.
+- Specific, checkable claims that match the documentation. The more substance, the higher the score.
+- Written in your own words and framing.
+
+Posts that **score zero**:
+
+- Empty praise, such as "great project" or a single emoji.
+- Reposting or rewording something that has already been scored, in any language.
+- Copying sentences straight from the documentation.
+- Posts that appear to be machine generated.
+
+Each post's score converts into a $BLOKC amount. Reward amounts are discretionary and are not wages or a guarantee of any value.
+
+### Provisional Rewards and Settlement
+
+The amount you see first is **provisional**. About seven days after a post is scored, it is re-checked and the reward is **settled** (confirmed). This delay is a deliberate safety window, and it is the last point at which a reward can be reversed at no cost, before it is proposed on-chain.
+
+A reward is **removed** if, at settlement, the post has been:
+
+- deleted, made private, or its account suspended,
+- edited into something materially different from what was scored, or
+- found to duplicate another contribution. Where two posts match, the earliest post keeps the reward and the later one is removed.
+
+Only settled rewards are owed. Settled amounts are what the on-chain distribution proposal, described earlier on this page, pays out.
+
+### Claiming and the Lock
+
+Settled $BLOKC accrues in your **rewards vault** and stays locked until **May 1, 2027**, a fixed date that cannot be accelerated or overridden by anyone, including the team. As described in Token Lock and Governance above, your voting power is delegated to you during the lock, so locked $BLOKC counts toward governance from day one.
+
+After the unlock date you can claim, which sweeps your full balance to your **smart wallet**. Before then, any claim attempt is refused while the lock is in force.
+
+### Requesting a Human Review
+
+Because scoring is automated, you can request a human review of any score. Contact the team through the official Discord or X channels. A record of how each post was assessed is kept and is reviewed on request.
+
+### The #BLOKC Contest Is Separate
+
+From time to time BLOK Capital runs a separate contest, such as the "Explain BLOK to a Friend" contest, which uses the **#BLOKC** hashtag. Contest entries are judged only for that contest. They are not counted or paid as regular $BLOKC contribution rewards.
+
 
 ---
 
@@ -3494,81 +3674,33 @@ After unlock, the contributor can withdraw a specific amount to any address, or 
 Source: https://docs.blokcapital.io/en/resources/smart-contract-address
 Section: Resources
 
-**The contracts are currently under development, this section would be live soon.**
+**Not yet deployed**
 
 
----
-
-# Behavioural Economics
-Source: https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics
-Section: Resources
-
-The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time poor and need professional help to try and invest in the complexities of Crypto Assets.
-
-Indeed, in the market sizing section, we make it absolutely clear we are going for this market and not professional high velocity traders or more risk ready investors. We shall leave this to other protocols. We believe focus is everything and we also believe this is an incredibly big market for the protocol to serve.
-
-Using the BLOKC Token we shall reward investors for good investment behavior and equally not reward them for bad behavior.
-Some examples:
-- An investor who doesn’t touch this investment for 1 year will receive BLOKC tokens as a reward for good behavior.
-- An investor who sells or changes advisors throughout the year will receive no incentivisation.
-
-We shall employ the services of an advisor experienced in Behavioral economics and tokenomics so we can keep a constant eye on the behavior of our protocol users to ensure we are aligning incentives across all stakeholders to hold the token and be long term investors / users of the protocol. This was explained more in the Flywheel section above.
-
-Rewarding Good behavior, punishing poor behavior forces our users to become rewarded happy protocol users.
+BLOK Capital V1 has not been deployed to mainnet, so there are no addresses to
+verify yet. This page will list every deployed contract with its network,
+address and block explorer link as soon as deployment completes.
 
 
----
+## Where addresses will be published
 
-# The Token
-Source: https://docs.blokcapital.io/en/resources/Tokenomics/the-token
-Section: Resources
+When V1 ships, each contract will be listed here with:
 
-| Field            | Value                                                                              |
-| ---------------- | ---------------------------------------------------------------------------------- |
-| **Token Name**   | BLOKC Coin                                                                         |
-| **Total Supply** | 10,000,000,000 BLOKC                                                               |
-| **Blockchain**   | Arbitrum                                                                           |
-| **Symbol**       | BLOKC                                                                              |
-| **Standard**     | ERC-20                                                                             |
-| **Contract**     | [Arbscan.io](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
+- the **network** and chain ID it is deployed on;
+- the **verified address**, linked to the block explorer;
+- the **facet or module** it implements, cross-referenced to its page in
+  [Smart Contracts](/en/smart-contracts);
+- the **audit report** covering it, from [Security Overview](/en/resources/audits-and-security/audits).
 
+## Verifying an address in the meantime
 
----
+Treat any address circulating before that as unverified. BLOK Capital will only
+ever publish addresses in two places — this page and the
+[public audits repository](https://github.com/BLOKCapital/audits). Anything
+posted elsewhere, including in chat channels or direct messages, should be
+assumed hostile until you have matched it against one of those two sources.
 
-# Token Utility
-Source: https://docs.blokcapital.io/en/resources/Tokenomics/token-utility
-Section: Resources
+## Follow the deployment
 
-Our token will be used for the following:
-
-- Governance of the Blok Capital Platform
-- Medium of exchange on the platform between investors and wealth managers to handle payment of fees.
-- Platform fees payable by both investors and wealth managers and other future actors involved with the platform.
-- Rewards for the introduction of new clients by existing investors to the platform or by any actor introducing an investor to the platform.
-- Rewards for being a certain level of Investor or Wealth Manager. Bronze, Silver, Gold and Diamond by staking the token.
-- Rewards opportunities via activities such as staking to help secure the platform and make it more stable.
-
-
----
-
-# Tokenomics Chart
-Source: https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart
-Section: Resources
-
-**$BLOKC token distribution**
-
-| Allocation | Share | Purpose |
-| --- | --- | --- |
-| IDO | 20% | Initial DEX offering |
-| Product Development | 15% | Technical development |
-| Team | 20% | Vested Over 3 Years |
-| Treasury | 12.5% | Platform development and maintenance |
-| Marketing And PR | 10% | Growth and awareness |
-| Liquidity | 10% | Market stability |
-| Seed | 5% | Vested Over 3 Years |
-| Influencers | 3% | Marketing and promotion |
-| Bug Bounty | 3% | Security and improvements |
-| Presale | 3% | Early supporters |
-| Advisors | 3% | Strategic guidance |
-| Community | 2% | Community development |
-| Air Drop | 1% | Community rewards and engagement |
+- Watch [github.com/BLOKCapital](https://github.com/BLOKCapital) for release tags.
+- Deployment announcements go out on [X](https://x.com/blok_cap) and in [Discord](https://discord.com/invite/blokc).

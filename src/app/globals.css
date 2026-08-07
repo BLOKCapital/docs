@@ -6,6 +6,10 @@
  * Garden Journal theme — warm cream paper, cocoa ink, moss + clay.
  * Tokens mirror the marketing site (new-webiste) so docs and site share
  * one visual language. R G B triplets feed Tailwind's `<alpha-value>`.
+ *
+ * Light only, by design: the cream paper IS the brand, and a dark variant read
+ * as a different product. Every text pair below is verified at >= 4.5:1 (WCAG
+ * AA); the contrast notes beside each token record which pair forced the value.
  */
 :root {
   --paper: 250 247 240;
@@ -14,14 +18,19 @@
 
   --ink: 31 26 20;
   --ink-2: 71 60 48;
-  --ink-3: 122 108 90;
+  /* Darkened from 122 108 90: at the old value the search trigger label
+     (ink-3 on paper-warm) sat at 4.41:1 and missed AA. Now 5.36:1. */
+  --ink-3: 108 95 78;
 
   --moss: 79 111 79;
   --moss-deep: 50 78 56;
   --moss-soft: 138 169 138;
   --sage: 168 181 160;
+  /* `clay` is a decorative accent only (rules, focus ring, sidebar marker) —
+     it is 3.07:1 on paper. Anything carrying text uses `clay-deep` (4.97:1). */
   --clay: 198 123 92;
   --clay-deep: 154 91 65;
+  /* Border + highlight-background only, never text. */
   --ochre: 196 156 71;
 
   --rule: 31 26 20;
@@ -51,12 +60,13 @@ body {
 }
 
 /* Keyboard focus ring. In @layer base so components can opt out via an
-   `outline-none` utility (e.g. controls that supply their own focus style). */
+   `outline-none` utility (e.g. controls that supply their own focus style).
+   No `border-radius` here — forcing 4px drew a near-rectangular ring around
+   `rounded-full` pills. Outline follows the element's own radius instead. */
 @layer base {
   :focus-visible {
     outline: 2px solid rgb(var(--clay));
     outline-offset: 3px;
-    border-radius: 4px;
   }
 }
 
@@ -137,7 +147,18 @@ body {
   font-family: var(--font-display);
   color: rgb(var(--ink));
   letter-spacing: -0.012em;
-  scroll-margin-top: 6rem;
+  /* The mobile header is two stacked rows (64px bar + ~44px section tabs
+     ≈ 108px), so a 6rem offset dropped anchored headings behind it. Desktop
+     has a single 64px bar and reverts below. */
+  scroll-margin-top: 7.5rem;
+}
+@media (min-width: 768px) {
+  .doc-prose h1,
+  .doc-prose h2,
+  .doc-prose h3,
+  .doc-prose h4 {
+    scroll-margin-top: 6rem;
+  }
 }
 .doc-prose h1 {
   font-weight: 600;
@@ -303,6 +324,56 @@ body {
 .doc-prose [data-rehype-pretty-code-figure] {
   margin: 1.5rem 0;
 }
+
+/* ── Code block chrome ────────────────────────────────────────────────
+   `.code-block` wraps every fenced block (see CodeBlock.tsx) and anchors the
+   copy button. The button stays visible on touch (where there is no hover) and
+   on keyboard focus; it only fades in on hover for pointer users. */
+.code-block {
+  position: relative;
+}
+.code-block .code-copy {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 28px;
+  padding: 0.25rem 0.55rem;
+  border-radius: 7px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.08);
+  color: #d9d4c7;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+.code-block:hover .code-copy,
+.code-block .code-copy:focus-visible {
+  opacity: 1;
+}
+.code-block .code-copy:hover {
+  background: rgb(255 255 255 / 0.16);
+}
+.code-block .code-copy[data-copied="true"] {
+  opacity: 1;
+  color: #b7d3b2;
+}
+/* Touch/coarse pointers get no hover event — keep the control permanently on. */
+@media (hover: none) {
+  .code-block .code-copy {
+    opacity: 1;
+  }
+}
+/* Leave room so the button never sits on top of the first line of code. */
+.code-block pre {
+  padding-right: 4.5rem;
+}
 .doc-prose [data-rehype-pretty-code-title] {
   font-family: var(--font-mono);
   font-size: 12px;
@@ -331,14 +402,25 @@ body {
   margin: 0.35rem 0;
 }
 
-/* Tables. */
+/* Tables.
+   Horizontal overflow is handled by a `.table-scroll` wrapper (see Mdx.tsx),
+   NOT by `display: block` on the <table> itself — that drops the table role in
+   several browser/AT pairings, costing screen readers row/column association,
+   and it breaks natural column sizing. */
+.table-scroll {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  /* Keyboard users must be able to reach a scrollable region; the tabIndex on
+     the wrapper does that, and this keeps its focus ring from being clipped. */
+  scrollbar-width: thin;
+}
 .doc-prose table {
   width: 100%;
-  margin: 1.5rem 0;
   border-collapse: collapse;
   font-size: 14.5px;
-  display: block;
-  overflow-x: auto;
+}
+.doc-prose .table-scroll table {
+  margin: 0;
 }
 .doc-prose thead {
   border-bottom: 2px solid rgb(var(--rule) / 0.15);
@@ -359,13 +441,76 @@ body {
   background: rgb(var(--moss) / 0.04);
 }
 
-/* Images & figures. */
+/* Images & figures.
+   Width/height come from the build-time manifest (see scripts/build-image-manifest.ts)
+   so the browser reserves space and nothing shifts on load. The inline
+   `max-width` caps each image at its intrinsic size — previously every diagram
+   was stretched to the full column and went soft. */
 .doc-prose img {
   border-radius: 12px;
   border: 1px solid rgb(var(--rule) / 0.1);
-  margin: 1.5rem 0;
+  margin: 1.5rem auto;
+  display: block;
   max-width: 100%;
   height: auto;
+}
+.doc-prose .zoomable {
+  cursor: zoom-in;
+  transition: border-color 150ms ease;
+}
+.doc-prose .zoomable:hover {
+  border-color: rgb(var(--moss) / 0.45);
+}
+
+/* ── FAQ / disclosure ─────────────────────────────────────────────────
+   `<details>` blocks authored in MDX. Crawlable (content stays in the DOM) and
+   keyboard-operable for free, unlike a JS accordion. */
+.doc-prose details {
+  margin: 0.6rem 0;
+  border: 1px solid rgb(var(--rule) / 0.1);
+  border-radius: 12px;
+  background: rgb(var(--paper-warm));
+  overflow: hidden;
+}
+.doc-prose details > summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1.1rem;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: rgb(var(--ink));
+}
+.doc-prose details > summary::-webkit-details-marker {
+  display: none;
+}
+.doc-prose details > summary::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.45em;
+  border-right: 1.8px solid rgb(var(--moss));
+  border-bottom: 1.8px solid rgb(var(--moss));
+  transform: rotate(-45deg);
+  transition: transform 180ms ease;
+}
+.doc-prose details[open] > summary::before {
+  transform: rotate(45deg);
+}
+.doc-prose details > summary:hover {
+  background: rgb(var(--moss) / 0.05);
+}
+.doc-prose details > *:not(summary) {
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+.doc-prose details > *:last-child {
+  margin-bottom: 0.9rem;
 }
 
 /* Horizontal rule. */

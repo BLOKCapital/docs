@@ -30,7 +30,7 @@
           "findings": {
             "critical": "-",
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": "-",
             "tips": "-"
           }
@@ -44,7 +44,7 @@
           "findings": {
             "critical": "-",
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": "-",
             "tips": "-"
           }
@@ -58,7 +58,7 @@
           "findings": {
             "critical": "-",
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": 2,
             "tips": "-"
           }
@@ -72,7 +72,7 @@
           "findings": {
             "critical": 2,
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": 1,
             "tips": "-"
           }
@@ -86,7 +86,7 @@
           "findings": {
             "critical": 1,
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": "-",
             "tips": "-"
           }
@@ -100,7 +100,7 @@
           "findings": {
             "critical": 1,
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": "-",
             "tips": "-"
           }
@@ -114,7 +114,7 @@
           "findings": {
             "critical": 1,
             "high": 2,
-            "midium": 4,
+            "medium": 4,
             "low": "-",
             "tips": 1
           }
@@ -128,7 +128,7 @@
           "findings": {
             "critical": 1,
             "high": 2,
-            "midium": 4,
+            "medium": 4,
             "low": "-",
             "tips": 1
           }
@@ -142,7 +142,7 @@
           "findings": {
             "critical": "-",
             "high": "-",
-            "midium": "-",
+            "medium": "-",
             "low": "-",
             "tips": 5
           }

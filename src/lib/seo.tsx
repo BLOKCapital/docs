@@ -47,13 +47,20 @@ export const OG_IMAGE = {
  */
 export function languageAlternates(
   pathAfterLocale: string,
+  /**
+   * Locales this page actually exists in. Defaults to all of them; pass the
+   * real set (see `localesWithDoc`) so the cluster never advertises a
+   * translation that 404s. `x-default` follows the first available locale.
+   */
+  available: readonly Locale[] = LOCALES,
 ): Record<string, string> {
   const suffix = pathAfterLocale ? `/${pathAfterLocale}` : "";
+  const locales = available.length ? available : LOCALES;
   const languages: Record<string, string> = {};
-  for (const loc of LOCALES) {
+  for (const loc of locales) {
     languages[loc] = absoluteUrl(`/${loc}${suffix}`);
   }
-  languages["x-default"] = absoluteUrl(`/${LOCALES[0]}${suffix}`);
+  languages["x-default"] = absoluteUrl(`/${locales[0]}${suffix}`);
   return languages;
 }
 
@@ -70,10 +77,14 @@ export function canonicalFor(
  * `alternates` block ready to spread into a Next.js Metadata object:
  * canonical + per-language hreflang.
  */
-export function alternatesFor(locale: Locale, pathAfterLocale: string) {
+export function alternatesFor(
+  locale: Locale,
+  pathAfterLocale: string,
+  available?: readonly Locale[],
+) {
   return {
     canonical: canonicalFor(locale, pathAfterLocale),
-    languages: languageAlternates(pathAfterLocale),
+    languages: languageAlternates(pathAfterLocale, available),
   };
 }
 
@@ -143,11 +154,19 @@ export function extractFaq(body: string): { question: string; answer: string }[]
 
   for (const line of lines) {
     if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
-    const heading = !inFence && line.match(/^#{2,3}\s+(.+?)\s*#*\s*$/);
-    if (heading) {
+    // Questions are authored either as `##` headings or, on the FAQ pages, as
+    // the <summary> of a <details> disclosure. Both must be recognised or the
+    // page silently loses its FAQPage rich-result eligibility.
+    const summary = inFence ? null : line.match(/<summary[^>]*>\s*(.+?)\s*<\/summary>/);
+    const heading =
+      inFence || summary ? null : line.match(/^#{2,3}\s+(.+?)\s*#*\s*$/);
+    const question = summary?.[1] ?? heading?.[1];
+    if (question) {
       push();
-      current = { question: heading[1].replace(/[*_`]/g, "").trim(), answer: [] };
+      current = { question: question.replace(/[*_`]/g, "").trim(), answer: [] };
     } else if (current) {
+      // Structural tags of the disclosure itself aren't part of the answer.
+      if (/^\s*<\/?details(\s|>)/.test(line)) continue;
       current.answer.push(line);
     }
   }
@@ -248,23 +267,6 @@ export function articleLd(opts: {
   };
 }
 
-/** CollectionPage for a section landing / locale home. */
-export function collectionPageLd(opts: {
-  name: string;
-  description: string;
-  url: string;
-  locale: Locale;
-}): Json {
-  return {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: opts.name,
-    description: opts.description,
-    url: opts.url,
-    inLanguage: opts.locale,
-    isPartOf: { "@id": `${SITE.url}/#website` },
-  };
-}
 
 /** FAQPage from extracted Q&A pairs. */
 export function faqLd(

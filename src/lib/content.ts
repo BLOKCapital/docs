@@ -264,6 +264,68 @@ function buildTree(
   });
 }
 
+/**
+ * Would rendering `description` under the H1 just repeat how the page opens?
+ *
+ * Descriptions do double duty: they are the meta description (so they must stay
+ * in frontmatter) and they render as the visible lede. Many were generated as
+ * excerpts of the body — sometimes truncated with an ellipsis — so displaying
+ * them printed the same sentence twice, back to back. `fix-content-structure`
+ * strips the exact duplicates from the source; this catches the truncated ones
+ * and anything reintroduced later, at render time.
+ */
+export function duplicatesLede(description: string, body: string): boolean {
+  const norm = (s: string) =>
+    s
+      .replace(/^---[\s\S]*?---/, "")
+      .replace(/[*_`#>]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+  const desc = norm(description).replace(/[…\.]+$/, "");
+  if (desc.length < 40) return false; // too short to judge
+  return norm(body).startsWith(desc.slice(0, Math.min(desc.length, 120)));
+}
+
+/**
+ * The first real doc in a section — the page `/<locale>/<section>` sends you to.
+ *
+ * The section roots used to render a grid of link cards. That is a thin hub
+ * page: no content of its own, competing with the real docs in search results
+ * and putting an extra click between a searcher and the answer. They now
+ * redirect here instead, so every indexable URL is a page with actual content.
+ */
+export const getSectionEntry = cache(
+  (locale: Locale, section: SectionSlug): string => {
+    const first = flattenNav(getSectionNav(locale, section))[0];
+    return first?.href ?? `/${locale}`;
+  },
+);
+
+/** `{ concepts: "/en/concepts/blok-c-overview", … }` for one locale. */
+export function getSectionEntries(
+  locale: Locale,
+): Record<SectionSlug, string> {
+  return Object.fromEntries(
+    SECTIONS.map((s) => [s.slug, getSectionEntry(locale, s.slug)]),
+  ) as Record<SectionSlug, string>;
+}
+
+/**
+ * Which locales actually have this page.
+ *
+ * Content parity is not guaranteed — `resources/brand-guidelines/logo-design`
+ * exists in English only — so neither the sitemap nor a page's hreflang cluster
+ * may claim a translation that isn't there. Advertising one costs a soft 404 in
+ * Search Console and sends speakers of that language to a dead URL.
+ */
+export const localesWithDoc = cache((pathAfterLocale: string): Locale[] =>
+  LOCALES.filter((locale) =>
+    getAllDocs(locale).some((d) => d.segments.join("/") === pathAfterLocale),
+  ),
+);
+
 /** Flatten a nav tree into ordered doc links (for prev/next). */
 export function flattenNav(nodes: NavNode[]): { label: string; href: string }[] {
   const out: { label: string; href: string }[] = [];

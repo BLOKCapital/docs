@@ -31,6 +31,8 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 ## Builders
 
 - [Builders overview](https://docs.blokcapital.io/en/builders): Hands-on guides for building on BLOK Capital: Gardens, facets, and governance.
+- [Guide: Creating a New Diamond Facet](https://docs.blokcapital.io/en/builders/Guides/Facets.md): In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic.
+- [Smart contract style guide](https://docs.blokcapital.io/en/builders/Guides/contract-style-guide.md): Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access control).
 - [Cut](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/cut.md): This module manages state upgrades within the Diamond but enforces Blok Capital's strict "Registry-First" security model.
 - [Loupe](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/loupe.md): The Loupe module is entirely read-only.
 - [Ownership](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/ownership.md): The ownership module provides standard ERC-173 administrative control but stores the state securely within the Diamond Storage pattern to prevent collisions during upgrades.
@@ -41,8 +43,6 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 - [IndexStorage.sol](https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/index-facets/index-storage.md): As the Diamond pattern relies on , state must be carefully managed to avoid storage collisions. Blok Capital uses the Diamond Storage pattern.
 - [Protocol Architecture V1](https://docs.blokcapital.io/en/builders/blok-capital-v1.md): Onboarding new users is hindered by the complexity and risk of seed-phrase management.
 - [Governance with Aragon](https://docs.blokcapital.io/en/builders/dao-governance/blokc-proposal.md): At BLOK Capital, we’re redefining decentralized governance by building a robust and modular DAO proposal system, seamlessly powered by Aragon OSX.
-- [Smart contract style guide](https://docs.blokcapital.io/en/builders/Guides/contract-style-guide.md): Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access control).
-- [Guide: Creating a New Diamond Facet](https://docs.blokcapital.io/en/builders/Guides/Facets.md): In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic.
 - [Builders Section](https://docs.blokcapital.io/en/builders/intro.md): The Builders Section is designed for developers and technical contributors who want to dive deep into the architecture, smart contracts, and governance logic of the Blok Capital ecosystem.
 - [Gardens & Diamonds](https://docs.blokcapital.io/en/builders/smart-contracts/gardens-and-diamonds.md): At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern.
 - [Overview](https://docs.blokcapital.io/en/builders/smart-contracts/overview.md): Gardens are programmable crypto portfolios implemented as ERC-2535 Diamond contracts.
@@ -51,20 +51,20 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 ## Resources
 
 - [Resources overview](https://docs.blokcapital.io/en/resources): Tokenomics, audits, FAQs, brand assets, and contract addresses.
+- [FAQs](https://docs.blokcapital.io/en/resources/FAQs/FAQs.md): BLOK Capital enables investors to maintain full control of their crypto assets while allowing wealth managers(Gardeners) to manage these assets under predefined terms set via smart contracts.
+- [Behavioural Economics](https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics.md): The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time poor and need professional help to try and…
+- [The Token](https://docs.blokcapital.io/en/resources/Tokenomics/the-token.md): Key details of the BLOKC token—built on Arbitrum, designed for utility, governance, and long-term ecosystem alignment.
+- [Token Utility](https://docs.blokcapital.io/en/resources/Tokenomics/token-utility.md): Our token will be used for the following: Governance of the Blok Capital Platform Medium of exchange on the platform between investors and wealth managers to handle payment of fees.
+- [Tokenomics Chart](https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart.md): A visual breakdown of BLOKC's token distribution—designed to ensure long-term sustainability, alignment, and ecosystem growth.
 - [Security Overview](https://docs.blokcapital.io/en/resources/audits-and-security/audits.md): At BLOK Capital, security isn’t just a feature, it’s our foundation. We are committed to ensuring that our smart contracts are as secure, reliable, and resilient as possible.
 - [Color Palette](https://docs.blokcapital.io/en/resources/brand-guidelines/color-palette.md): At BLOK Capital, our color palette is carefully curated to reflect both our technological innovation and our community-first approach.
 - [Logo Design](https://docs.blokcapital.io/en/resources/brand-guidelines/logo-design.md): The BLOK Capital logo is a foundational element of our visual identity.
 - [Token Design](https://docs.blokcapital.io/en/resources/brand-guidelines/token-design.md): At BLOK Capital, our token transcends mere functionality—it embodies our commitment to decentralized wealth management and community-driven governance.
 - [Contribute to our docs](https://docs.blokcapital.io/en/resources/create-video.md): BLOKC thrives on open contributions, and our documentation is no exception.
-- [FAQs](https://docs.blokcapital.io/en/resources/FAQs/FAQs.md): BLOK Capital enables investors to maintain full control of their crypto assets while allowing wealth managers(Gardeners) to manage these assets under predefined terms set via smart contracts.
 - [Garden Indices](https://docs.blokcapital.io/en/resources/garden-index.md): A market-cap weighted index assigns weights to assets proportional to their market capitalization relative to the total market capitalization of the portfolio (or basket).
 - [Resources Section](https://docs.blokcapital.io/en/resources/intro.md): The Resources Section provides essential materials and references for users, developers, and contributors.
 - [Contributor Rewards](https://docs.blokcapital.io/en/resources/rewards-program.md): How BLOK Capital distributes $BLOKC rewards to contributors through a three-layer pipeline combining AI-driven scoring, multi-signer approval, and on-chain execution.
-- [Smart Contract Addresses](https://docs.blokcapital.io/en/resources/smart-contract-address.md): The contracts are currently under development, this section would be live soon.
-- [Behavioural Economics](https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics.md): The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time poor and need professional help to try and…
-- [The Token](https://docs.blokcapital.io/en/resources/Tokenomics/the-token.md): Key details of the BLOKC token—built on Arbitrum, designed for utility, governance, and long-term ecosystem alignment.
-- [Token Utility](https://docs.blokcapital.io/en/resources/Tokenomics/token-utility.md): Our token will be used for the following: Governance of the Blok Capital Platform Medium of exchange on the platform between investors and wealth managers to handle payment of fees.
-- [Tokenomics Chart](https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart.md): A visual breakdown of BLOKC's token distribution—designed to ensure long-term sustainability, alignment, and ecosystem growth.
+- [Smart Contract Addresses](https://docs.blokcapital.io/en/resources/smart-contract-address.md): Deployed BLOK Capital contract addresses. Mainnet deployment is in progress — verified addresses will be published here and in the audits repository.
 
 ## Optional
 

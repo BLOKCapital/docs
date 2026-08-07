@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Inter, Newsreader, Caveat, JetBrains_Mono } from "next/font/google";
-import { DEFAULT_LOCALE } from "@/lib/config";
+import { NotFoundContent } from "@/components/docs/NotFoundContent";
+import { getSectionEntries } from "@/lib/content";
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  type Locale,
+  type SectionSlug,
+} from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -20,31 +26,30 @@ const caveat = Caveat({ subsets: ["latin"], weight: ["400", "500", "600"], displ
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--font-mono" });
 
 /**
- * Global 404. Rendered outside the `[locale]` layout, so it supplies its own
- * `<html>`/`<body>`. Defaults to the site's primary locale.
+ * The site's 404, for every unmatched path.
+ *
+ * Next renders a `notFound()` boundary under the root layout only, and this
+ * app's `<html>`/`<body>` and navigation live in `[locale]/layout.tsx` — so a
+ * nested `[locale]/not-found.tsx` would render without any of that chrome. This
+ * page therefore supplies its own document shell, and `NotFoundContent` brings
+ * its own header, section links and footer, localized from the pathname.
  */
 export default function NotFound() {
   return (
     <html
       lang={DEFAULT_LOCALE}
       className={`${inter.variable} ${newsreader.variable} ${caveat.variable} ${jetbrains.variable} bg-paper text-ink`}
+      suppressHydrationWarning
     >
       <body className="min-h-screen antialiased" suppressHydrationWarning>
-        <div className="paper relative isolate flex min-h-[70vh] items-center justify-center px-6 text-center">
-          <div>
-            <p className="eyebrow text-moss">404</p>
-            <h1 className="display mt-3 text-[40px] text-ink">Page not found</h1>
-            <p className="mt-3 text-ink-muted">
-              This page may have moved or doesn&apos;t exist in this language.
-            </p>
-            <Link
-              href={`/${DEFAULT_LOCALE}`}
-              className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-moss px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-moss-deep"
-            >
-              ← Back to docs home
-            </Link>
-          </div>
-        </div>
+        {/* Computed here (a Server Component) and handed down for every locale:
+            NotFoundContent recovers the locale from the pathname on the client,
+            and can't read the content tree itself. */}
+        <NotFoundContent
+          sectionEntries={Object.fromEntries(
+            LOCALES.map((l) => [l, getSectionEntries(l)]),
+          ) as Record<Locale, Record<SectionSlug, string>>}
+        />
       </body>
     </html>
   );

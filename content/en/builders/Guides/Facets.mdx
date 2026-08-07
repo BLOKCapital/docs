@@ -3,10 +3,10 @@ title: 'Guide: Creating a New Diamond Facet'
 description: 'In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic.'
 position: 3
 ---
-### Overview 
+## Overview 
 In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic. For example, “A Facets can be compared to an implementation contract… [it] holds the external function logic the proxy (Diamond) will call”. Facets allow us to split functionality into separate contracts that can be upgraded independently. Each facet has its own isolated state (using the Diamond Storage pattern) to avoid storage conflicts. This guide explains our conventions for adding a new facet, including folder structure, contract layout, and testing.
 
-### Folder Structure
+## Folder Structure
 Each new facet has its own subfolder under src/facets/, containing five Solidity files, plus corresponding tests under test/facets/. For example, a Transfer facet would use:
 - `src/facets/transfer/TransferFacet.sol` – the public facet contract.
 - `src/facets/transfer/TransferBase.sol` – an abstract contract with internal logic.
@@ -22,7 +22,7 @@ Tests mirror this structure in `test/facets/transfer/`. You should create:
 
 This naming convention ensures clarity and allows isolating tests via Foundry’s `--match-contract` flag.
 
-### Facet Contract Layout
+## Facet Contract Layout
 Within each facet folder, we follow a strict contract layout:
 
 - `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Declare a `bytes32 constant STORAGE_SLOT = keccak256("blokc.<facet>.storage")`, a struct Layout with all facet state variables, and a function (often named layout()) that returns a pointer to that storage slot using inline assembly. For example:
@@ -111,7 +111,7 @@ interface ITransferBase {
     event ERC20TransferExecuted(address indexed token, address indexed from, address indexed to, uint256 amount);
 }
 ```
-### Testing Facets
+## Testing Facets
 We test facets by deploying them into a Diamond using the provided Foundry test framework. The key conventions are:
 - **Helper Contract** (`<FacetName>Helper`): Write a helper that creates the facet, and returns its address, selectors array, initializer function, and supported interface IDs. This is used by tests to assemble the Diamond configuration. For example, a TransferFacetHelper might implement facet() (return the facet address) and selectors() (array of function selectors to add).
 ```js

@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
-import GithubSlugger from "github-slugger";
+import GithubSlugger, { slug as staticSlug } from "github-slugger";
 import { LOCALES, SECTIONS, isLocale } from "../src/lib/config";
 
 export { LOCALES, SECTIONS, isLocale };
@@ -136,6 +136,19 @@ export function collectHeadings(body: string): Heading[] {
       continue;
     }
     if (inFence) continue;
+
+    // `<summary>` in a <details> disclosure is a section heading in every sense
+    // that matters here — it's what the FAQ pages use instead of `##`, and
+    // without this their questions would drop out of the search index's heading
+    // weighting and lose their deep links. Prefers the id authored on the tag
+    // and falls back to slugging the text, so both forms resolve.
+    const s = line.match(/<summary(?:\s+id="([^"]*)")?[^>]*>\s*(.+?)\s*<\/summary>/);
+    if (s) {
+      const text = s[2].replace(/[*_`]/g, "").trim();
+      out.push({ text, slug: s[1] || staticSlug(text) });
+      continue;
+    }
+
     const m = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
     if (!m) continue;
     const level = m[1].length;

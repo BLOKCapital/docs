@@ -3,14 +3,14 @@ title: Pourquoi le standard Transparent Proxy pour les Fabriques et Registres ?
 description: 'L’implémentation du Transparent Proxy suit EIP-1967, qui standardise la manière dont les proxys stockent l’adresse du contrat d’implémentation.'
 position: 4
 ---
-### 1. ERC-1967 : Prévenir les collisions de stockage
+## 1. ERC-1967 : Prévenir les collisions de stockage
 
 L’implémentation du **Transparent Proxy** suit [EIP-1967](https://eips.ethereum.org/EIPS/eip-1967), qui standardise la manière dont les proxys stockent l’**adresse du contrat d’implémentation**.
 
 * **Sans standard :** Chaque projet pourrait utiliser des emplacements de stockage arbitraires, et la mise à jour ou la composition de contrats pourrait entraîner des **collisions de stockage**, corrompant les variables d’état.
 * **Avec ERC-1967 :** L’adresse de l’implémentation est toujours stockée dans un emplacement de stockage déterministe (`bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`). Cela évite les collisions, rend la disposition du stockage prévisible et permet aux outils de s’appuyer sur une convention partagée.
 
-### 2. Visibilité sur les explorateurs de blocs
+## 2. Visibilité sur les explorateurs de blocs
 
 Comme ERC-1967 est un standard largement reconnu, les **explorateurs de blocs** (tels qu’Etherscan, Basescan et Polygonscan) le détectent automatiquement.
 
@@ -18,7 +18,7 @@ Comme ERC-1967 est un standard largement reconnu, les **explorateurs de blocs** 
 * Cette transparence permet à notre communauté de vérifier quel code est exécuté et assure la confiance dans les mises à jour.
 * Les développeurs et auditeurs en bénéficient, car ils peuvent inspecter le contrat d’implémentation exact derrière chaque proxy.
 
-### 3. Transparent vs. UUPS et autres modèles
+## 3. Transparent vs. UUPS et autres modèles
 
 Lors du choix d’un modèle de proxy, nous avons comparé le **Transparent Proxy** au **UUPS (EIP-1822)** et à d’autres approches d’évolutivité.
 
@@ -36,13 +36,13 @@ Lors du choix d’un modèle de proxy, nous avons comparé le **Transparent Prox
 
 Compte tenu de notre besoin de **stabilité et de fiabilité à long terme** pour les contrats de registre, le Transparent Proxy était le choix évident.
 
-### 4. Pourquoi différent des Diamonds
+## 4. Pourquoi différent des Diamonds
 
 * Pour les **contrats de registre**, nous privilégions **maturité, visibilité et sécurité** — Transparent Proxy est parfaitement adapté.
 * Pour les **contrats Garden** (comptes multi-fonctionnalités), nous utilisons le **Diamond Standard (EIP-2535)**, qui prend en charge une logique modulaire et extensible.
 * Chaque choix correspond à son objectif : Transparent Proxy pour la stabilité et la clarté, Diamonds pour la flexibilité et la composabilité.
 
-### 5. Références
+## 5. Références
 
 * [EIP-1967 : Standard Proxy Storage Slots](https://eips.ethereum.org/EIPS/eip-1967)
 * [Documentation OpenZeppelin Transparent Proxy](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent)

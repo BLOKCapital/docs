@@ -3,14 +3,14 @@ title: Jardines & Diamonds
 description: 'En BLOK Capital, nuestra arquitectura principal para los smart contracts se basa en el patrón proxy Diamond.'
 position: 2
 ---
-### La arquitectura de Diamonds & Gardens
+## La arquitectura de Diamonds & Gardens
 
 En BLOK Capital, nuestra arquitectura principal para los smart contracts se basa en el patrón proxy **Diamond**. En esta sección exploramos la arquitectura de los diamonds, un enfoque de despliegue basado en fábricas (factory) inspirado en el repositorio Diamond de Nick Mudge, y cómo estos conceptos crean un "jardín" que impulsa la arquitectura BLOK.
 
-### Flujo del contrato proxy:
+## Flujo del contrato proxy:
 ![Flujo de delegación del proxy Diamond](/img/diamondSchema2.png)
 
-### ¿Qué es el Diamond Standard?
+## ¿Qué es el Diamond Standard?
 
 El Diamond Standard, propuesto por Nick Mudge en la EIP-2535, ayuda a resolver el problema de cómo crear contratos modulares y actualizables (upgradable) sin toparse con los límites de gas o de tamaño. Los contratos tradicionales son monolíticos, con toda la lógica empaquetada en una sola dirección, lo que hace que las actualizaciones sean muy difíciles y arriesgadas. Los diamonds, en cambio, son como jardines: consisten en un **contrato Diamond** central (por ejemplo, el suelo) que delega funcionalidades a múltiples **facetas** (por ejemplo, las plantas), cada una con lógica específica.
 
@@ -22,12 +22,12 @@ Un diamond es un contrato proxy que utiliza una arquitectura única para:
 
 Esta modularidad hace a los diamonds ideales para dApps complejas (DAO, DeFi, NFT) que deben evolucionar/actualizarse con el tiempo, al igual que un jardín que puede replantarse o ampliarse.
 
-### La arquitectura de un Diamond
+## La arquitectura de un Diamond
 
 Imagínese el diamond como un hub central (el contrato `Diamond.sol`) que enruta las llamadas de función a facetas especializadas. Cada faceta es un contrato separado que contiene un subconjunto de la funcionalidad del sistema —por ejemplo, ownership, transferencias de tokens o gobernanza. El diamond mantiene un mapeo de **selectores de función** (identificadores únicos para funciones) a direcciones de facetas, lo que le permite delegar llamadas de forma eficiente.  
 ![Delegación de facetas](/img/delegation.png)
 
-#### Componentes clave en la arquitectura Diamond
+### Componentes clave en la arquitectura Diamond
 
 1. **Contrato Diamond** (`Diamond.sol`):  
     - Actúa como punto de entrada para todas las interacciones.  
@@ -74,7 +74,7 @@ contract Diamond {
 
 Este código muestra cómo el diamond enruta las llamadas entrantes (`msg.sig`) a la faceta apropiada, permitiendo modularidad.
 
-### El Jardín: sistemas modulares y escalables
+## El Jardín: sistemas modulares y escalables
 
 ¿Por qué llamarlo "jardín"? En un jardín, cada planta (faceta) cumple una función: algunas aportan estructura (como `DiamondCutFacet`), otras añaden introspección o utilidades (como `DiamondLoupeFacet`), y otras dan fruto (facetas personalizadas con la lógica de tu dApp). El Diamond Standard te permite cultivar un jardín de smart contracts que:
 
@@ -84,11 +84,11 @@ Este código muestra cómo el diamond enruta las llamadas entrantes (`msg.sig`) 
 
 Esta modularidad es especialmente útil para dApps como DAOs, protocolos DeFi o marketplaces NFT, donde nuevas funcionalidades (gobernanza, staking, etc.) pueden añadirse sin redeplegar todo el sistema.
 
-### Despliegue basado en factory con `DiamondFactory.sol`
+## Despliegue basado en factory con `DiamondFactory.sol`
 
 Desplegar diamonds manualmente puede ser complejo, sobre todo para sistemas que requieren múltiples instancias (p. ej., un marketplace con muchos diamonds por usuario). El repositorio `diamond-foundry` introduce `DiamondFactory.sol`, una factory que automatiza el despliegue de diamonds y la inicialización de facetas, actuando como un jardinero que planta nuevos parterres.
 
-#### Cómo funciona `DiamondFactory.sol`
+### Cómo funciona `DiamondFactory.sol`
 
 La factory despliega un nuevo contrato `Diamond` y lo inicializa con las facetas especificadas. Aquí una versión simplificada de `DiamondFactory.sol`:
 
@@ -142,7 +142,7 @@ La factory:
 
 Este patrón de factory permite despliegues escalables, facilitando plantar múltiples diamonds en tu jardín con poco esfuerzo.
 
-#### Ejemplo de despliegue
+### Ejemplo de despliegue
 
 Así podrías desplegar un diamond usando un script de Foundry:
 
@@ -180,7 +180,7 @@ Ejecuta este script con:
 forge script script/DeployDiamond.s.sol --fork-url http://localhost:8545 --broadcast
 ```
 
-### Probar el jardín
+## Probar el jardín
 
 Para asegurar que tu jardín de diamonds prospere, necesitas pruebas robustas. Las pruebas en Solidity con Foundry facilitan esto. A continuación una suite de test que verifica el despliegue vía la factory y la funcionalidad del diamond:
 
@@ -233,7 +233,7 @@ Ejecuta las pruebas con:
 forge test
 ```
 
-### Beneficios del Diamond Garden
+## Beneficios del Diamond Garden
 
 El Diamond Standard, combinado con el despliegue mediante factory, ofrece:
 
@@ -242,7 +242,7 @@ El Diamond Standard, combinado con el despliegue mediante factory, ofrece:
 * **Upgradabilidad**: actualizar funcionalidad sin romper contratos existentes.
 * **Eficiencia en gas**: mantener ligero el contrato diamond delegando lógica a las facetas.
 
-### Conclusión
+## Conclusión
 
 El Diamond Standard es una herramienta poderosa para construir sistemas de smart contracts modulares y actualizables, análoga al cultivo de un jardín donde cada planta (faceta) contribuye a un ecosistema próspero. Usando `DiamondFactory.sol`, puedes automatizar el despliegue de diamonds y escalar tu jardín a través de múltiples instancias. Ya sea que construyas un protocolo DeFi, una DAO o un marketplace NFT, el Diamond Standard ofrece la flexibilidad para crecer y adaptarse.
 

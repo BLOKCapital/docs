@@ -3,8 +3,6 @@ title: Base.sol & Facet.sol
 description: Ces fichiers contiennent la logique métier principale pour le rééquilibrage de portefeuille. Le processus est divisé en deux transactions distinctes pour garantir la sécurité.
 position: 3
 ---
-Ces fichiers contiennent la logique métier principale pour le rééquilibrage de portefeuille. Le processus est divisé en deux transactions distinctes pour garantir la sécurité.
-
 ## Concept Central : Le pipeline en deux étapes
 
 1. **`_rebalanceIntent()` :** Verrouille les prix de marché actuels et calcule les allocations cibles selon les pondérations de l'Indice. Stocke le numéro de bloc.

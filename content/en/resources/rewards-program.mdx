@@ -61,3 +61,75 @@ When the contributor later deploys their account by calling the factory, the tok
 Tokens remain locked in the contributor account until a fixed unlock timestamp shared across all accounts. During the lock period, voting power is delegated to the contributor: locked $BLOKC counts toward governance from day one.
 
 After unlock, the contributor can withdraw a specific amount to any address, or sweep the full balance to their own wallet. No protocol involvement is required at withdrawal time.
+
+---
+
+## How Rewards Are Earned
+
+The sections above describe how settled rewards are secured and distributed on-chain. This section describes the earning side that comes first: who can take part, what counts as a contribution, how each post is scored, and how a provisional score becomes a settled reward that feeds the distribution proposal.
+
+Today, contributions are public posts on X (Twitter) about BLOK Capital. The scoring and settlement described here happen off-chain; only settled rewards are ever proposed on-chain.
+
+### Who Can Earn
+
+Taking part is self-serve, and approval is automatic once both accounts are connected and pass the checks:
+
+- **Sign in** with Google. This creates your contributor identity and a smart account used for reward attribution.
+- **Connect Discord.** You must be a member of the official BLOK Capital Discord server.
+- **Connect X.** Your X account must have at least 250 followers.
+- Both your X account and your Discord account must have been created before 2026.
+
+You must also be of the age of majority in your jurisdiction and legally permitted to receive $BLOKC. Approval is required before any post can earn, and posts published before you were approved do not earn.
+
+### What Earns Rewards
+
+- **Original public posts on X** that mention **$BLOKC** or **@blok_cap**.
+- **Replies and reposts do not count.**
+- **Up to two posts per day** earn rewards, counted by the UTC day the post was published. Any further posts that day are recorded but score zero.
+- The **full text** of long posts and any **attached images** (charts, screenshots, diagrams) are read and judged.
+- **Likes, views, reposts, and follower count are not scored.** Reach is not part of the score, so it cannot be bought or farmed for a higher reward.
+
+### How Each Post Is Scored
+
+Posts are scored daily. An AI judge reads each post and checks every claim it makes against the official BLOK Capital documentation at docs.blokcapital.io. Each claim is marked as supported, contradicted, unsupported, or not applicable, and the score is derived from those verdicts together with how substantive the claims are, the originality of the writing, and the overall quality.
+
+Posts that **score well**:
+
+- Original posts that explain how BLOK Capital works.
+- Specific, checkable claims that match the documentation. The more substance, the higher the score.
+- Written in your own words and framing.
+
+Posts that **score zero**:
+
+- Empty praise, such as "great project" or a single emoji.
+- Reposting or rewording something that has already been scored, in any language.
+- Copying sentences straight from the documentation.
+- Posts that appear to be machine generated.
+
+Each post's score converts into a $BLOKC amount. Reward amounts are discretionary and are not wages or a guarantee of any value.
+
+### Provisional Rewards and Settlement
+
+The amount you see first is **provisional**. About seven days after a post is scored, it is re-checked and the reward is **settled** (confirmed). This delay is a deliberate safety window, and it is the last point at which a reward can be reversed at no cost, before it is proposed on-chain.
+
+A reward is **removed** if, at settlement, the post has been:
+
+- deleted, made private, or its account suspended,
+- edited into something materially different from what was scored, or
+- found to duplicate another contribution. Where two posts match, the earliest post keeps the reward and the later one is removed.
+
+Only settled rewards are owed. Settled amounts are what the on-chain distribution proposal, described earlier on this page, pays out.
+
+### Claiming and the Lock
+
+Settled $BLOKC accrues in your **rewards vault** and stays locked until **May 1, 2027**, a fixed date that cannot be accelerated or overridden by anyone, including the team. As described in Token Lock and Governance above, your voting power is delegated to you during the lock, so locked $BLOKC counts toward governance from day one.
+
+After the unlock date you can claim, which sweeps your full balance to your **smart wallet**. Before then, any claim attempt is refused while the lock is in force.
+
+### Requesting a Human Review
+
+Because scoring is automated, you can request a human review of any score. Contact the team through the official Discord or X channels. A record of how each post was assessed is kept and is reviewed on request.
+
+### The #BLOKC Contest Is Separate
+
+From time to time BLOK Capital runs a separate contest, such as the "Explain BLOK to a Friend" contest, which uses the **#BLOKC** hashtag. Contest entries are judged only for that contest. They are not counted or paid as regular $BLOKC contribution rewards.

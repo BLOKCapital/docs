@@ -3,11 +3,11 @@ title: 'Guía: Crear un Nuevo Facet de Diamante'
 description: 'En este proyecto utilizamos el patrón "Diamond" (EIP-2535) para componer contratos modulares. Un Diamond es un proxy que delega llamadas a múltiples Facets, cada uno con lógica relacionada.'
 position: 3
 ---
-### Visión General
+## Visión General
 
 En este proyecto utilizamos el patrón "Diamond" (EIP-2535) para componer contratos modulares. Un Diamond es un proxy que delega llamadas a múltiples Facets, cada uno con lógica relacionada. Por ejemplo, "Un Facet puede compararse con un contrato de implementación... \[éste] contiene la lógica de funciones externas que el proxy (Diamond) llamará". Los Facets nos permiten dividir funcionalidades en contratos separados que pueden ser actualizados independientemente. Cada Facet tiene su estado aislado (utilizando el patrón de Diamond Storage) para evitar conflictos de almacenamiento. Esta guía explica nuestras convenciones para añadir un nuevo facet, incluyendo estructura de carpetas, diseño del contrato y pruebas.
 
-### Estructura de Carpetas
+## Estructura de Carpetas
 
 Cada nuevo Facet tiene su propia subcarpeta en `src/facets/`, que contiene cinco archivos Solidity, más sus pruebas correspondientes en `test/facets/`. Por ejemplo, un facet de Transfer usaría:
 
@@ -24,7 +24,7 @@ Las pruebas reflejan esta estructura en `test/facets/transfer/`:
 
 Esta convención de nombres asegura claridad y permite aislar pruebas con la opción `--match-contract` de Foundry.
 
-### Diseño del Contrato Facet
+## Diseño del Contrato Facet
 
 Dentro de cada carpeta de facet, seguimos una estructura estricta:
 
@@ -116,7 +116,7 @@ interface ITransferBase {
 }
 ```
 
-### Pruebas de Facets
+## Pruebas de Facets
 
 Probamos los facets desplegándolos en un Diamond usando el framework de pruebas de Foundry. Las convenciones clave son:
 

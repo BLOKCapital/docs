@@ -2,8 +2,8 @@
 title: Guide de style pour contrats intelligents
 description: 'Notre protocole utilise une architecture modulaire diamant/facette, où chaque facette encapsule un domaine spécifique (par ex. swaps Uniswap, création de « gardens », contrôle d’accès).'
 ---
-### Conventions de nommage
-#### 1. Vue d’ensemble architecturale
+## Conventions de nommage
+### 1. Vue d’ensemble architecturale
 Notre protocole utilise une architecture modulaire diamant/facette, où chaque facette encapsule un domaine spécifique (par ex. : swaps Uniswap, création de « gardens », contrôle d’accès). Les facettes exposent des interfaces externes, délèguent la logique à des contrats de base internes et utilisent des bibliothèques de stockage pour la gestion de l’état. Ce modèle permet l’upgradabilité, la séparation des responsabilités et des frontières claires entre les fonctionnalités du protocole.  
 Exemple : Facette Uniswap  
 - **Facette externe** : `UniswapFacet` expose les fonctions de swap et TWAP.  
@@ -12,7 +12,7 @@ Exemple : Facette Uniswap
 - **Bibliothèque de stockage** : `UniswapStorage` gère l’état persistant.  
 - **Bibliothèque d’erreurs** : `IUniswapBase` définit erreurs et événements.
 
-#### 2. Conventions de nommage
+### 2. Conventions de nommage
 
 **Contrats & Facettes**
 - **Contrats de facette** : Suffixer par `Facet` (ex. `UniswapFacet`).  
@@ -48,7 +48,7 @@ Exemple : Facette Uniswap
 
 ---
 
-### En-tête Copyright
+## En-tête Copyright
 
 ```md
 /*###############################################################################
@@ -67,7 +67,7 @@ Exemple : Facette Uniswap
 
 ---
 
-### Ordre de disposition des éléments du contrat intelligent
+## Ordre de disposition des éléments du contrat intelligent
 
 **Les éléments du contrat doivent être disposés dans l’ordre suivant :**
 
@@ -88,9 +88,9 @@ Exemple : Facette Uniswap
 5. Modificateurs
 6. Fonctions
 
-Consultez la guide officiel de Solidity pour plus de détails : [link](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
+Consultez la guide officiel de Solidity pour plus de détails : [guide de style officiel de Solidity](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
 
-### Ordre des fonctions
+## Ordre des fonctions
 
 L’ordre aide le lecteur à identifier quelles fonctions il peut appeler et à trouver plus facilement le constructeur et les définitions `receive` / `fallback`.
 
@@ -145,7 +145,7 @@ contract A {
 }
 ```
 
-### Contrat exemple
+## Contrat exemple
 
 > Le bloc de code suivant est laissé tel quel (syntaxe inchangée). Si vous souhaitez, je peux traduire les commentaires de documentation (`/// @notice`, `/// @dev`, etc.) en français tout en conservant la syntaxe Solidity.
 
@@ -356,7 +356,7 @@ contract ProtocolTemplate {
 }
 ```
 
-### Modèle de contrat
+## Modèle de contrat
 
 > Le modèle ci-dessous est laissé en code tel quel. Si vous le souhaitez, je peux traduire les commentaires `/// @notice`, `/// @dev` et autres en français tout en conservant la syntaxe du contrat.
 

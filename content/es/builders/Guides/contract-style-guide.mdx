@@ -2,8 +2,8 @@
 title: Guía de estilo para contratos inteligentes
 description: 'Nuestro protocolo utiliza una arquitectura modular de diamante/faceta, donde cada faceta encapsula un dominio específico (p. ej., intercambios Uniswap, creación de gardens, control de acceso).'
 ---
-### Convenciones de nomenclatura
-#### 1. Visión arquitectónica
+## Convenciones de nomenclatura
+### 1. Visión arquitectónica
 Nuestro protocolo utiliza una arquitectura modular de diamante/faceta, donde cada faceta encapsula un dominio específico (p. ej., intercambios Uniswap, creación de gardens, control de acceso). Las facetas exponen interfaces externas, delegan la lógica a contratos base internos y usan bibliotecas de almacenamiento para la gestión del estado. Este patrón permite la posibilidad de actualizaciones (upgradability), separación de responsabilidades y límites claros entre las funcionalidades del protocolo.  
 Ejemplo: Faceta Uniswap  
 - **Faceta externa**: `UniswapFacet` expone funciones de swap y TWAP.  
@@ -12,7 +12,7 @@ Ejemplo: Faceta Uniswap
 - **Biblioteca de almacenamiento**: `UniswapStorage` gestiona el estado persistente.  
 - **Biblioteca de errores**: `IUniswapBase` define errores y eventos.
 
-#### 2. Convenciones de nomenclatura
+### 2. Convenciones de nomenclatura
 
 **Contratos y Facetas**
 - **Contratos de faceta**: Sufijo `Facet` (p. ej., `UniswapFacet`).  
@@ -48,7 +48,7 @@ Ejemplo: Faceta Uniswap
 
 ---
 
-### Cabecera de copyright
+## Cabecera de copyright
 
 ```md
 /*###############################################################################
@@ -67,7 +67,7 @@ Ejemplo: Faceta Uniswap
 
 ---
 
-### Orden de disposición de los elementos del contrato inteligente
+## Orden de disposición de los elementos del contrato inteligente
 
 **Los elementos del contrato deben disponerse en el siguiente orden:**
 
@@ -88,9 +88,9 @@ Ejemplo: Faceta Uniswap
 5. Modificadores
 6. Funciones
 
-Siga la guía oficial de Solidity para más detalles: [link](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
+Siga la guía oficial de Solidity para más detalles: [guía de estilo oficial de Solidity](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
 
-### Orden de las funciones
+## Orden de las funciones
 
 El orden ayuda a los lectores a identificar qué funciones pueden llamar y a encontrar el constructor y las definiciones `receive` / `fallback` más fácilmente.
 
@@ -145,7 +145,7 @@ contract A {
 }
 ```
 
-### Contrato de ejemplo
+## Contrato de ejemplo
 
 > El siguiente bloque mantiene el código tal cual; los comentarios de documentación en inglés se pueden traducir si lo desea, pero se mantiene la sintaxis original para garantizar compatibilidad.
 
@@ -356,7 +356,7 @@ contract ProtocolTemplate {
 }
 ```
 
-### Plantilla de contrato
+## Plantilla de contrato
 
 > La plantilla siguiente se mantiene en su forma original de código. Si desea, puedo traducir los comentarios `/// @notice` y otros comentarios en el código al español también.
 

@@ -1,0 +1,20 @@
+{
+  "en": {
+    "concepts": "/en/concepts/blok-c-overview",
+    "smart-contracts": "/en/smart-contracts/introduction",
+    "builders": "/en/builders/intro",
+    "resources": "/en/resources/intro"
+  },
+  "es": {
+    "concepts": "/es/concepts/blok-c-overview",
+    "smart-contracts": "/es/smart-contracts/introduction",
+    "builders": "/es/builders/intro",
+    "resources": "/es/resources/intro"
+  },
+  "fr": {
+    "concepts": "/fr/concepts/blok-c-overview",
+    "smart-contracts": "/fr/smart-contracts/introduction",
+    "builders": "/fr/builders/intro",
+    "resources": "/fr/resources/intro"
+  }
+}

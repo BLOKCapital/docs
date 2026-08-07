@@ -3,7 +3,7 @@ title: 'Guide : Création d’un Nouveau Facet Diamond'
 description: 'Ce projet utilise le pattern “Diamond” (EIP-2535) pour composer des contrats modulaires. Un Diamond est un proxy qui délègue des appels à plusieurs Facets, chacun contenant une logique spécifique.'
 position: 3
 ---
-### Vue d’ensemble
+## Vue d’ensemble
 Ce projet utilise le pattern “Diamond” (EIP-2535) pour composer des contrats modulaires. Un Diamond est un proxy qui délègue des appels à plusieurs Facets, chacun contenant une logique spécifique. Par exemple : « Un Facet peut être comparé à un contrat d’implémentation… [il] contient la logique des fonctions externes que le proxy (Diamond) va appeler ». 
 
 Les Facets permettent de séparer les fonctionnalités en contrats indépendants pouvant être mis à jour séparément. Chaque Facet a son propre état isolé (grâce au pattern Diamond Storage) pour éviter les conflits de stockage.
@@ -12,7 +12,7 @@ Ce guide décrit nos conventions pour ajouter un nouveau Facet, incluant la stru
 
 ---
 
-### Structure des Dossiers
+## Structure des Dossiers
 Chaque nouveau Facet possède son propre sous-dossier dans `src/facets/`, contenant cinq fichiers Solidity, ainsi que des tests correspondants dans `test/facets/`.
 
 Par exemple, un Facet `Transfer` utilisera :
@@ -31,9 +31,9 @@ Cette convention de nommage assure la clarté et permet d’isoler les tests ave
 
 ---
 
-### Organisation du Contrat Facet
+## Organisation du Contrat Facet
 
-#### `<FacetName>Storage.sol`
+### `<FacetName>Storage.sol`
 Implémente le Diamond Storage pattern. Déclare une constante `bytes32 STORAGE_SLOT`, une structure `Layout` avec les variables de stockage, et une fonction `layout()` pour y accéder via l’assembly :
 
 ```solidity
@@ -53,7 +53,7 @@ library TransferStorage {
 }
 ````
 
-#### `<FacetName>Base.sol`
+### `<FacetName>Base.sol`
 
 Un contrat abstrait définissant la logique interne. Il importe la bibliothèque de stockage et les interfaces requises. Les fonctions internes utilisent `TransferStorage.layout()` pour lire/écrire le stockage. Exemple :
 
@@ -83,7 +83,7 @@ abstract contract TransferBase is ITransferBase {
 }
 ```
 
-#### `<FacetName>Facet.sol`
+### `<FacetName>Facet.sol`
 
 Le contrat Facet public. Il hérite de `Base`, de l’interface externe, et d’un marqueur Facet générique. Il expose les fonctions accessibles depuis l’extérieur et applique les contrôles d’accès. Exemple :
 
@@ -103,7 +103,7 @@ contract TransferFacet is ITransfer, TransferBase {
 }
 ```
 
-#### `I<FacetName>.sol`
+### `I<FacetName>.sol`
 
 Interface Solidity définissant uniquement les fonctions publiques/externes. Les clients du Diamond interagiront avec cette interface.
 
@@ -115,7 +115,7 @@ interface ITransfer {
 }
 ```
 
-#### `I<FacetName>Base.sol`
+### `I<FacetName>Base.sol`
 
 Interface contenant les erreurs personnalisées, événements, structures et énumérations internes. Elle est utilisée par `<FacetName>Base` et `<FacetName>Facet`.
 
@@ -130,11 +130,11 @@ interface ITransferBase {
 
 ---
 
-### Tests des Facets
+## Tests des Facets
 
 On teste les Facets en les déployant dans un Diamond via Foundry.
 
-#### **Helper Contract** (`<FacetName>Helper`)
+### **Helper Contract** (`<FacetName>Helper`)
 
 Un helper qui crée le Facet et retourne son adresse, ses sélecteurs, l’initialiseur, et les interfaces supportées :
 
@@ -172,7 +172,7 @@ contract TransferFacetHelper is FacetHelper {
 }
 ```
 
-#### **Test Abstrait** (`<FacetName>FacetTest`)
+### **Test Abstrait** (`<FacetName>FacetTest`)
 
 Un contrat de test abstrait qui configure le Diamond avec ce Facet :
 
@@ -198,7 +198,7 @@ abstract contract TransferFacetTest is FacetTest, ITransfer {
 }
 ```
 
-#### **Tests Unitaires**
+### **Tests Unitaires**
 
 Créez un contrat de test par méthode externe, dans `behavior/`, nommé `<Facet>_<Method>.t.sol`. Exemple :
 

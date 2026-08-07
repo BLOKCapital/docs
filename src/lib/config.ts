@@ -90,32 +90,58 @@ export const SECTIONS = [
 
 export type SectionSlug = (typeof SECTIONS)[number]["slug"];
 
-/** UI strings, per locale. Kept tiny — content itself is translated in MDX. */
-export const UI: Record<
-  Locale,
-  {
-    sections: Record<SectionSlug, string>;
-    search: string;
-    searchPlaceholder: string;
-    onThisPage: string;
-    previous: string;
-    next: string;
-    noResults: string;
-    editPage: string;
-    home: string;
-    helpTranslate: string;
-    lastUpdated: string;
-    menu: string;
-    footer: {
-      tagline: string;
-      blurb: string;
-      protocol: string;
-      community: string;
-      website: string;
-      whitepaper: string;
-    };
-  }
-> = {
+/**
+ * UI strings, per locale.
+ *
+ * Everything the chrome renders lives here — including plural forms and the
+ * 404 copy. Anything hardcoded in a component leaks English onto the /es and
+ * /fr trees, which is exactly what this dictionary exists to prevent.
+ */
+export type UIStrings = {
+  sections: Record<SectionSlug, string>;
+  /** Localized hero copy for the locale home page. */
+  tagline: string;
+  documentation: string;
+  chooseSection: string;
+  search: string;
+  searchPlaceholder: string;
+  searchHint: string;
+  searchLoading: string;
+  searchError: string;
+  searchRetry: string;
+  navigate: string;
+  open: string;
+  close: string;
+  onThisPage: string;
+  previous: string;
+  next: string;
+  noResults: string;
+  editPage: string;
+  home: string;
+  helpTranslate: string;
+  lastUpdated: string;
+  menu: string;
+  skipToContent: string;
+  copy: string;
+  copied: string;
+  enlargeImage: string;
+  /** Shown in the locale menu for a page with no translation yet. */
+  notTranslated: string;
+  notFound: { title: string; body: string; cta: string };
+  audits: { heading: string; auditor: string; date: string; viewReport: string };
+  /** [singular, plural] — selected by `plural()` below. */
+  results: [string, string];
+  footer: {
+    tagline: string;
+    blurb: string;
+    protocol: string;
+    community: string;
+    website: string;
+    whitepaper: string;
+  };
+};
+
+export const UI: Record<Locale, UIStrings> = {
   en: {
     sections: {
       concepts: "Concepts",
@@ -123,8 +149,18 @@ export const UI: Record<
       builders: "Builders",
       resources: "Resources",
     },
+    tagline: "Decentralized wealth management, documented.",
+    documentation: "Documentation",
+    chooseSection: "Choose a section to begin.",
     search: "Search",
     searchPlaceholder: "Search the docs…",
+    searchHint: "Search titles, headings, and page text.",
+    searchLoading: "Loading search…",
+    searchError: "Search couldn’t load.",
+    searchRetry: "Try again",
+    navigate: "navigate",
+    open: "open",
+    close: "close",
     onThisPage: "On this page",
     previous: "Previous",
     next: "Next",
@@ -134,6 +170,23 @@ export const UI: Record<
     helpTranslate: "Help us translate",
     lastUpdated: "Last updated",
     menu: "Menu",
+    skipToContent: "Skip to content",
+    copy: "Copy",
+    copied: "Copied",
+    enlargeImage: "Enlarge image",
+    notTranslated: "Not translated yet",
+    notFound: {
+      title: "Page not found",
+      body: "This page may have moved, or it doesn’t exist in this language yet.",
+      cta: "Back to docs home",
+    },
+    audits: {
+      heading: "Security audits",
+      auditor: "Auditor",
+      date: "Date",
+      viewReport: "View audit report",
+    },
+    results: ["result", "results"],
     footer: {
       tagline: "It's crypto, but different.",
       blurb:
@@ -151,8 +204,18 @@ export const UI: Record<
       builders: "Desarrolladores",
       resources: "Recursos",
     },
+    tagline: "Gestión patrimonial descentralizada, documentada.",
+    documentation: "Documentación",
+    chooseSection: "Elige una sección para comenzar.",
     search: "Buscar",
     searchPlaceholder: "Buscar en la documentación…",
+    searchHint: "Busca en títulos, encabezados y texto de las páginas.",
+    searchLoading: "Cargando el buscador…",
+    searchError: "No se pudo cargar el buscador.",
+    searchRetry: "Reintentar",
+    navigate: "navegar",
+    open: "abrir",
+    close: "cerrar",
     onThisPage: "En esta página",
     previous: "Anterior",
     next: "Siguiente",
@@ -162,6 +225,23 @@ export const UI: Record<
     helpTranslate: "Ayúdanos a traducir",
     lastUpdated: "Última actualización",
     menu: "Menú",
+    skipToContent: "Saltar al contenido",
+    copy: "Copiar",
+    copied: "Copiado",
+    enlargeImage: "Ampliar imagen",
+    notTranslated: "Aún no traducido",
+    notFound: {
+      title: "Página no encontrada",
+      body: "Es posible que esta página se haya movido o que aún no exista en este idioma.",
+      cta: "Volver al inicio de la documentación",
+    },
+    audits: {
+      heading: "Auditorías de seguridad",
+      auditor: "Auditor",
+      date: "Fecha",
+      viewReport: "Ver informe de auditoría",
+    },
+    results: ["resultado", "resultados"],
     footer: {
       tagline: "Cripto, pero diferente.",
       blurb:
@@ -179,8 +259,18 @@ export const UI: Record<
       builders: "Développeurs",
       resources: "Ressources",
     },
+    tagline: "La gestion de patrimoine décentralisée, documentée.",
+    documentation: "Documentation",
+    chooseSection: "Choisissez une section pour commencer.",
     search: "Rechercher",
     searchPlaceholder: "Rechercher dans la documentation…",
+    searchHint: "Recherchez dans les titres, les rubriques et le texte des pages.",
+    searchLoading: "Chargement de la recherche…",
+    searchError: "La recherche n’a pas pu être chargée.",
+    searchRetry: "Réessayer",
+    navigate: "naviguer",
+    open: "ouvrir",
+    close: "fermer",
     onThisPage: "Sur cette page",
     previous: "Précédent",
     next: "Suivant",
@@ -190,6 +280,23 @@ export const UI: Record<
     helpTranslate: "Aidez-nous à traduire",
     lastUpdated: "Dernière mise à jour",
     menu: "Menu",
+    skipToContent: "Aller au contenu",
+    copy: "Copier",
+    copied: "Copié",
+    enlargeImage: "Agrandir l’image",
+    notTranslated: "Pas encore traduit",
+    notFound: {
+      title: "Page introuvable",
+      body: "Cette page a peut-être été déplacée, ou elle n’existe pas encore dans cette langue.",
+      cta: "Retour à l’accueil de la documentation",
+    },
+    audits: {
+      heading: "Audits de sécurité",
+      auditor: "Auditeur",
+      date: "Date",
+      viewReport: "Voir le rapport d’audit",
+    },
+    results: ["résultat", "résultats"],
     footer: {
       tagline: "La crypto, autrement.",
       blurb:
@@ -236,4 +343,14 @@ export const EXTERNAL = {
 
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
+}
+
+/**
+ * "3 pages" / "1 página" — picks the singular or plural form from a
+ * `[singular, plural]` pair in the UI dictionary. All three supported locales
+ * use the same one-vs-many rule, so a simple pick is correct here; swap in
+ * `Intl.PluralRules` if a locale with richer plural categories is added.
+ */
+export function plural(n: number, forms: readonly [string, string]): string {
+  return `${n} ${n === 1 ? forms[0] : forms[1]}`;
 }

@@ -12,7 +12,7 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div className="max-w-sm">
             <Logo />
-            <p className="script mt-2 text-[20px] leading-none text-clay">
+            <p className="script mt-2 text-[20px] leading-none text-clay-deep">
               {f.tagline}
             </p>
             <p className="mt-4 text-sm leading-relaxed text-ink-muted">

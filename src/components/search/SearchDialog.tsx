@@ -1,26 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import FlexSearch from "flexsearch";
-import { UI, type Locale, type SectionSlug } from "@/lib/config";
+import { UI, plural, type Locale } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { makeEncoder, queryTerms, foldKeepLen } from "@/lib/search-text";
 import { expandQuery } from "@/lib/search-synonyms";
-
-type Heading = { text: string; slug: string };
-
-type Record = {
-  id: number;
-  href: string;
-  title: string;
-  section: SectionSlug;
-  description: string;
-  headings: Heading[];
-  symbols: string[];
-  text: string;
-};
+import { useDialog } from "@/lib/use-dialog";
+import {
+  loadSearchIndex,
+  resetSearchIndex,
+  type SearchHeading as Heading,
+  type SearchRecord as Record,
+} from "@/lib/search-index";
 
 /** An enriched result: the record plus query-aware presentation data. */
 type Hit = {
@@ -160,18 +154,27 @@ export function SearchDialog({
   const t = UI[locale];
   const [query, setQuery] = useState("");
   const [records, setRecords] = useState<Record[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [attempt, setAttempt] = useState(0);
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
   const indexRef = useRef<FlexSearch.Index | null>(null);
 
-  // Load the locale index once and build the FlexSearch index. Title and
-  // headings are weighted by repetition so they rank above body prose.
+  const panelRef = useDialog(true, onClose);
+
+  // Load the locale index and build the FlexSearch index. Title and headings
+  // are weighted by repetition so they rank above body prose.
+  //
+  // `status` is tracked explicitly: previously an unloaded or failed index left
+  // `results` empty, which rendered as "No results found" — telling the user the
+  // docs contain nothing while the fetch was still in flight, and permanently so
+  // if it failed.
   useEffect(() => {
     let cancelled = false;
-    fetch(`/search/${locale}.json`)
-      .then((r) => r.json())
-      .then((data: Record[]) => {
+    setStatus("loading");
+    loadSearchIndex(locale)
+      .then((data) => {
         if (cancelled) return;
         const idx = new FlexSearch.Index({
           tokenize: "forward",
@@ -188,20 +191,23 @@ export function SearchDialog({
         }
         indexRef.current = idx;
         setRecords(data);
+        setStatus("ready");
       })
-      .catch(() => setRecords([]));
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
     return () => {
       cancelled = true;
     };
+  }, [locale, attempt]);
+
+  const retry = useCallback(() => {
+    resetSearchIndex(locale);
+    setAttempt((a) => a + 1);
   }, [locale]);
 
   useEffect(() => {
     inputRef.current?.focus();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
   }, []);
 
   const results = useMemo<Hit[]>(() => {
@@ -251,7 +257,6 @@ export function SearchDialog({
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") return onClose();
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActive((a) => Math.min(a + 1, results.length - 1));
@@ -284,7 +289,9 @@ export function SearchDialog({
         onClick={onClose}
       />
       <div
-        className="relative flex max-h-[76vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-ink/10 bg-paper shadow-[0_30px_60px_-24px_rgba(31,26,20,0.4)]"
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative flex max-h-[76vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-ink/10 bg-paper shadow-[0_30px_60px_-24px_rgba(31,26,20,0.4)] outline-none"
         onKeyDown={onKeyDown}
       >
         <div className="flex items-center gap-3 border-b border-ink/10 px-4">
@@ -302,6 +309,12 @@ export function SearchDialog({
             role="combobox"
             aria-expanded={results.length > 0}
             aria-controls="search-results"
+            /* Without this the highlighted option is invisible to screen
+               readers — arrow-key navigation would move a selection nothing
+               ever announces. */
+            aria-activedescendant={
+              results.length > 0 ? `search-option-${active}` : undefined
+            }
             autoComplete="off"
             spellCheck={false}
           />
@@ -311,17 +324,53 @@ export function SearchDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
-          {hasQuery && results.length === 0 && (
+          {status === "loading" && (
+            <div
+              className="flex items-center justify-center gap-2.5 px-3 py-10 text-sm text-ink-subtle"
+              role="status"
+            >
+              <Spinner />
+              {t.searchLoading}
+            </div>
+          )}
+
+          {status === "error" && (
+            <div className="px-3 py-9 text-center" role="alert">
+              <p className="text-sm text-ink-muted">{t.searchError}</p>
+              <button
+                type="button"
+                onClick={retry}
+                className="mt-3 inline-flex min-h-[36px] items-center rounded-full border border-ink/15 bg-paper-warm px-4 text-[13px] font-medium text-ink transition-colors hover:border-ink/30"
+              >
+                {t.searchRetry}
+              </button>
+            </div>
+          )}
+
+          {status === "ready" && !hasQuery && (
             <p className="px-3 py-8 text-center text-sm text-ink-subtle">
+              {t.searchHint}
+            </p>
+          )}
+
+          {status === "ready" && hasQuery && results.length === 0 && (
+            <p className="px-3 py-8 text-center text-sm text-ink-subtle" role="status">
               {t.noResults}
             </p>
           )}
-          <ul id="search-results" role="listbox">
+
+          <ul id="search-results" role="listbox" aria-label={t.search}>
             {results.map((hit, i) => (
-              <li key={hit.href} role="option" aria-selected={i === active}>
+              <li
+                key={hit.href}
+                id={`search-option-${i}`}
+                role="option"
+                aria-selected={i === active}
+              >
                 <button
                   ref={i === active ? activeRef : undefined}
                   type="button"
+                  tabIndex={-1}
                   onMouseEnter={() => setActive(i)}
                   onClick={() => go(hit.href)}
                   className={cn(
@@ -329,7 +378,7 @@ export function SearchDialog({
                     i === active ? "bg-moss/[0.1]" : "hover:bg-paper-deep/50",
                   )}
                 >
-                  <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-clay">
+                  <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-clay-deep">
                     {t.sections[hit.record.section]}
                     {hit.heading && (
                       <>
@@ -356,17 +405,26 @@ export function SearchDialog({
 
         {results.length > 0 && (
           <div className="flex items-center gap-4 border-t border-ink/10 px-4 py-2 text-[11px] text-ink-subtle">
-            <Hint keys={["↑", "↓"]} label="navigate" />
-            <Hint keys={["↵"]} label="open" />
-            <Hint keys={["esc"]} label="close" />
+            <Hint keys={["↑", "↓"]} label={t.navigate} />
+            <Hint keys={["↵"]} label={t.open} />
+            <Hint keys={["esc"]} label={t.close} />
             <span className="ml-auto tabular-nums">
-              {results.length} {results.length === 1 ? "result" : "results"}
+              {plural(results.length, t.results)}
             </span>
           </div>
         )}
       </div>
     </div>,
     document.body,
+  );
+}
+
+function Spinner() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden className="animate-spin">
+      <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.6" opacity="0.25" />
+      <path d="M14 8a6 6 0 0 0-6-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
   );
 }
 

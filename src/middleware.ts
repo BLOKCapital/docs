@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import routes from "@/lib/generated/markdown-routes.json";
+import { DEFAULT_LOCALE, isLocale } from "@/lib/config";
 
 /**
  * Agent content negotiation (AFDocs / Agent Score).
@@ -36,10 +37,38 @@ function prefersMarkdown(accept: string | null): boolean {
   return htmlQ < 0 || mdQ >= htmlQ;
 }
 
-export function middleware(req: NextRequest): NextResponse {
-  if (!prefersMarkdown(req.headers.get("accept"))) return NextResponse.next();
+/**
+ * Root-level routes that legitimately have no locale prefix and no file
+ * extension, so they must not be swept into the locale redirect below.
+ */
+const UNPREFIXED_ROUTES = new Set(["/opengraph-image"]);
 
+export function middleware(req: NextRequest): NextResponse {
   const pathname = req.nextUrl.pathname.replace(/\/+$/, "") || "/";
+
+  /**
+   * Send locale-less paths to the default locale.
+   *
+   * Besides being the conventional i18n behaviour (so a link to
+   * `/concepts/diamond` resolves rather than dying), this is what keeps a bad
+   * first segment off `[locale]/layout.tsx`. That layout calls `notFound()` for
+   * an unrecognised locale, and a `notFound()` thrown from a *layout* leaves
+   * Next with no document shell to render into — the response degrades to the
+   * bare `__next_error__` page. Redirecting first means the 404 is served by
+   * the real, prerendered not-found page instead.
+   */
+  const first = pathname.split("/")[1] ?? "";
+  if (
+    pathname !== "/" &&
+    !isLocale(first) &&
+    !UNPREFIXED_ROUTES.has(pathname)
+  ) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/${DEFAULT_LOCALE}${pathname}`;
+    return NextResponse.redirect(url, 308);
+  }
+
+  if (!prefersMarkdown(req.headers.get("accept"))) return NextResponse.next();
   if (!MD_ROUTES.has(pathname)) return NextResponse.next();
 
   const url = req.nextUrl.clone();

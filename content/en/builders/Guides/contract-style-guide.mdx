@@ -2,8 +2,8 @@
 title: Smart contract style guide
 description: 'Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access control).'
 ---
-### Naming conventions
-#### 1. Architectural Overview
+## Naming conventions
+### 1. Architectural Overview
 Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access control). Facets expose external interfaces, delegate logic to internal base contracts, and use storage libraries for state management. This pattern enables upgradability, separation of concerns, and clear boundaries between protocol features.
 Example: Uniswap Facet
 - **External Facet**: `UniswapFacet` exposes swap and TWAP functions.
@@ -12,7 +12,7 @@ Example: Uniswap Facet
 - **Storage Library**: `UniswapStorage` manages persistent state.
 - **Error Library**: `IUniswapBase` defines errors and events.
 
-#### 2. Naming Conventions
+### 2. Naming Conventions
 
 **Contracts & Facets**
 - **Facet Contracts**: Suffix with Facet (e.g., `UniswapFacet`).
@@ -48,7 +48,7 @@ Example: Uniswap Facet
 
 ---
 
-### Copyright Header
+## Copyright Header
 
 ```md
 /*###############################################################################
@@ -65,7 +65,7 @@ Example: Uniswap Facet
 ################################################################################*/
 ```
 
-### Order of Layout of smart contract elements
+## Order of Layout of smart contract elements
 
 **Contract elements should be laid out in the following order:**
 
@@ -86,9 +86,9 @@ Example: Uniswap Facet
 5. Modifiers
 6. Functions
 
-Follow the official solidity guide for more : [link](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
+Follow the official solidity guide for more : [official Solidity style guide](https://docs.soliditylang.org/en/latest/style-guide.html#order-of-layout)
 
-### Order of Functions
+## Order of Functions
 
 Ordering helps readers identify which functions they can call and to find the constructor and fallback definitions easier.
 
@@ -143,7 +143,7 @@ contract A {
 }
 ```
 
-### Sample contract
+## Sample contract
 ```js
 // SPDX-License-Identifier: GPL-3.0
 /*###############################################################################
@@ -351,7 +351,7 @@ contract ProtocolTemplate {
 }
 ```
 
-### Contract Template
+## Contract Template
 ```js
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;

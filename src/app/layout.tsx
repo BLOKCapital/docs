@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import "katex/dist/katex.min.css";
 import { SITE, SITE_KEYWORDS, TWITTER_HANDLE } from "@/lib/config";
 import { OG_IMAGE } from "@/lib/seo";
 
