@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/docs/Sidebar";
 import { TableOfContents } from "@/components/docs/TableOfContents";
@@ -50,7 +51,11 @@ export function MobileNav({ locale }: { locale: Locale }) {
         </svg>
       </button>
 
-      {open && (
+      {/* Portalled to <body>. This trigger sits in the sticky header, and the
+          header's `backdrop-blur` makes it the containing block for any
+          `position: fixed` descendant — so rendered in place the drawer would be
+          clipped to the 64px header box instead of covering the viewport. */}
+      {open && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-50">
           <div
             className="absolute inset-0 bg-ink/50 backdrop-blur-sm"
@@ -93,7 +98,8 @@ export function MobileNav({ locale }: { locale: Locale }) {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

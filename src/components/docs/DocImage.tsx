@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, type ImgHTMLAttributes } from "react";
+import { createPortal } from "react-dom";
 import manifest from "@/lib/generated/image-manifest.json";
 import { useDialog } from "@/lib/use-dialog";
 
@@ -57,33 +58,37 @@ export function DocImage({
 
   if (!canZoom) return img;
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setZoomed(true)}
-        aria-label={`${enlargeLabel}${alt ? `: ${alt}` : ""}`}
-        className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
-      >
-        {img}
-      </button>
-
-      {zoomed && (
+  /**
+   * The overlay is portalled to <body>.
+   *
+   * The doc page wraps its content in `.paper`, which sets `isolation: isolate`
+   * — a stacking context. Rendered in place, this overlay's `z-50` would only be
+   * 50 *within that context*, while the sticky header's `z-40` lives in the root
+   * context and paints over the entire subtree: the header stayed bright above
+   * the backdrop and covered the close button. Portalling puts the overlay in
+   * the root stacking context, where z-50 genuinely outranks the header.
+   */
+  const overlay = zoomed && typeof document !== "undefined"
+    ? createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8">
-          <div className="absolute inset-0 bg-ink/80 backdrop-blur-sm" aria-hidden onClick={close} />
+          <div
+            className="absolute inset-0 bg-ink/80 backdrop-blur-sm"
+            aria-hidden
+            onClick={close}
+          />
           <div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label={alt || enlargeLabel}
             tabIndex={-1}
-            className="relative max-h-full max-w-full overflow-auto outline-none"
+            className="relative max-h-full max-w-full outline-none"
           >
             <button
               type="button"
               onClick={close}
               aria-label={closeLabel}
-              className="absolute right-2 top-2 z-10 inline-flex size-9 items-center justify-center rounded-full border border-paper/25 bg-ink/70 text-paper transition-colors hover:bg-ink"
+              className="absolute right-2 top-2 z-10 inline-flex size-9 items-center justify-center rounded-full border border-paper/25 bg-ink/70 text-paper backdrop-blur-sm transition-colors hover:bg-ink"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
                 <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -95,11 +100,25 @@ export function DocImage({
               alt={alt}
               width={meta.width}
               height={meta.height}
-              className="h-auto max-h-[88vh] w-auto max-w-full rounded-xl"
+              className="block h-auto max-h-[88vh] w-auto max-w-full"
             />
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setZoomed(true)}
+        aria-label={`${enlargeLabel}${alt ? `: ${alt}` : ""}`}
+        className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
+      >
+        {img}
+      </button>
+      {overlay}
     </>
   );
 }

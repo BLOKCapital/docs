@@ -447,19 +447,19 @@ body {
    `max-width` caps each image at its intrinsic size — previously every diagram
    was stretched to the full column and went soft. */
 .doc-prose img {
-  border-radius: 12px;
-  border: 1px solid rgb(var(--rule) / 0.1);
   margin: 1.5rem auto;
   display: block;
   max-width: 100%;
   height: auto;
 }
+/* No frame: the diagrams carry their own background and edges, so a border and
+   rounded corners on top read as a second, competing box. */
 .doc-prose .zoomable {
   cursor: zoom-in;
-  transition: border-color 150ms ease;
+  transition: opacity 150ms ease;
 }
 .doc-prose .zoomable:hover {
-  border-color: rgb(var(--moss) / 0.45);
+  opacity: 0.88;
 }
 
 /* ── FAQ / disclosure ─────────────────────────────────────────────────
