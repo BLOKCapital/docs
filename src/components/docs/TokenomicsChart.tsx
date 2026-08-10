@@ -139,7 +139,7 @@ export function TokenomicsChart() {
       {focus?.description && (
         <p className="mt-5 border-t border-ink/10 pt-4 text-[13.5px] leading-relaxed text-ink-muted">
           <span className="font-medium text-ink">{focus.title}</span>
-          {focus.subtitle ? ` · ${focus.subtitle}` : ""} — {focus.description}
+          {focus.subtitle ? ` · ${focus.subtitle}` : ""}: {focus.description}
         </p>
       )}
 

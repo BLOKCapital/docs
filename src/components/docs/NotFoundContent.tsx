@@ -54,7 +54,7 @@ export function NotFoundContent({
           <Link
             href={entries[SECTIONS[0].slug]}
             className="flex shrink-0 items-center gap-2.5 rounded p-1 text-ink transition-opacity hover:opacity-85"
-            aria-label={`${t.home} — BLOK Capital Docs`}
+            aria-label={`${t.home}, BLOK Capital Docs`}
           >
             <Logo />
             <span className="hidden text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle sm:inline">

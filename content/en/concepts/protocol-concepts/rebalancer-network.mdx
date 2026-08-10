@@ -33,7 +33,7 @@ Rebalancing operations are executed in a deliberate, atomic sequence within the 
 
 Rather than processing individual withdrawals and deposits for each user, execution follows an aggregated pipeline:
 
-**→ Validation:** The contract evaluates whether the aggregated pool meets the criteria to shift — either an index drifting beyond its target weights, or a yield strategy falling below predefined performance triggers.
+**→ Validation:** The contract evaluates whether the aggregated pool meets the criteria to shift: either an index drifting beyond its target weights, or a yield strategy falling below predefined performance triggers.
 
 **→ Pooled Withdrawal:** Assets belonging to all active gardens are withdrawn simultaneously from the current index allocation or yield strategy in a single transaction.
 

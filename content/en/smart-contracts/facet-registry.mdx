@@ -1,31 +1,31 @@
 ---
 title: Facet Registry
-description: 'Key files: — Manages facet registration and version tracking — Public interface'
+description: 'Key files in the facet registry: FacetRegistry.sol manages facet registration and version tracking; IFacetRegistry.sol is the public interface.'
 position: 4
 ---
 ## **Facet Registry (Governance & Approval Layer)**
 
-**Location:** `src/facetRegistry/`
+**Location:** `src/facetRegistry/`
 
 **Key files:**
 
-- `FacetRegistry.sol` — Manages facet registration and version tracking
-- `IFacetRegistry.sol` — Public interface
+- `FacetRegistry.sol`: Manages facet registration and version tracking
+- `IFacetRegistry.sol`: Public interface
 
 ---
 
 ### **What It Does**
 
-The Facet Registry is the **governed catalog of approved facets**. It acts as a gatekeeper ensuring:
+The Facet Registry is the **governed catalog of approved facets**. It acts as a gatekeeper ensuring:
 
-- **Only pre-approved facets** can be added to Gardens.
-- **4 immutable base facets** (Ownership, Cut, Upgrade, Loupe) remain protected.
-- **Complete audit trail** of all facet changes via versioning.
-- **Off-chain tools** can discover which facets and functions are available.
+- **Only pre-approved facets** can be added to Gardens.
+- **4 immutable base facets** (Ownership, Cut, Upgrade, Loupe) remain protected.
+- **Complete audit trail** of all facet changes via versioning.
+- **Off-chain tools** can discover which facets and functions are available.
 
 ### **Core Operations**
 
-**1. Register facets: `upgradeFacetRegistry()`**
+**1. Register facets: `upgradeFacetRegistry()`**
 
 Called by governance to register, update, or remove facets. Validates that facets are contracts and that core base facets are never modified.
 

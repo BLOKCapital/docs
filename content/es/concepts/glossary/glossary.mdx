@@ -11,11 +11,11 @@ position: 1
 | Facet (Faceta) | Un contrato que implementa funcionalidad especifica, registrado con el Diamond y llamado via delegatecall. |
 | Function Selector (Selector de Funcion) | Identificador de 4 bytes (bytes4) derivado del hash de la firma de una funcion, utilizado para enrutar llamadas a la faceta correcta. |
 | Facet Cut (Corte de Faceta) | Una estructura de datos que contiene una direccion de faceta, una accion (Agregar/Reemplazar/Eliminar) y selectores a modificar. |
-| Facet Cut Action (Accion de Corte de Faceta) | Enum: Add (0), Replace (1), Remove (2) — determina como se modifica el Diamond. |
+| Facet Cut Action (Accion de Corte de Faceta) | Enum: Add (0), Replace (1), Remove (2). Determina como se modifica el Diamond. |
 | DiamondCut | La funcion que aplica cortes de faceta para modificar la tabla de enrutamiento del Diamond. |
 | DiamondLoupe | Interfaz de consulta para inspeccionar las facetas actuales, selectores y enrutamiento de un Diamond. |
 | Module (Modulo) | Agrupacion logica de facetas relacionadas. Cada faceta pertenece a exactamente un modulo. |
-| Base Module (Modulo Base) | Modulo inmutable (keccak256("BASE")) que contiene las 4 facetas principales — siempre incluido en cada Garden. |
+| Base Module (Modulo Base) | Modulo inmutable (keccak256("BASE")) que contiene las 4 facetas principales. Siempre incluido en cada Garden. |
 | Delegatecall | Llamada EVM de bajo nivel que ejecuta codigo externo en el contexto de almacenamiento del contrato que llama. |
 
 ## Garden y Factory
@@ -49,7 +49,7 @@ position: 1
 
 | Termino | Definicion |
 |---------|-----------|
-| Protocol Status (Estado del Protocolo) | Enum: ACTIVE, UPGRADES_DISABLED o INACTIVE — controla el comportamiento a nivel de protocolo. |
+| Protocol Status (Estado del Protocolo) | Enum: ACTIVE, UPGRADES_DISABLED o INACTIVE. Controla el comportamiento a nivel de protocolo. |
 | Security Council Member (SCM) (Miembro del Consejo de Seguridad) | Miembros del DAO rastreados via ENS que pueden autorizar cambios de estado del protocolo. |
 | ENS Namehash | Identificador hash de un dominio ENS utilizado para rastrear la membresia del SCM. |
 

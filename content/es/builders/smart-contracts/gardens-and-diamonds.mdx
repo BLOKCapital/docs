@@ -24,7 +24,7 @@ Esta modularidad hace a los diamonds ideales para dApps complejas (DAO, DeFi, NF
 
 ## La arquitectura de un Diamond
 
-Imagínese el diamond como un hub central (el contrato `Diamond.sol`) que enruta las llamadas de función a facetas especializadas. Cada faceta es un contrato separado que contiene un subconjunto de la funcionalidad del sistema —por ejemplo, ownership, transferencias de tokens o gobernanza. El diamond mantiene un mapeo de **selectores de función** (identificadores únicos para funciones) a direcciones de facetas, lo que le permite delegar llamadas de forma eficiente.  
+Imagínese el diamond como un hub central (el contrato `Diamond.sol`) que enruta las llamadas de función a facetas especializadas. Cada faceta es un contrato separado que contiene un subconjunto de la funcionalidad del sistema, por ejemplo, ownership, transferencias de tokens o gobernanza. El diamond mantiene un mapeo de **selectores de función** (identificadores únicos para funciones) a direcciones de facetas, lo que le permite delegar llamadas de forma eficiente.  
 ![Delegación de facetas](/img/delegation.png)
 
 ### Componentes clave en la arquitectura Diamond

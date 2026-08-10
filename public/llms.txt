@@ -22,7 +22,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 
 - [Smart Contracts overview](https://docs.blokcapital.io/en/smart-contracts): The V1 on-chain architecture: entry points, facets, the registry, and indices.
 - [The Diamond Controller](https://docs.blokcapital.io/en/smart-contracts/entry-point.md): This is the main controller contract and the only contract address that end‑users and most integrations should interact with.
-- [Facet Registry](https://docs.blokcapital.io/en/smart-contracts/facet-registry.md): Key files: — Manages facet registration and version tracking — Public interface
+- [Facet Registry](https://docs.blokcapital.io/en/smart-contracts/facet-registry.md): Key files in the facet registry: FacetRegistry.sol manages facet registration and version tracking; IFacetRegistry.sol is the public interface.
 - [Facet Architecture](https://docs.blokcapital.io/en/smart-contracts/facets.md): The facets are split into two main groups:
 - [Indices Layer](https://docs.blokcapital.io/en/smart-contracts/indices-layer.md): Key components: Core index contract managing components and weights. Factory for deploying Index instances. Whitelist of approved tokens. Whitelist of approved calculation strategies.
 - [Infrastructure & Storage](https://docs.blokcapital.io/en/smart-contracts/infrastructure.md): Diamond’s power comes with one big constraint: all facets share storage. To manage that safely, this repo uses storage libraries.
@@ -53,21 +53,21 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 - [Resources overview](https://docs.blokcapital.io/en/resources): Tokenomics, security, FAQs, brand assets, and contract addresses.
 - [FAQs](https://docs.blokcapital.io/en/resources/FAQs/FAQs.md): BLOK Capital enables investors to maintain full control of their crypto assets while allowing wealth managers(Gardeners) to manage these assets under predefined terms set via smart contracts.
 - [Behavioural Economics](https://docs.blokcapital.io/en/resources/Tokenomics/behavioural-economics.md): The key market that the protocol is trying to serve is to connect professional medium and long term wealth managers with novice investors who are time poor and need professional help to try and…
-- [The Token](https://docs.blokcapital.io/en/resources/Tokenomics/the-token.md): Key details of the BLOKC token—built on Arbitrum, designed for utility, governance, and long-term ecosystem alignment.
+- [The Token](https://docs.blokcapital.io/en/resources/Tokenomics/the-token.md): Key details of the BLOKC token, built on Arbitrum, designed for utility, governance, and long-term ecosystem alignment.
 - [Token Utility](https://docs.blokcapital.io/en/resources/Tokenomics/token-utility.md): Our token will be used for the following: Governance of the Blok Capital Platform Medium of exchange on the platform between investors and wealth managers to handle payment of fees.
-- [Tokenomics Chart](https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart.md): A visual breakdown of BLOKC's token distribution—designed to ensure long-term sustainability, alignment, and ecosystem growth.
+- [Tokenomics Chart](https://docs.blokcapital.io/en/resources/Tokenomics/tokenomics-chart.md): A visual breakdown of BLOKC's token distribution, designed to ensure long-term sustainability, alignment, and ecosystem growth.
 - [Security Overview](https://docs.blokcapital.io/en/resources/audits-and-security/audits.md): At BLOK Capital, security isn’t just a feature, it’s our foundation. We are committed to ensuring that our smart contracts are as secure, reliable, and resilient as possible.
 - [Color Palette](https://docs.blokcapital.io/en/resources/brand-guidelines/color-palette.md): At BLOK Capital, our color palette is carefully curated to reflect both our technological innovation and our community-first approach.
 - [Logo Design](https://docs.blokcapital.io/en/resources/brand-guidelines/logo-design.md): The BLOK Capital logo is a foundational element of our visual identity.
-- [Token Design](https://docs.blokcapital.io/en/resources/brand-guidelines/token-design.md): At BLOK Capital, our token transcends mere functionality—it embodies our commitment to decentralized wealth management and community-driven governance.
+- [Token Design](https://docs.blokcapital.io/en/resources/brand-guidelines/token-design.md): At BLOK Capital, our token transcends mere functionality; it embodies our commitment to decentralized wealth management and community-driven governance.
 - [Contribute to our docs](https://docs.blokcapital.io/en/resources/create-video.md): BLOKC thrives on open contributions, and our documentation is no exception.
 - [Garden Indices](https://docs.blokcapital.io/en/resources/garden-index.md): A market-cap weighted index assigns weights to assets proportional to their market capitalization relative to the total market capitalization of the portfolio (or basket).
 - [Resources Section](https://docs.blokcapital.io/en/resources/intro.md): The Resources Section provides essential materials and references for users, developers, and contributors.
 - [Contributor Rewards](https://docs.blokcapital.io/en/resources/rewards-program.md): How BLOK Capital distributes $BLOKC rewards to contributors through a three-layer pipeline combining AI-driven scoring, multi-signer approval, and on-chain execution.
-- [Smart Contract Addresses](https://docs.blokcapital.io/en/resources/smart-contract-address.md): Deployed BLOK Capital contract addresses. Mainnet deployment is in progress — verified addresses will be published here and in the audits repository.
+- [Smart Contract Addresses](https://docs.blokcapital.io/en/resources/smart-contract-address.md): Deployed BLOK Capital contract addresses. Mainnet deployment is in progress; verified addresses will be published here and in the audits repository.
 
 ## Optional
 
-- [Documentation home](https://docs.blokcapital.io/en): Start here — overview and the four documentation sections.
+- [Documentation home](https://docs.blokcapital.io/en): Start here: overview and the four documentation sections.
 - [Website](https://blokcapital.io): The BLOK Capital product site.
 - [Full documentation corpus](https://docs.blokcapital.io/llms-full.txt): Every page concatenated as Markdown.

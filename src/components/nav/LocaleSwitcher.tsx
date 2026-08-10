@@ -101,7 +101,7 @@ export function LocaleSwitcher({ current }: { current: Locale }) {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`${LOCALE_LABELS[current]} — ${t.helpTranslate}`}
+        aria-label={`${LOCALE_LABELS[current]}, ${t.helpTranslate}`}
         onClick={() => setOpen((v) => !v)}
         className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-ink/15 bg-paper-warm px-3 text-[13px] font-medium text-ink-muted transition-colors hover:border-ink/30 hover:text-ink"
       >

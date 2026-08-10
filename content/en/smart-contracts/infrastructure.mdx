@@ -5,14 +5,14 @@ position: 6
 ---
 ## **5 Storage & State Management**
 
-Diamond’s power comes with one big constraint: **all facets share storage**. To manage that safely, this repo uses **storage libraries**.
+Diamond’s power comes with one big constraint: **all facets share storage**. To manage that safely, this repo uses **storage libraries**.
 
 ### **Shared Diamond storage pattern**
 
 The pattern:
 
-- Define a `struct Layout` containing variables for a specific concern.
-- Fix a **storage slot** via a constant `bytes32` hash of a unique string.
+- Define a `struct Layout` containing variables for a specific concern.
+- Fix a **storage slot** via a constant `bytes32` hash of a unique string.
 - Provide a `layout()` function that returns a storage reference to that layout.
 
 ```solidity
@@ -46,7 +46,7 @@ This ensures that each concern (ownership, loupe, index, etc.) has its own dedic
 
 **File:** `src/garden/libraries/LibDiamond.sol`
 
-This is the **runtime kernel** for the Diamond. It owns the primary Diamond storage layout (selector-to-facet mapping) and provides core functions to perform cuts and enforce ownership.
+This is the **runtime kernel** for the Diamond. It owns the primary Diamond storage layout (selector-to-facet mapping) and provides core functions to perform cuts and enforce ownership.
 
 ### **OpenZeppelin libraries**
 
@@ -73,14 +73,14 @@ If you’re new to this codebase, here’s a reading path that lines up with bot
 1. `src/garden/Garden.sol`
    - Understand:
      - That it’s a Diamond.
-     - How it routes calls using `LibDiamond`.
+     - How it routes calls using `LibDiamond`.
    - Skim the constructor to see how initial facets are wired.
 
 ### **Step 2 – Explore base facets (kernel)**
 
 1. `src/garden/facets/baseFacets/ownership/*`
    - See how ownership is stored and enforced.
-2. `src/garden/facets/baseFacets/cut/*` and `.../upgrade/*`
+2. `src/garden/facets/baseFacets/cut/*` and `.../upgrade/*`
    - Understand how diamond cuts work.
    - Note how selectors and facets are managed.
 3. `src/garden/facets/baseFacets/loupe/*`
@@ -94,7 +94,7 @@ At this point you know:
 
 1. `src/garden/facets/indexFacets/IIndex.sol`
    - Look at the external behavior: connect, disconnect, rebalance, check status.
-2. `src/garden/facets/indexFacets/IndexBase.sol` + `IndexStorage.sol`
+2. `src/garden/facets/indexFacets/IndexBase.sol` + `IndexStorage.sol`
    - See how:
      - It pulls from registries and math libs.
      - It calls DEX/GMX utilities.
@@ -133,7 +133,7 @@ Now you know:
    - `GmxV2Storage.sol`
 2. `src/garden/libraries/LibDiamond.sol`
 
-This is where you lock in your understanding of **how state is laid out** and how the Diamond works internally. You don’t need to read this first, but you should read it before making any low‑level changes.
+This is where you lock in your understanding of **how state is laid out** and how the Diamond works internally. You don’t need to read this first, but you should read it before making any low‑level changes.
 
 ### **Step 6 – External integrations & SBTs**
 
@@ -144,4 +144,4 @@ This is where you lock in your understanding of **how state is laid out** and 
    - `IERC173.sol`
 2. `src/GardenSBT/CollectionRegistry/SBTRegistry.sol`
 
-This is the last layer: you understand how the protocol **talks to the outside world** and how SBT features fit in.
+This is the last layer: you understand how the protocol **talks to the outside world** and how SBT features fit in.

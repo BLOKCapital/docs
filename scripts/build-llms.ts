@@ -116,7 +116,7 @@ function build(): void {
   lines.push(
     "## Optional",
     "",
-    `- [Documentation home](${SITE_URL}/en): Start here — overview and the four documentation sections.`,
+    `- [Documentation home](${SITE_URL}/en): Start here: overview and the four documentation sections.`,
     `- [Website](https://blokcapital.io): The BLOK Capital product site.`,
     `- [Full documentation corpus](${SITE_URL}/llms-full.txt): Every page concatenated as Markdown.`,
     "",

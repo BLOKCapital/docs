@@ -11,11 +11,11 @@ position: 1
 | Facet (Facette) | Un contrat implementant une fonctionnalite specifique, enregistre aupres du Diamond et appele via delegatecall. |
 | Function Selector (Selecteur de Fonction) | Identifiant de 4 octets (bytes4) derive du hash de la signature d'une fonction, utilise pour acheminer les appels vers la bonne facette. |
 | Facet Cut (Coupe de Facette) | Une structure de donnees contenant une adresse de facette, une action (Ajouter/Remplacer/Supprimer) et des selecteurs a modifier. |
-| Facet Cut Action (Action de Coupe de Facette) | Enum : Add (0), Replace (1), Remove (2) — determine comment le Diamond est modifie. |
+| Facet Cut Action (Action de Coupe de Facette) | Enum : Add (0), Replace (1), Remove (2). Determine comment le Diamond est modifie. |
 | DiamondCut | La fonction qui applique les coupes de facettes pour modifier la table de routage du Diamond. |
 | DiamondLoupe | Interface de requete pour inspecter les facettes actuelles, les selecteurs et le routage d'un Diamond. |
 | Module | Regroupement logique de facettes liees. Chaque facette appartient a exactement un module. |
-| Base Module (Module de Base) | Module immuable (keccak256("BASE")) contenant les 4 facettes principales — toujours inclus dans chaque Garden. |
+| Base Module (Module de Base) | Module immuable (keccak256("BASE")) contenant les 4 facettes principales. Toujours inclus dans chaque Garden. |
 | Delegatecall | Appel EVM de bas niveau qui execute du code externe dans le contexte de stockage du contrat appelant. |
 
 ## Garden et Factory
@@ -49,7 +49,7 @@ position: 1
 
 | Terme | Definition |
 |-------|-----------|
-| Protocol Status (Statut du Protocole) | Enum : ACTIVE, UPGRADES_DISABLED ou INACTIVE — controle le comportement au niveau du protocole. |
+| Protocol Status (Statut du Protocole) | Enum : ACTIVE, UPGRADES_DISABLED ou INACTIVE. Controle le comportement au niveau du protocole. |
 | Security Council Member (SCM) (Membre du Conseil de Securite) | Membres du DAO suivis via ENS qui peuvent autoriser les changements d'etat du protocole. |
 | ENS Namehash | Identifiant hash d'un domaine ENS utilise pour suivre l'adhesion au SCM. |
 

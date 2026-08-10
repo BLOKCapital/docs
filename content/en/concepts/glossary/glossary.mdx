@@ -11,11 +11,11 @@ position: 1
 | Facet | A contract implementing specific functionality, registered with the Diamond and called via delegatecall. |
 | Function Selector | 4-byte identifier (bytes4) derived from a function signature hash, used to route calls to the correct facet. |
 | Facet Cut | A data structure containing a facet address, action (Add/Replace/Remove), and selectors to modify. |
-| Facet Cut Action | Enum: Add (0), Replace (1), Remove (2) — determines how the Diamond is modified. |
+| Facet Cut Action | Enum: Add (0), Replace (1), Remove (2). Determines how the Diamond is modified. |
 | DiamondCut | The function that applies facet cuts to modify the Diamond's routing table. |
 | DiamondLoupe | Query interface for inspecting a Diamond's current facets, selectors, and routing. |
 | Module | Logical grouping of related facets. Each facet belongs to exactly one module. |
-| Base Module | Immutable module (keccak256("BASE")) containing the 4 core facets — always included in every Garden. |
+| Base Module | Immutable module (keccak256("BASE")) containing the 4 core facets. Always included in every Garden. |
 | Delegatecall | Low-level EVM call that executes external code in the calling contract's storage context. |
 
 ## Garden & Factory
@@ -49,7 +49,7 @@ position: 1
 
 | Term | Definition |
 |------|-----------|
-| Protocol Status | Enum: ACTIVE, UPGRADES_DISABLED, or INACTIVE — controls protocol-level behavior. |
+| Protocol Status | Enum: ACTIVE, UPGRADES_DISABLED, or INACTIVE. Controls protocol-level behavior. |
 | Security Council Member (SCM) | DAO members tracked via ENS who can authorize protocol state changes. |
 | ENS Namehash | Hash identifier of an ENS domain used to track SCM membership. |
 
