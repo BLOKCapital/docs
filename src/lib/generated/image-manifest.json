@@ -1,44 +1,4 @@
 {
-  "/img/Diamond_proxy.png": {
-    "width": 3221,
-    "height": 2831
-  },
-  "/img/Frame-21.jpg": {
-    "height": 11648,
-    "width": 8744
-  },
-  "/img/Frame-22.jpg": {
-    "height": 6364,
-    "width": 8136
-  },
-  "/img/Frame-25.jpg": {
-    "height": 11048,
-    "width": 13256
-  },
-  "/img/Frame-27.png": {
-    "width": 613,
-    "height": 697
-  },
-  "/img/GardenIndex.png": {
-    "width": 1320,
-    "height": 503
-  },
-  "/img/IndexGarden.png": {
-    "width": 2112,
-    "height": 1640
-  },
-  "/img/Rebalancer.png": {
-    "height": 1600,
-    "width": 1077
-  },
-  "/img/Userflow.png": {
-    "width": 941,
-    "height": 637
-  },
-  "/img/Wealth_mgmt.png": {
-    "width": 515,
-    "height": 660
-  },
   "/img/architect.png": {
     "width": 1100,
     "height": 932
@@ -79,6 +39,10 @@
     "width": 988,
     "height": 408
   },
+  "/img/Diamond_proxy.png": {
+    "width": 3221,
+    "height": 2831
+  },
   "/img/dont-1.jpg": {
     "height": 483,
     "width": 939
@@ -111,6 +75,26 @@
     "height": 488,
     "width": 932
   },
+  "/img/Frame-21.jpg": {
+    "height": 11648,
+    "width": 8744
+  },
+  "/img/Frame-22.jpg": {
+    "height": 6364,
+    "width": 8136
+  },
+  "/img/Frame-25.jpg": {
+    "height": 11048,
+    "width": 13256
+  },
+  "/img/Frame-27.png": {
+    "width": 613,
+    "height": 697
+  },
+  "/img/GardenIndex.png": {
+    "width": 1320,
+    "height": 503
+  },
   "/img/gradient-logo.jpg": {
     "height": 642,
     "width": 1011
@@ -118,6 +102,10 @@
   "/img/horizontal.jpg": {
     "height": 886,
     "width": 1677
+  },
+  "/img/IndexGarden.png": {
+    "width": 2112,
+    "height": 1640
   },
   "/img/luca.png": {
     "width": 7340,
@@ -135,6 +123,10 @@
     "width": 4168,
     "height": 4068
   },
+  "/img/Rebalancer.png": {
+    "height": 1600,
+    "width": 1077
+  },
   "/img/rewards.png": {
     "width": 513,
     "height": 520
@@ -151,9 +143,17 @@
     "width": 2160,
     "height": 2160
   },
+  "/img/Userflow.png": {
+    "width": 941,
+    "height": 637
+  },
   "/img/vertical.jpg": {
     "height": 1245,
     "width": 1526
+  },
+  "/img/Wealth_mgmt.png": {
+    "width": 515,
+    "height": 660
   },
   "/img/white-logo.jpg": {
     "height": 642,
