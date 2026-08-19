@@ -1,6 +1,7 @@
 # Dependencies
 /node_modules
 
+/blokc-v1-core
 # Next.js
 /.next
 /out

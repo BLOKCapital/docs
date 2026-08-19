@@ -41,6 +41,17 @@ export const ORG = {
 export const TWITTER_HANDLE = "@blok_cap";
 
 /**
+ * Google Analytics 4 measurement ID.
+ *
+ * Not a secret — it ships in the page source of every GA-instrumented site.
+ * The env var exists so a fork or a preview deployment can point at its own
+ * property, or opt out entirely by setting `NEXT_PUBLIC_GA_ID=""`. It must be
+ * `NEXT_PUBLIC_`-prefixed to be inlined into the client bundle at build time.
+ */
+export const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_ID ?? "G-H0E7WK8HLB";
+
+/**
  * Broad, brand- and topic-level keywords. Per-page keywords are derived from
  * frontmatter + section context; these anchor the site's topical authority.
  * Kept lean; keyword stuffing hurts more than it helps in 2026.

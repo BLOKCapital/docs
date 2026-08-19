@@ -1,0 +1,60 @@
+---
+title: Quickstart
+description: 'Get the BLOK Capital contracts building and testing locally, and know where to go next.'
+position: 3
+---
+
+## Before you start
+
+BLOK Capital V1 hasn't been deployed to mainnet yet (see [Smart Contract Addresses](/en/resources/smart-contract-address) for the current status), so building today means working against a local checkout, not a live network. Everything below gets you from a fresh clone to a passing test suite.
+
+## What you need
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge`, `cast`, `anvil`)
+- Git
+
+## Clone and install
+
+The contracts live at [github.com/BLOKCapital/blokc-v1-core](https://github.com/BLOKCapital/blokc-v1-core). Dependencies are pulled in as git submodules, not through Foundry's own dependency manager, so clone with `--recursive`:
+
+```shell
+git clone --recursive https://github.com/BLOKCapital/blokc-v1-core
+cd blokc-v1-core
+```
+
+If you already cloned without `--recursive`, pull the submodules in after the fact instead of re-cloning:
+
+```shell
+git submodule update --init --recursive
+```
+
+## Build and test
+
+```shell
+forge build
+forge test
+```
+
+Facets live under `src/garden/facets/`: the base facets (ownership, cut, upgrade, loupe) in `baseFacets/`, and every DeFi integration in `utilityFacets/<chain>/`, one folder per chain (`arbitrumOne`, `avalanche`, `ethereum`). Tests live under the mirrored path in `test/`. If you're only working on one facet, run just its tests:
+
+```shell
+forge test --match-contract OwnershipFacetTest
+```
+
+See the [Guide: Creating a New Diamond Facet](/en/builders/Guides/Facets) for the facet folder and file layout convention before you add anything new. Note the guide's test-folder convention is out of date, current tests are organized into `unit/`, `fuzz/`, and `invariant/` subfolders per facet, not the flat layout the guide describes.
+
+Before touching anything with its own storage library, note that `forge test` already runs three storage safety guards on every test suite: they catch slot collisions and stop you from accidentally renaming a storage library that's already deployed. If one of those fails, don't override it, see [Security Considerations](/en/builders/security-considerations) for why it exists.
+
+## Testing against a fork
+
+Some of the protocol's guardrails, like the Index rebalancer's oracle checks, are defined against real deployed addresses on whichever chain a Garden lives on. To exercise that code path faithfully, run your tests against a fork of the relevant chain instead of a clean local one:
+
+```shell
+forge test --fork-url <rpc-url-for-that-chain>
+```
+
+## Where to go next
+
+- [Protocol Architecture V1](/en/builders/blok-capital-v1) for how the pieces fit together.
+- [Smart Contracts](/en/smart-contracts) for the full reference: entry point, facet registry, storage layout, and a suggested reading order through the repo.
+- [Security Considerations](/en/builders/security-considerations) before you write or review anything that touches funds.

@@ -64,8 +64,80 @@ Después del desbloqueo, el colaborador puede retirar un monto específico a cua
 
 ---
 
+## Cómo se Ganan las Recompensas
+
+Las secciones anteriores describen cómo las recompensas ya confirmadas se aseguran y distribuyen on-chain. Esta sección describe la parte previa: quién puede participar, qué cuenta como contribución, cómo se puntúa cada publicación, y cómo una puntuación provisional se convierte en una recompensa confirmada que alimenta la propuesta de distribución.
+
+Hoy, las contribuciones son publicaciones públicas en X (Twitter) sobre BLOK Capital. La puntuación y confirmación descritas aquí ocurren off-chain; solo las recompensas confirmadas se proponen alguna vez on-chain.
+
+### Quién Puede Ganar
+
+Participar es autoservicio, y la aprobación es automática una vez que ambas cuentas están conectadas y pasan las verificaciones:
+
+- **Inicia sesión** con Google. Esto crea tu identidad de colaborador y una smart account usada para la atribución de recompensas.
+- **Conecta Discord.** Debes ser miembro del servidor oficial de Discord de BLOK Capital.
+- **Conecta X.** Tu cuenta de X debe tener al menos 250 seguidores.
+- Tanto tu cuenta de X como tu cuenta de Discord deben haberse creado antes de 2026.
+
+También debes tener la mayoría de edad en tu jurisdicción y estar legalmente autorizado para recibir $BLOKC. Se requiere aprobación antes de que cualquier publicación pueda generar recompensa, y las publicaciones hechas antes de tu aprobación no cuentan.
+
+### Qué Genera Recompensas
+
+- **Publicaciones públicas originales en X** que mencionen **$BLOKC** o **@blok_cap**.
+- **Las respuestas y republicaciones no cuentan.**
+- **Hasta dos publicaciones por día** generan recompensa, contadas según el día UTC en que se publicaron. Cualquier publicación adicional ese día queda registrada pero puntúa cero.
+- Se lee y evalúa el **texto completo** de publicaciones largas y cualquier **imagen adjunta** (gráficos, capturas, diagramas).
+- **Los me gusta, las vistas, las republicaciones y el número de seguidores no puntúan.** El alcance no forma parte de la puntuación, así que no se puede comprar ni cultivar para obtener una recompensa mayor.
+
+### Cómo se Puntúa Cada Publicación
+
+Las publicaciones se puntúan diariamente. Un juez de IA lee cada publicación y verifica cada afirmación que hace contra la documentación oficial de BLOK Capital en docs.blokcapital.io. Cada afirmación se marca como respaldada, contradicha, no respaldada o no aplicable, y la puntuación se deriva de esos veredictos junto con qué tan sustanciales son las afirmaciones, la originalidad de la redacción y la calidad general.
+
+Publicaciones que **puntúan bien**:
+
+- Publicaciones originales que explican cómo funciona BLOK Capital.
+- Afirmaciones específicas y verificables que coinciden con la documentación. Cuanta más sustancia, mayor la puntuación.
+- Escritas con tus propias palabras y enfoque.
+
+Publicaciones que **puntúan cero**:
+
+- Elogios vacíos, como "gran proyecto" o un solo emoji.
+- Republicar o reformular algo que ya fue puntuado, en cualquier idioma.
+- Copiar frases directamente de la documentación.
+- Publicaciones que parecen generadas por máquina.
+
+La puntuación de cada publicación se convierte en un monto de $BLOKC. Los montos de recompensa son discrecionales y no constituyen un salario ni una garantía de valor alguno.
+
+### Recompensas Provisionales y Confirmación
+
+El monto que ves primero es **provisional**. Unos siete días después de que se puntúa una publicación, se vuelve a verificar y la recompensa queda **confirmada** (settled). Este retraso es una ventana de seguridad deliberada, y es el último punto en el que una recompensa puede revertirse sin costo, antes de proponerse on-chain.
+
+Una recompensa se **elimina** si, al momento de la confirmación, la publicación ha sido:
+
+- eliminada, hecha privada, o su cuenta suspendida,
+- editada hasta convertirse en algo materialmente distinto de lo que se puntuó, o
+- encontrada como duplicado de otra contribución. Cuando dos publicaciones coinciden, la más antigua conserva la recompensa y la más reciente se elimina.
+
+Solo se deben las recompensas confirmadas. Los montos confirmados son los que paga la propuesta de distribución on-chain descrita anteriormente en esta página.
+
+### Reclamar y el Bloqueo
+
+Los $BLOKC confirmados se acumulan en tu **bóveda de recompensas** y permanecen bloqueados hasta el **1 de mayo de 2027**, una fecha fija que nadie puede adelantar ni anular, incluido el equipo. Como se describe en Bloqueo de Tokens y Gobernanza más arriba, tu poder de voto se te delega durante el bloqueo, así que los $BLOKC bloqueados cuentan para la gobernanza desde el primer día.
+
+Después de la fecha de desbloqueo puedes reclamar, lo que transfiere todo tu saldo a tu **smart wallet**. Antes de eso, cualquier intento de reclamo se rechaza mientras el bloqueo esté vigente.
+
+### Solicitar una Revisión Humana
+
+Como la puntuación es automatizada, puedes solicitar una revisión humana de cualquier puntuación. Contacta al equipo a través de los canales oficiales de Discord o X. Se guarda un registro de cómo se evaluó cada publicación y se revisa cuando se solicita.
+
+### El Concurso #BLOKC Es Independiente
+
+De vez en cuando BLOK Capital organiza un concurso independiente, como el concurso "Explica BLOK a un Amigo", que usa el hashtag **#BLOKC**. Las participaciones del concurso se juzgan solo para ese concurso. No se cuentan ni se pagan como recompensas regulares de contribución en $BLOKC.
+
+---
+
 ## Recorrido de la Comunidad
 
-El ingeniero de la comunidad [Rohit Purkait](https://x.com/codeswithroh) elaboró un desglose completo de este sistema de recompensas en acción: cómo la IA puntúa cada contribución, por qué cada distribución necesita la aprobación unánime de los firmantes, cómo se verifica todo on-chain, y por qué los seguidores o los "me gusta" nunca influyen en los pagos.
+Nuestro Ingeniero de Relaciones con Desarrolladores [Rohit Purkait](https://x.com/codeswithroh) elaboró un desglose completo de este sistema de recompensas en acción: cómo la IA puntúa cada contribución, por qué cada distribución necesita la aprobación unánime de los firmantes, cómo se verifica todo on-chain, y por qué los seguidores o los "me gusta" nunca influyen en los pagos.
 
 [Mira el desglose completo en X](https://x.com/codeswithroh/status/2086068928082751815)

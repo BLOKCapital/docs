@@ -1,0 +1,54 @@
+---
+title: Consideraciones de Seguridad
+description: 'Qué vigilar al escribir o revisar un facet: control de acceso, reentrada, seguridad del almacenamiento y el camino de actualización.'
+position: 4
+---
+
+La mayor parte del modelo de seguridad de BLOK Capital viene de un puñado de patrones repetidos en cada facet. Si estás escribiendo uno nuevo, o revisando el de alguien más, esto es lo que realmente importa.
+
+## Control de acceso
+
+Cada función que modifica estado necesita una verificación explícita de quién puede llamarla. Los dos patrones que verás en todos los facets base son una verificación de propietario (`onlyGardenOwner`, transferible mediante `OwnershipFacet`) y una verificación de auto-llamada.
+
+El patrón de auto-llamada aparece específicamente en las funciones de DEX y swap una vez que un Jardín está conectado a un Index: `Facet.sol` restringe esas llamadas a `msg.sender == address(this)`, lo que significa que solo el propio Jardín, en medio de un rebalanceo, puede activarlas. Ninguna cuenta o contrato externo puede intervenir y adelantarse a un rebalanceo mientras está en curso. Si añades una función que mueve fondos, decide desde el principio cuál de estas dos verificaciones necesita, y no te saltes la verificación solo porque una función parezca de solo lectura a primera vista.
+
+## Reentrada
+
+Los puntos de entrada que modifican estado y tocan contratos externos (swaps, transferencias, actualizaciones) usan `nonReentrant` o una protección personalizada equivalente. El facet de Index, por ejemplo, mantiene un booleano `rebalancing` en su propio almacenamiento específicamente para que un rebalanceo no pueda reentrarse a mitad de camino. Si tu facet llama a un protocolo externo (un DEX, un mercado de préstamos), asume que esa llamada puede reentrar en tu código, y protégete en consecuencia. Sigue el patrón checks-effects-interactions: valida primero, actualiza tu propio estado, y haz la llamada externa al final.
+
+## Seguridad del almacenamiento
+
+El estado de cada facet vive en una ranura de almacenamiento derivada de `keccak256` a partir del nombre de su librería de almacenamiento (enmascarado según EIP-7201), no en un desplazamiento fijo. Esto es lo que permite que muchos facets compartan el almacenamiento de un Jardín sin colisionar, pero también significa que **el nombre de la librería es la clave de almacenamiento**: renombrar una librería de almacenamiento ya desplegada hace que todos los Jardines que la usan pierdan acceso a esos datos de forma permanente, los datos no se mueven con el renombrado.
+
+De ahí se derivan dos reglas:
+
+- Deriva siempre el slot mediante `LibStorageSlot.deriveStorageSlot()`, nunca escribas la fórmula en línea tú mismo.
+- Nunca renombres una librería de almacenamiento una vez desplegada. Si un renombrado es realmente necesario, requiere un facet de migración que lea el slot antiguo y escriba en el nuevo, ejecutado en cada Jardín desplegado, no un buscar-y-reemplazar.
+
+No tienes que vigilar esto de memoria. `forge test` ejecuta tres protecciones en cada suite: una detecta cuando dos archivos distintos reutilizan el mismo nombre de librería (una colisión silenciosa), otra prueba que ese detector realmente funciona, y otra falla si una librería listada en `storage-registry.json` (la fuente de verdad de las librerías de almacenamiento desplegadas de cada módulo) ya no existe en el código. Si añades un nuevo facet con su propio almacenamiento, dale a la librería un nombre único en todo el repositorio, y si es un módulo nuevo, regístralo y ejecuta el script de sincronización del registro para que `storage-registry.json` se mantenga al día.
+
+## El camino de actualización está cerrado por defecto
+
+`diamondCut` está bloqueado en todos los Jardines. La única forma en que un facet llega a un Jardín es siendo registrado en el Registro de Facets y explícitamente permitido para ese tipo de Jardín, y la única forma en que un Jardín existente recibe un cambio es a través de la sincronización verificada por hash del facet de Upgrade con el registro. Si estás proponiendo un nuevo facet, espera que pase por la aprobación del registro, no por un cut directo. Esto es intencional: significa que una clave de propietario comprometida no puede instalar lógica arbitraria en un Jardín unilateralmente, y los cuatro facets base (ownership, cut, upgrade, loupe) nunca pueden ser reemplazados, ni siquiera por la gobernanza.
+
+## Protecciones específicas del rebalanceo
+
+Si tu trabajo toca el camino de rebalanceo del Index, ten en cuenta que ya asume condiciones hostiles:
+
+- **Protección contra flash loans**: la intención y el rebalanceo real deben caer en bloques diferentes, así que ninguna manipulación en una sola transacción puede abarcar ambos.
+- **Protección contra pérdida de valor**: un rebalanceo revierte si el valor total del portafolio cae más de un 0.5% respecto a antes de los swaps.
+- **Tolerancia por activo**: los balances después del swap tienen que quedar dentro de un 2% de su asignación objetivo.
+
+No relajes ninguno de estos umbrales sin entender por qué existen. Están ahí para limitar lo que un relayer fuera de la cadena, comprometido o no, puede hacerle a las posiciones de un Jardín. Un contrato Rebalancer independiente, no el propio Jardín, es lo que activa esto para todos los Jardines de un tipo de Index a la vez, y es permissionless una vez pasado un período de enfriamiento, así que trata "cualquiera puede llamar a esto" como la suposición por defecto, no como un caso extremo.
+
+## El interruptor de emergencia a nivel de protocolo
+
+Por encima del nivel de un Jardín individual, el Estado del Protocolo puede poner a todo el protocolo en uno de tres estados: activo, actualizaciones deshabilitadas, o inactivo. Los cambios de estado no los autoriza una simple clave de propietario, los autoriza un consejo de seguridad rastreado mediante dominios ENS. El GardenFactory verifica esto antes de desplegar nada nuevo, y se niega mientras el protocolo esté inactivo. Si estás integrando algo que asume que el protocolo siempre está disponible, no es así; diseña también para el caso inactivo.
+
+## Este es un código multi-cadena
+
+Los facets están organizados por cadena (`arbitrumOne`, `avalanche`, `ethereum` por ahora), y qué integraciones existen depende de cuál estés mirando. No asumas que un patrón, una protección o una integración que viste en una cadena existe en otra, revisa la carpeta de facets de esa cadena específica.
+
+## Dónde ir para más detalle
+
+Esta página es la lista de verificación. Para ver cómo se implementa cada uno de estos puntos, consulta las referencias de cada facet en [Blok-C-V1-Core](/es/builders/blok-c-v1-core), y la explicación a nivel de arquitectura en [Smart Contracts](/es/smart-contracts).

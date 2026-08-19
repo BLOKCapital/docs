@@ -27,6 +27,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 - [Indices Layer](https://docs.blokcapital.io/en/smart-contracts/indices-layer.md): Key components: Core index contract managing components and weights. Factory for deploying Index instances. Whitelist of approved tokens. Whitelist of approved calculation strategies.
 - [Infrastructure & Storage](https://docs.blokcapital.io/en/smart-contracts/infrastructure.md): Diamond’s power comes with one big constraint: all facets share storage. To manage that safely, this repo uses storage libraries.
 - [Introduction & Builder's Guide](https://docs.blokcapital.io/en/smart-contracts/introduction.md): This repository implements an on‑chain asset management protocol built around a Diamond (EIP‑2535) controller called the Garden.
+- [Why Transparent proxy standard for Factory and Registries?](https://docs.blokcapital.io/en/smart-contracts/transparent-proxy.md): The Transparent Proxy implementation follows EIP-1967, which standardizes how proxies store the implementation contract address.
 
 ## Builders
 
@@ -43,10 +44,9 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 - [Governance with Aragon](https://docs.blokcapital.io/en/builders/dao-governance/blokc-proposal.md): At BLOK Capital, we’re redefining decentralized governance by building a robust and modular DAO proposal system, seamlessly powered by Aragon OSX.
 - [Smart contract style guide](https://docs.blokcapital.io/en/builders/Guides/contract-style-guide.md): Our protocol uses a modular diamond/facet architecture, where each facet encapsulates a specific domain (e.g., Uniswap swaps, garden creation, access control).
 - [Guide: Creating a New Diamond Facet](https://docs.blokcapital.io/en/builders/Guides/Facets.md): In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic.
-- [Builders Section](https://docs.blokcapital.io/en/builders/intro.md): The Builders Section is designed for developers and technical contributors who want to dive deep into the architecture, smart contracts, and governance logic of the Blok Capital ecosystem.
-- [Gardens & Diamonds](https://docs.blokcapital.io/en/builders/smart-contracts/gardens-and-diamonds.md): At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern.
-- [Overview](https://docs.blokcapital.io/en/builders/smart-contracts/overview.md): Gardens are programmable crypto portfolios implemented as ERC-2535 Diamond contracts.
-- [Why Transparent proxy standard for Factory and Registries?](https://docs.blokcapital.io/en/builders/smart-contracts/transparent-proxy.md): The Transparent Proxy implementation follows EIP-1967, which standardizes how proxies store the implementation contract address.
+- [Builders Section](https://docs.blokcapital.io/en/builders/intro.md): The Builders Section is for developers and technical contributors building on or extending the Blok Capital protocol: setup, architecture, facet development, and security.
+- [Quickstart](https://docs.blokcapital.io/en/builders/quickstart.md): Get the BLOK Capital contracts building and testing locally, and know where to go next.
+- [Security Considerations](https://docs.blokcapital.io/en/builders/security-considerations.md): What to watch for when writing or reviewing a facet: access control, reentrancy, storage safety, and the upgrade path.
 
 ## Resources
 

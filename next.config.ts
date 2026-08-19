@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { LOCALES } from "./src/lib/config";
 
 /**
  * Baseline security headers applied to every route.
@@ -99,6 +100,32 @@ const config: NextConfig = {
         });
       }
     }
+
+    // `builders/smart-contracts/*` was a second, stale copy of the protocol
+    // architecture (it taught `diamondCut` as a live upgrade path, which is
+    // blocked in the real contracts) that duplicated and contradicted the
+    // accurate top-level `smart-contracts` section. Retired in favor of a
+    // single source of truth; these send old links and search results there.
+    for (const locale of LOCALES) {
+      rules.push(
+        {
+          source: `/${locale}/builders/smart-contracts/overview`,
+          destination: `/${locale}/smart-contracts/introduction`,
+          permanent: true,
+        },
+        {
+          source: `/${locale}/builders/smart-contracts/gardens-and-diamonds`,
+          destination: `/${locale}/smart-contracts/entry-point`,
+          permanent: true,
+        },
+        {
+          source: `/${locale}/builders/smart-contracts/transparent-proxy`,
+          destination: `/${locale}/smart-contracts/transparent-proxy`,
+          permanent: true,
+        },
+      );
+    }
+
     return rules;
   },
 };

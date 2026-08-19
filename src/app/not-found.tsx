@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader, Caveat, JetBrains_Mono } from "next/font/google";
 import { NotFoundContent } from "@/components/docs/NotFoundContent";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { getSectionEntries } from "@/lib/content";
 import {
   DEFAULT_LOCALE,
@@ -50,6 +51,7 @@ export default function NotFound() {
             LOCALES.map((l) => [l, getSectionEntries(l)]),
           ) as Record<Locale, Record<SectionSlug, string>>}
         />
+        <GoogleAnalytics />
       </body>
     </html>
   );

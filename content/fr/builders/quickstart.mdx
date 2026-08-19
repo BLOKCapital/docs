@@ -1,0 +1,60 @@
+---
+title: Démarrage Rapide
+description: 'Faites compiler et tester les contrats BLOK Capital en local, et sachez où aller ensuite.'
+position: 3
+---
+
+## Avant de commencer
+
+BLOK Capital V1 n'a pas encore été déployé sur le mainnet (voir [Adresses des Smart Contracts](/fr/resources/smart-contract-address) pour le statut actuel), donc développer aujourd'hui signifie travailler sur une copie locale, pas sur un réseau en direct. Ce qui suit vous mène d'un clone tout frais à une suite de tests qui passe.
+
+## Ce dont vous avez besoin
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge`, `cast`, `anvil`)
+- Git
+
+## Cloner et installer
+
+Les contrats se trouvent à [github.com/BLOKCapital/blokc-v1-core](https://github.com/BLOKCapital/blokc-v1-core). Les dépendances sont récupérées comme des sous-modules git, pas via le gestionnaire de dépendances propre à Foundry, donc clonez avec `--recursive` :
+
+```shell
+git clone --recursive https://github.com/BLOKCapital/blokc-v1-core
+cd blokc-v1-core
+```
+
+Si vous avez déjà cloné sans `--recursive`, récupérez les sous-modules après coup plutôt que de recloner :
+
+```shell
+git submodule update --init --recursive
+```
+
+## Compiler et tester
+
+```shell
+forge build
+forge test
+```
+
+Les facets vivent sous `src/garden/facets/` : les facets de base (ownership, cut, upgrade, loupe) dans `baseFacets/`, et chaque intégration DeFi dans `utilityFacets/<chain>/`, un dossier par chaîne (`arbitrumOne`, `avalanche`, `ethereum`). Les tests suivent le même chemin sous `test/`. Si vous ne travaillez que sur un seul facet, lancez uniquement ses tests :
+
+```shell
+forge test --match-contract OwnershipFacetTest
+```
+
+Consultez le [Guide : Créer un Nouveau Facet Diamond](/fr/builders/Guides/Facets) pour la convention de dossiers et de fichiers d'un facet avant d'ajouter quoi que ce soit de nouveau. Notez que la convention de dossiers de tests du guide est obsolète : les tests actuels sont organisés en sous-dossiers `unit/`, `fuzz/` et `invariant/` par facet, pas dans la structure plate que décrit le guide.
+
+Avant de toucher à quoi que ce soit ayant sa propre librairie de stockage, notez que `forge test` exécute déjà trois protections de sécurité du stockage sur chaque suite de tests : elles détectent les collisions de slots et vous empêchent de renommer par accident une librairie de stockage déjà déployée. Si l'une d'elles échoue, ne la contournez pas, consultez les [Considérations de Sécurité](/fr/builders/security-considerations) pour comprendre pourquoi elle existe.
+
+## Tester contre un fork
+
+Certaines protections du protocole, comme les vérifications d'oracle du rééquilibreur d'Index, sont définies par rapport à de vraies adresses déployées sur la chaîne où vit un Jardin donné. Pour exercer ce chemin de code fidèlement, lancez vos tests contre un fork de la chaîne concernée plutôt qu'une chaîne locale propre :
+
+```shell
+forge test --fork-url <url-rpc-de-cette-chaine>
+```
+
+## Où aller ensuite
+
+- [Architecture du Protocole V1](/fr/builders/blok-capital-v1) pour voir comment les pièces s'assemblent.
+- [Smart Contracts](/fr/smart-contracts) pour la référence complète : point d'entrée, registre des facets, disposition du stockage, et un ordre de lecture suggéré à travers le dépôt.
+- [Considérations de Sécurité](/fr/builders/security-considerations) avant d'écrire ou de relire quoi que ce soit qui touche aux fonds.

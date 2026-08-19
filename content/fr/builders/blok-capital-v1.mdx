@@ -5,18 +5,30 @@ position: 2
 ---
 ![Architecture du Protocole V1](/img/architect.png)
 
-## Les éléments principaux de notre architecture sont les suivants :
+## Les éléments principaux de notre architecture
 
 ### Infrastructure de Portefeuille
 L'intégration de nouveaux utilisateurs est freinée par la complexité et le risque de gestion des phrases de récupération. En intégrant la solution MPC de Web3Auth, nous éliminons les phrases de récupération tout en préservant la sécurité EOA et offrons aux utilisateurs avancés la possibilité de connecter leurs propres clés. Les futures mises à jour suivront les standards d'abstraction de compte d'Ethereum EIP-3074 et ERC-4337, remplaçant notre couche MPC une fois le support natif mature. Cette approche hybride offre une expérience d'inscription et de portefeuille familière de type Web2, assure une garde sécurisée des clés sans point de défaillance unique, et ouvre la voie à une adoption décentralisée plus large.
 
 ### Infrastructure du Protocole
 
-- Jardins : Contrat intelligent agissant comme portefeuille pour les utilisateurs. Les Jardins sont déployés par le contrat GardenFactory. Un utilisateur peut posséder plusieurs Jardins.
-- Jardiniers : Gestionnaires de patrimoine pouvant gérer les Jardins, c'est-à-dire le portefeuille des utilisateurs.
-- Contrats d'administration des Jardins : Ces contrats sont responsables du maintien des contrôles d'administration appropriés et permettent au Jardin d'accéder de manière sécurisée à la puissance du protocole DeFi, tel que voté par la communauté.
-- Registres de protocole : Ces registres sont administrés par la communauté via des votes DAO et des contrôles utilisés par les contrats d'administration des Jardins pour garantir que seules les actions vérifiées par la communauté sur les protocoles DeFi peuvent être effectuées.
-- Contrats d'intégration DeFi : Contrats d'implémentation pour différentes intégrations de protocoles DeFi tels que DEX, protocoles de prêt, staking, etc.
+- Jardins : Un Jardin est un contrat intelligent qui agit comme le portefeuille d'un utilisateur. Il est implémenté comme un Diamond EIP-2535, donc c'est en réalité un routeur léger qui délègue à un ensemble de facets plutôt qu'un seul gros contrat. Les Jardins sont déployés par le GardenFactory à une adresse déterministe (CREATE2), jusqu'à 10 par utilisateur. La propriété d'un Jardin est un token ERC-721 : celui qui détient le NFT contrôle le portefeuille, et le transférer transfère le Jardin.
+- Jardiniers : Gestionnaires de patrimoine pouvant gérer des Jardins pour le compte d'un utilisateur, dans les limites des permissions accordées par celui-ci.
+- Registre des Facets : Le catalogue, gouverné par la DAO, des facets qu'un Jardin est autorisé à installer. Avant qu'un facet n'atteigne un Jardin, il doit être enregistré ici et explicitement autorisé pour ce type de Jardin. Les quatre facets de base (ownership, cut, upgrade et loupe) sont protégés en permanence : la gouvernance peut ajouter ou retirer des facets de fonctionnalités, mais elle ne peut jamais remplacer le noyau.
+- Statut du Protocole : Un interrupteur à l'échelle du protocole entre actif, mises à jour désactivées et inactif. Les changements d'état sont autorisés par un conseil de sécurité suivi via des domaines ENS plutôt qu'une liste de portefeuilles, et le GardenFactory lui-même refuse de déployer de nouveaux Jardins tant que le protocole est inactif.
+- Contrats d'intégration DeFi : Contrats d'implémentation pour chaque protocole qu'un Jardin peut utiliser pour investir. La liste dépend de la chaîne et s'élargit à mesure que la communauté approuve de nouvelles intégrations, voir Intégrations de Protocoles DeFi ci-dessous.
+
+### Comment les Jardins se Mettent à Jour
+
+Un Diamond EIP-2535 standard expose `diamondCut`, permettant au propriétaire d'ajouter ou de remplacer des facets directement. BLOK Capital bloque volontairement cette fonction. L'appeler entraîne un revert.
+
+À la place, les mises à jour passent par un facet Upgrade dédié qui vérifie un hash par rapport à ce que le Registre des Facets a approuvé pour ce type de Jardin, avant d'appliquer tout changement. Cela signifie qu'une mise à jour ne peut installer que ce que la DAO a déjà validé, et c'est pour cette raison qu'un Jardin connecté à un Index peut être corrigé automatiquement, par n'importe qui, sans jamais nécessiter la signature du propriétaire : c'est la vérification par hash qui rend cela sûr.
+
+### Rééquilibrage Basé sur l'Index
+
+Les Jardins connectés à un Index se rééquilibrent en deux étapes. D'abord, une intention fige les allocations cibles à un bloc donné. Ensuite, à un bloc ultérieur, les échanges s'exécutent, en utilisant des instructions de swap fournies par un relayeur hors chaîne (un moteur déclenché par cron qui cherche la meilleure route entre plusieurs DEX avant de soumettre le calldata du swap). Exiger un bloc ultérieur ferme la porte à la manipulation par flash loan entre les deux étapes, et le protocole vérifie que la valeur totale du portefeuille n'a pas chuté de plus de 0,5 % avant de laisser le rééquilibrage s'exécuter.
+
+Un contrat Rebalancer distinct regroupe ceci pour tous les Jardins qui partagent un type d'Index en une seule transaction atomique, plutôt que de rééquilibrer chaque Jardin individuellement. Il est permissionless après un délai de récupération, n'importe qui peut le déclencher, et il découvre les pools entièrement via le Liquidity Pool Registry, donc ajouter le support d'un nouveau DEX ne nécessite pas de modifier le code du Rebalancer.
 
 ### Sous-graphes BLOK Capital
 Nous utilisons les sous-graphes du protocole The Graph pour interroger les événements on-chain, éliminant ainsi le besoin de services de données off-chain centralisés. Ces sous-graphes alimentent notre interface de gouvernance en indexant les événements clés tels que les propositions et les votes, et sont également utilisés dans nos contrats de registre. En indexant l'activité on-chain, les sous-graphes garantissent que toutes les interactions avec le protocole sont transparentes, vérifiables et facilement accessibles par la communauté. Cette approche est essentielle pour maintenir la confiance et la visibilité sur les opérations et décisions de gouvernance du protocole.
@@ -25,6 +37,14 @@ Nous utilisons les sous-graphes du protocole The Graph pour interroger les évé
 Nous utilisons le protocole Aragon pour construire et gérer notre DAO, bénéficiant de son infrastructure de gouvernance hautement personnalisable et modulaire. Aragon offre la flexibilité nécessaire pour adapter la DAO aux besoins spécifiques de notre protocole. La DAO gouverne les décisions et opérations clés, garantissant que le développement du protocole et l'allocation des ressources sont dirigés par la communauté de manière transparente et décentralisée. Cette structure favorise la responsabilité, la résilience et la durabilité à long terme.
 
 ### Intégrations de Protocoles DeFi
-L'intégration de différents protocoles DeFi permettrait aux utilisateurs de profiter de leurs fonctionnalités sans quitter l'interface BLOK Capital. La liste des intégrations s'élargira à mesure que la communauté grandira.
-- Protocoles de prêt : Les utilisateurs peuvent déposer des actifs cryptographiques dans des protocoles de prêt intégrés comme AAVE pour gagner des intérêts et faire croître leur portefeuille, le tout dans une interface unifiée.
-- DEX (Échanges Décentralisés) : Les utilisateurs peuvent échanger ou acheter les jetons de leur choix via des plateformes intégrées comme Uniswap, assurant flexibilité et facilité de gestion des actifs.
+Intégrer différents protocoles DeFi permet aux utilisateurs de profiter de leurs fonctionnalités sans quitter l'interface BLOK Capital. Chaque intégration est un facet, elle passe donc par le même Registre des Facets gouverné par la DAO que tout le reste, et les intégrations disponibles dépendent de la chaîne sur laquelle un Jardin est déployé.
+
+- **Arbitrum** : Uniswap V2 et V3, Camelot V2 et V3, et GMX V2 pour les swaps et positions à effet de levier ; Aave V3 pour le prêt ; Pendle V2 pour les positions génératrices de rendement ; CCTP de Circle pour déplacer des USDC entre chaînes ; plus des facets dédiés à la collecte de récompenses et au retrait.
+- **Ethereum** : Uniswap V2 et V3, SushiSwap V3 et Balancer V3 pour les swaps ; Morpho Blue pour le prêt ; un facet de retrait.
+- **Avalanche** : Trader Joe V2 pour les swaps.
+
+La liste s'élargit à mesure que la communauté approuve de nouvelles intégrations, chaîne par chaîne.
+
+### Réputation Soulbound
+
+La couche GardenSBT émet des tokens non transférables (SBT) liés à l'activité on-chain d'un utilisateur au sein du protocole. Comme ils ne peuvent être ni vendus ni transférés, ils fonctionnent comme un signal de réputation persistant et résistant au sybil, sur lequel la gouvernance et les futures fonctionnalités peuvent s'appuyer sans avoir à faire confiance à une identité auto-déclarée.

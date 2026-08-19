@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav/Nav";
 import { Footer } from "@/components/footer/Footer";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { DocNavProvider } from "@/components/docs/DocNavContext";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { getSectionEntries } from "@/lib/content";
 import { LOCALES, UI, isLocale, type Locale } from "@/lib/config";
 import { JsonLd, organizationLd, websiteLd } from "@/lib/seo";
@@ -86,6 +87,7 @@ export default async function LocaleLayout({
             <Footer locale={loc} />
           </DocNavProvider>
         </SearchProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );

@@ -64,8 +64,80 @@ Après le déverrouillage, le contributeur peut retirer un montant spécifique v
 
 ---
 
+## Comment les Récompenses Sont Gagnées
+
+Les sections ci-dessus décrivent comment les récompenses confirmées sont sécurisées et distribuées on-chain. Cette section décrit la partie qui vient avant : qui peut participer, ce qui compte comme contribution, comment chaque publication est notée, et comment un score provisoire devient une récompense confirmée qui alimente la proposition de distribution.
+
+Aujourd'hui, les contributions sont des publications publiques sur X (Twitter) au sujet de BLOK Capital. La notation et la confirmation décrites ici se déroulent off-chain ; seules les récompenses confirmées sont un jour proposées on-chain.
+
+### Qui Peut Gagner
+
+Participer se fait en autonomie, et l'approbation est automatique une fois que les deux comptes sont connectés et passent les vérifications :
+
+- **Connectez-vous** avec Google. Cela crée votre identité de contributeur et un smart account utilisé pour l'attribution des récompenses.
+- **Connectez Discord.** Vous devez être membre du serveur Discord officiel de BLOK Capital.
+- **Connectez X.** Votre compte X doit avoir au moins 250 abonnés.
+- Votre compte X et votre compte Discord doivent tous deux avoir été créés avant 2026.
+
+Vous devez également avoir atteint la majorité légale dans votre juridiction et être légalement autorisé à recevoir des $BLOKC. Une approbation est requise avant qu'une publication puisse rapporter, et les publications faites avant votre approbation ne comptent pas.
+
+### Ce Qui Rapporte des Récompenses
+
+- **Publications publiques originales sur X** mentionnant **$BLOKC** ou **@blok_cap**.
+- **Les réponses et les republications ne comptent pas.**
+- **Jusqu'à deux publications par jour** rapportent une récompense, comptées selon le jour UTC de publication. Toute publication supplémentaire ce jour-là est enregistrée mais note zéro.
+- Le **texte intégral** des publications longues et toute **image jointe** (graphiques, captures d'écran, diagrammes) sont lus et évalués.
+- **Les likes, les vues, les republications et le nombre d'abonnés ne sont pas notés.** La portée ne fait pas partie du score, elle ne peut donc pas être achetée ni cultivée pour obtenir une récompense plus élevée.
+
+### Comment Chaque Publication Est Notée
+
+Les publications sont notées quotidiennement. Un juge IA lit chaque publication et vérifie chaque affirmation qu'elle contient par rapport à la documentation officielle de BLOK Capital sur docs.blokcapital.io. Chaque affirmation est marquée comme étayée, contredite, non étayée ou non applicable, et le score est calculé à partir de ces verdicts, ainsi que du caractère substantiel des affirmations, de l'originalité de la rédaction et de la qualité générale.
+
+Publications qui **obtiennent un bon score** :
+
+- Publications originales qui expliquent le fonctionnement de BLOK Capital.
+- Affirmations spécifiques et vérifiables qui correspondent à la documentation. Plus il y a de substance, plus le score est élevé.
+- Rédigées avec vos propres mots et votre propre angle.
+
+Publications qui **obtiennent un score de zéro** :
+
+- Les éloges creux, comme « super projet » ou un simple emoji.
+- Republier ou reformuler quelque chose qui a déjà été noté, dans n'importe quelle langue.
+- Copier des phrases directement depuis la documentation.
+- Les publications qui semblent générées par une machine.
+
+Le score de chaque publication se convertit en un montant de $BLOKC. Les montants de récompense sont discrétionnaires et ne constituent ni un salaire ni une garantie de valeur.
+
+### Récompenses Provisoires et Confirmation
+
+Le montant que vous voyez en premier est **provisoire**. Environ sept jours après la notation d'une publication, elle est revérifiée et la récompense est **confirmée** (settled). Ce délai est une fenêtre de sécurité délibérée, et c'est le dernier moment où une récompense peut être annulée sans coût, avant d'être proposée on-chain.
+
+Une récompense est **retirée** si, au moment de la confirmation, la publication a été :
+
+- supprimée, rendue privée, ou son compte suspendu,
+- modifiée au point de devenir substantiellement différente de ce qui a été noté, ou
+- identifiée comme un doublon d'une autre contribution. Lorsque deux publications correspondent, la plus ancienne conserve la récompense et la plus récente est retirée.
+
+Seules les récompenses confirmées sont dues. Les montants confirmés sont ce que paie la proposition de distribution on-chain décrite plus haut sur cette page.
+
+### Réclamation et Verrouillage
+
+Les $BLOKC confirmés s'accumulent dans votre **coffre de récompenses** et restent verrouillés jusqu'au **1er mai 2027**, une date fixe que personne, pas même l'équipe, ne peut avancer ou modifier. Comme décrit dans Verrouillage des Tokens et Gouvernance ci-dessus, votre pouvoir de vote vous est délégué pendant le verrouillage, donc les $BLOKC verrouillés comptent pour la gouvernance dès le premier jour.
+
+Après la date de déverrouillage, vous pouvez réclamer, ce qui transfère la totalité de votre solde vers votre **smart wallet**. Avant cela, toute tentative de réclamation est refusée tant que le verrouillage est en vigueur.
+
+### Demander une Révision Humaine
+
+Comme la notation est automatisée, vous pouvez demander une révision humaine de n'importe quel score. Contactez l'équipe via les canaux officiels Discord ou X. Un historique de la façon dont chaque publication a été évaluée est conservé et peut être consulté sur demande.
+
+### Le Concours #BLOKC Est Distinct
+
+De temps à autre, BLOK Capital organise un concours distinct, comme le concours « Explique BLOK à un Ami », qui utilise le hashtag **#BLOKC**. Les participations au concours ne sont jugées que pour ce concours. Elles ne sont ni comptabilisées ni payées comme des récompenses de contribution régulières en $BLOKC.
+
+---
+
 ## Retour d'Expérience de la Communauté
 
-L'ingénieur communautaire [Rohit Purkait](https://x.com/codeswithroh) a réalisé une analyse complète de ce système de récompenses en action : comment l'IA évalue chaque contribution, pourquoi chaque distribution nécessite l'approbation unanime des signataires, comment tout est vérifié on-chain, et pourquoi le nombre d'abonnés ou de likes n'influence jamais les paiements.
+Notre Ingénieur Relations Développeurs [Rohit Purkait](https://x.com/codeswithroh) a réalisé une analyse complète de ce système de récompenses en action : comment l'IA évalue chaque contribution, pourquoi chaque distribution nécessite l'approbation unanime des signataires, comment tout est vérifié on-chain, et pourquoi le nombre d'abonnés ou de likes n'influence jamais les paiements.
 
 [Voir l'analyse complète sur X](https://x.com/codeswithroh/status/2086068928082751815)

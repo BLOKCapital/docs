@@ -1155,6 +1155,59 @@ The diagram provided above is the authoritative map for these layers; this docum
 
 ---
 
+# Why Transparent proxy standard for Factory and Registries?
+Source: https://docs.blokcapital.io/en/smart-contracts/transparent-proxy
+Section: Smart Contracts
+
+## 1. ERC-1967: Preventing Storage Collisions
+
+The **Transparent Proxy** implementation follows [EIP-1967](https://eips.ethereum.org/EIPS/eip-1967), which standardizes how proxies store the **implementation contract address**.
+
+* **Without a standard:** Each project could use arbitrary storage slots, and upgrading or composing contracts could lead to **storage collisions**, breaking state variables.
+* **With ERC-1967:** The implementation address is always stored in a deterministic storage slot (`bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`). This prevents collisions, makes the storage layout predictable, and allows tooling to rely on a shared convention.
+
+## 2. Visibility on Blockscanners
+
+Since ERC-1967 is a widely recognized standard, **block explorers** (such as Etherscan, Basescan, and Polygonscan) automatically detect it.
+
+* They show the link between the **proxy contract** (what users interact with) and the **implementation contract** (where the logic resides).
+* This transparency allows our community to verify which code is running and ensures confidence in upgrades.
+* Builders and auditors benefit because they can inspect the exact implementation contract behind each proxy.
+
+## 3. Transparent vs. UUPS and Other Patterns
+
+When choosing a proxy pattern, we evaluated **Transparent Proxy** against **UUPS (EIP-1822)** and other upgradeable models.
+
+* **Transparent Proxy Pros**
+
+  * **Maturity:** Transparent Proxy is the most widely adopted and audited pattern. It has been used for years across DeFi protocols, DAOs, and registries.
+  * **Battle-Tested:** Many critical contracts in production use it, proving its reliability under real conditions.
+  * **Immutable Upgrade Functionality:** The upgrade mechanism is embedded in the proxy itself and cannot be overridden or broken by future implementation contracts. This prevents accidental or malicious disabling of upgrades.
+  * **Developer Experience:** It is straightforward for builders: admins use the proxy admin for upgrades, while users only interact with the implementation logic.
+
+* **Why Not UUPS?**
+
+  * UUPS proxies require the upgrade logic to live in the implementation contract. If not carefully managed, this could introduce risk (e.g., losing the ability to upgrade if the upgrade function is removed or broken).
+  * While lighter in gas usage, the trade-off is more responsibility on developers to avoid errors.
+
+Given our need for **long-term stability and trustworthiness** in registry contracts, Transparent Proxy was the clear choice.
+
+## 4. Why Different from Diamonds
+
+* For **registry contracts**, we prioritize **maturity, visibility, and safety**. Transparent Proxy is perfect here.
+* For **Garden contracts** (multi-feature accounts), we use the **Diamond Standard (EIP-2535)**, which supports modular and expandable logic.
+* Each choice fits its purpose: Transparent Proxy for stability and clarity, Diamonds for flexibility and composability.
+
+## 5. References
+
+* [EIP-1967: Standard Proxy Storage Slots](https://eips.ethereum.org/EIPS/eip-1967)
+* [OpenZeppelin Transparent Proxy Docs](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent)
+* [EIP-1822: Universal Upgradeable Proxy Standard (UUPS)](https://eips.ethereum.org/EIPS/eip-1822)
+* [EIP-2535: Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535)
+
+
+---
+
 # Cut
 Source: https://docs.blokcapital.io/en/builders/blok-c-v1-core/garden/facets/base-facets/cut
 Section: Builders
@@ -1510,33 +1563,49 @@ Section: Builders
 
 ![Protocol V1 architecture](/img/architect.png)
 
-## The core parts of our architecture is as follows :
+## The core parts of our architecture
 
 ### Wallet Infrastructure
 Onboarding new users is hindered by the complexity and risk of seed-phrase management. By integrating Web3Auth’s MPC solution, we eliminate seed phrases while preserving EOA security and offer advanced users the option to connect their own keys. Future upgrades will track Ethereum’s EIP-3074 and ERC-4337 account-abstraction standards, phasing out our MPC layer once native support matures. This hybrid approach delivers familiar Web2-style signup and wallet experiences, ensures secure key custody without single-point-of-failure, and paves the way for broader decentralized adoption.
 
 ### Protocol Infrastructure
 
-- Gardens : Smart contract acting as portfolio for the users. Gardens are deployed by the GardenFactory contract. A single user can own multiple Gardens.
-- Gardeners : Wealth managers who will be able to manage Gardens i.e. portfolio of users.
-- Garden Administration contracts : These contracts are responsible for maintaining proper admin checks and allow the Garden to access to power of DeFi protocol securely as voted on by the community.
-- Protocol registries : These registries are administered by the community through DAO votes and checks and balances used by the Garden Administration contracts to ensure that only community verified actions on DeFi protocols can be carried out.
-- DeFi integration contracts : Implementation contracts for different DeFi protocol integrations such as DEXs, Lending protocols, Staking etc.
+- Gardens: A Garden is a smart contract that acts as a user's portfolio. It's implemented as an EIP-2535 Diamond, so it's really a thin router that delegates to a set of facets rather than one large contract. Gardens are deployed by the GardenFactory at a deterministic address (CREATE2), up to 10 per user. Ownership of a Garden is an ERC-721 token: whoever holds the NFT controls the portfolio, and transferring it transfers the Garden.
+- Gardeners: Wealth managers who can manage Gardens on a user's behalf, within the permissions the user has granted.
+- Facet Registry: The DAO-governed catalog of facets a Garden is allowed to install. Before any facet reaches a Garden, it has to be registered here and explicitly allowed for that Garden's type. The four base facets, ownership, cut, upgrade, and loupe, are permanently protected: governance can add or retire feature facets, but it can never swap out the kernel.
+- Protocol Status: A protocol-wide switch between active, upgrades-disabled, and inactive. State changes are authorized by a security council tracked through ENS domains rather than a hot wallet list, and the Garden Factory itself refuses to deploy new Gardens while the protocol is inactive.
+- DeFi integration contracts: Implementation contracts for each protocol a Garden can use to invest. The list is chain-specific and grows as the community approves new ones, see DeFi Protocol Integrations below.
+
+### How Gardens Upgrade
+
+A standard EIP-2535 Diamond exposes `diamondCut`, letting the owner add or replace facets directly. BLOK Capital blocks that function on purpose. Calling it reverts.
+
+Instead, upgrades go through a dedicated Upgrade facet that checks a hash against what the Facet Registry has approved for that Garden's type before pulling in any change. This means an upgrade can only ever install something the DAO has already vetted, and it's the reason a Garden connected to an Index can be patched automatically, by anyone, without ever needing the owner's signature: the hash verification is what keeps that safe.
+
+### Index-Based Rebalancing
+
+Gardens that are connected to an Index rebalance in two steps. First, an intent locks in target allocations at a given block. Then, on a later block, the trades themselves execute, using swap instructions supplied by an off-chain relayer (a cron-triggered engine that shops for the best route across DEXs before submitting swap calldata). Requiring a later block closes the door on flash-loan manipulation between the two steps, and the protocol checks that total portfolio value hasn't dropped by more than 0.5% before it lets the rebalance go through.
+
+A separate Rebalancer contract batches this across every Garden that shares an Index type into one atomic transaction, rather than rebalancing each Garden individually. It's permissionless after a cooldown, anyone can trigger it, and it discovers pools entirely through the Liquidity Pool Registry, so adding support for a new DEX doesn't require changing the Rebalancer's code.
 
 ### BLOK Capital Subgraphs
-We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our gov-
-ernance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
+We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our governance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
 
 ### DAO architecture with Aragon
-We leverage the Aragon protocol to build and manage our DAO, benefiting from its highly customizable and modular governance infrastructure. Aragon provides the flexibility needed to tailor the DAO to our protocol’s specific requirements. The DAO governs key decisions and operations, ensuring that protocol development and
-resource allocation are driven by the community in a transparent, decentralized manner. This structure promotes accountability, resilience, and long-term sustain-
-ability.
+We leverage the Aragon protocol to build and manage our DAO, benefiting from its highly customizable and modular governance infrastructure. Aragon provides the flexibility needed to tailor the DAO to our protocol’s specific requirements. The DAO governs key decisions and operations, ensuring that protocol development and resource allocation are driven by the community in a transparent, decentralized manner. This structure promotes accountability, resilience, and long-term sustainability.
 
 ### DeFi Protocol Integrations
-Integrating different DeFi protocols would allow users to utilize their features without having to leave the BLOK Capital interface. The list of integrations would grow as the community grows with time.
-- Lending Protocols: Users can deposit crypto assets into integrated lending protocols like AAVE to earn interest and grow their portfolio, all within a unified interface.
-8
-- DEXs (Decentralized Exchanges): Users can swap or purchase tokens of their choice through integrated platforms like Uniswap, ensuring flexibility and ease of asset management.
+Integrating different DeFi protocols lets users use their features without leaving the BLOK Capital interface. Every integration is a facet, so it goes through the same DAO-governed Facet Registry as everything else, and which integrations are available depends on which chain a Garden is deployed on.
+
+- **Arbitrum**: Uniswap V2 and V3, Camelot V2 and V3, and GMX V2 for swaps and leveraged positions; Aave V3 for lending; Pendle V2 for yield-bearing positions; Circle's CCTP for moving USDC cross-chain; plus dedicated reward-collection and withdrawal facets.
+- **Ethereum**: Uniswap V2 and V3, SushiSwap V3, and Balancer V3 for swaps; Morpho Blue for lending; a withdrawal facet.
+- **Avalanche**: Trader Joe V2 for swaps.
+
+The list grows as the community approves new integrations, chain by chain.
+
+### Soulbound Reputation
+
+The GardenSBT layer issues non-transferable tokens (SBTs) tied to a user's on-chain activity within the protocol. Because they can't be sold or transferred, they work as a persistent, sybil-resistant reputation signal, something governance and future features can build on without trusting a self-reported identity.
 
 
 ---
@@ -2217,334 +2286,129 @@ contract TransferFacet_Behavior is TransferFacetTest {
 Source: https://docs.blokcapital.io/en/builders/intro
 Section: Builders
 
-This section covers core components like the Blok Capital V1 protocol, contract structures, DAO governance mechanisms, and advanced testing/debugging workflows. It provides the technical foundation and implementation details necessary to build, audit, or extend the protocol with confidence.
+This section is for anyone writing code against BLOK Capital, whether that's a new facet, an integration, or an audit.
+
+Start with [Quickstart](/en/builders/quickstart) to get the contracts building and testing locally. [Protocol Architecture V1](/en/builders/blok-capital-v1) covers how the pieces fit together, and [Blok-C-V1-Core](/en/builders/blok-c-v1-core) has the per-facet reference if you need to see exactly how something is implemented. For the deepest architectural detail, including a suggested reading order through the repository, see the [Smart Contracts](/en/smart-contracts) section.
+
+Before you write anything that touches funds, read [Security Considerations](/en/builders/security-considerations). If you're adding a new facet, follow the [Guides](/en/builders/Guides) for folder structure, naming, and style. [DAO Governance](/en/builders/dao-governance) covers how protocol changes get proposed and approved.
 
 
 ---
 
-# Gardens & Diamonds
-Source: https://docs.blokcapital.io/en/builders/smart-contracts/gardens-and-diamonds
+# Quickstart
+Source: https://docs.blokcapital.io/en/builders/quickstart
 Section: Builders
 
-## The Architecture of Diamonds & Gardens
+## Before you start
 
-At BLOK Capital, our main architecture for the smart contracts depends on the Diamond proxy pattern. In this section, we’ll explore the architecture of diamonds, a factory-based deployment approach inspired by the Nick Mudge Diamond repository, and how these concepts create a "garden" powering the BLOK architecture.
+BLOK Capital V1 hasn't been deployed to mainnet yet (see [Smart Contract Addresses](/en/resources/smart-contract-address) for the current status), so building today means working against a local checkout, not a live network. Everything below gets you from a fresh clone to a passing test suite.
 
-## Proxy Contract Flow: 
-![Diamond proxy delegation flow](/img/diamondSchema2.png)
+## What you need
 
-## What is the Diamond Standard?
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge`, `cast`, `anvil`)
+- Git
 
-The Diamond Standard, proposed by Nick Mudge in EIP-2535, helps to address the problem of how to create upgradable, modular contracts without hitting gas limits or size constraints. Traditional contracts are monolithic, with all logic packed into a single address, making upgrades super hard and risky. Diamonds, by contrast, are like gardens: they consist of a single **Diamond contract** (for e.g. the soil) that delegates functionality to multiple **facets** ( e.g. the plants), each containing specific logic.
+## Clone and install
 
-A diamond is a proxy contract that uses a unique architecture to:
+The contracts live at [github.com/BLOKCapital/blokc-v1-core](https://github.com/BLOKCapital/blokc-v1-core). Dependencies are pulled in as git submodules, not through Foundry's own dependency manager, so clone with `--recursive`:
 
-- **Modularize logic**: Break functionality into smaller, reusable facets.
-- **Enable upgrades**: Add, replace, or remove facets without redeploying the entire contract.
-- **Bypass size limits**: Store only function selectors in the diamond, delegating execution to facets.
-
-This modularity makes diamonds ideal for complex decentralized applications (dApps) that need to evolve/upgrade over time, much like a garden that can be replanted or expanded.
-
-## The Architecture of a Diamond
-
-Imagine the diamond as a central hub (the `Diamond.sol` contract) that routes function calls to specialized facets. Each facet is a separate contract containing a subset of the system’s functionality, such as ownership, token transfers, or governance. The diamond maintains a mapping of **function selectors** (unique identifiers for functions) to facet addresses, allowing it to delegate calls efficiently.
-![Facet delegation](/img/delegation.png)
-
-### Key Components in the Diamond Architecture
-
-1. **Diamond Contract** (`Diamond.sol`):
-    - Acts as the entry point for all interactions.
-    - Stores a mapping of function selectors to facet addresses.
-    - Implements the `fallback` function to route calls to the appropriate facet.
-    - Uses the `diamondCut` function to add, replace, or remove facets, enabling upgrades.
-2. **Facets**:
-    - Independent contracts (e.g., `DiamondCutFacet.sol`, `DiamondLoupeFacet.sol`) containing specific functions.
-    - For example, `DiamondCutFacet` handles upgrades, while `DiamondLoupeFacet` provides introspection (querying facet addresses and selectors).
-3. **Interfaces**:
-    - Standard interfaces like `IDiamondCut` and `IDiamondLoupe` ensure consistency.
-    - Facets implement these interfaces to provide specific functionality.
-4. **Function Selectors**:
-    - A 4-byte hash (e.g., `keccak256("functionName()")`) that identifies a function.
-    - The diamond maps selectors to facet addresses, ensuring the correct contract handles each call.
-
-![Diamond facet components](/img/diamondFacet2.png)
-
-Here’s a simplified example of the `Diamond.sol` fallback function, which delegates calls to facets:
-
-```js
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract Diamond {
-    mapping(bytes4 => address) public facets;
-
-    fallback() external payable {
-        address facet = facets[msg.sig];
-        require(facet != address(0), "Function does not exist");
-        assembly {
-            let ptr := mload(0x40)
-            calldatacopy(ptr, 0, calldatasize())
-            let result := delegatecall(gas(), facet, ptr, calldatasize(), 0, 0)
-            let size := returndatasize()
-            returndatacopy(ptr, 0, size)
-            switch result
-            case 0 { revert(ptr, size) }
-            default { return(ptr, size) }
-        }
-    }
-}
-
-```
-
-This code shows how the diamond routes incoming calls (`msg.sig`) to the appropriate facet, enabling modularity.
-
-## The Garden: Modular and Scalable Systems
-
-Why call this a "garden"? In a garden, each plant (facet) serves a purpose, some provide structure (like `DiamondCutFacet`), others add beauty (like `DiamondLoupeFacet`), and some bear fruit (like custom facets for your dApp’s logic). The Diamond Standard allows you to cultivate a garden of smart contracts that:
-
-- **Grow over time**: Add new facets as requirements evolve.
-- **Prune and replant**: Replace or remove outdated facets without disrupting the garden.
-- **Scale efficiently**: Keep the core contract lightweight by offloading logic to facets.
-
-This modularity is particularly powerful for dApps like DAOs, DeFi protocols, or NFT platforms, where new features (e.g., governance, staking) can be added without redeploying the entire system.
-
-## Factory-Based Deployment with `DiamondFactory.sol`
-
-Deploying diamonds manually can be tricky, especially for systems requiring multiple instances (e.g., a marketplace with many user-specific diamonds). The `diamond-foundry` repository introduces `DiamondFactory.sol`, a factory contract that automates diamond deployment and facet initialization, acting like a gardener planting new plots.
-
-### How `DiamondFactory.sol` Works
-
-The factory deploys a new `Diamond` contract and initializes it with specified facets. Here’s a simplified version of `DiamondFactory.sol`:
-```js
-// SPDX-License-License: MIT
-pragma solidity ^0.8.0;
-
-import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
-import {Diamond} from "../Diamond.sol";
-
-contract DiamondFactory {
-    event DiamondDeployed(address diamond, address owner);
-
-    function deployDiamond(
-        address _owner,
-        address[] memory _facets,
-        bytes[] memory _initData
-    ) external returns (address diamond) {
-        diamond = address(new Diamond(_owner, address(this)));
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](_facets.length);
-        for (uint256 i = 0; i < _facets.length; i++) {
-            cuts[i] = IDiamondCut.FacetCut({
-                facetAddress: _facets[i],
-                action: IDiamondCut.FacetCutAction.Add,
-                functionSelectors: getSelectors(_facets[i])
-            });
-        }
-        IDiamondCut(diamond).diamondCut(cuts, address(0), "");
-        emit DiamondDeployed(diamond, _owner);
-        return diamond;
-    }
-
-    function getSelectors(address facet) internal pure returns (bytes4[] memory selectors) {
-        // Simplified: Hardcode selectors for known facets
-        selectors = new bytes4[](4);
-        selectors[0] = bytes4(keccak256("facets()"));
-        selectors[1] = bytes4(keccak256("facetFunctionSelectors(address)"));
-        selectors[2] = bytes4(keccak256("facetAddresses()"));
-        selectors[3] = bytes4(keccak256("facetAddress(bytes4)"));
-        return selectors;
-    }
-}
-
-```
-
-The factory:
-
-1. Deploys a new `Diamond` contract with the specified owner.
-2. Creates a `FacetCut` array to register facets (e.g., `DiamondCutFacet`, `DiamondLoupeFacet`).
-3. Calls `diamondCut` to initialize the diamond with the facets.
-4. Emits an event for tracking deployments.
-
-This factory pattern enables scalable deployment, allowing you to plant multiple diamonds in your garden with minimal effort.
-
-### Deployment Example
-
-Here’s how you might deploy a diamond using Foundry’s scripting:
-```js
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import {Script} from "forge-std/Script.sol";
-import {DiamondFactory} from "../src/factory/DiamondFactory.sol";
-import {DiamondCutFacet} from "../src/facets/DiamondCutFacet.sol";
-import {DiamondLoupeFacet} from "../src/facets/DiamondLoupeFacet.sol";
-
-contract DeployDiamond is Script {
-    function run() external {
-        vm.startBroadcast();
-        DiamondCutFacet cutFacet = new DiamondCutFacet();
-        DiamondLoupeFacet loupeFacet = new DiamondLoupeFacet();
-        DiamondFactory factory = new DiamondFactory();
-        address[] memory facets = new address[](2);
-        facets[0] = address(cutFacet);
-        facets[1] = address(loupeFacet);
-        bytes[] memory initData = new bytes[](2);
-        initData[0] = "";
-        initData[1] = "";
-        address diamond = factory.deployDiamond(msg.sender, facets, initData);
-        console.log("Diamond deployed at:", diamond);
-        vm.stopBroadcast();
-    }
-}
-```
-Run this script with:
 ```shell
-forge script script/DeployDiamond.s.sol --fork-url http://localhost:8545 --broadcast
+git clone --recursive https://github.com/BLOKCapital/blokc-v1-core
+cd blokc-v1-core
 ```
 
-## Testing the Garden
+If you already cloned without `--recursive`, pull the submodules in after the fact instead of re-cloning:
 
-To ensure your diamond garden thrives, you need robust tests. Foundry’s Solidity-based testing makes this straightforward. Below is a test suite verifying the factory deployment and diamond functionality:
-```js
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import {Test} from "forge-std/Test.sol";
-import {DiamondFactory} from "../src/factory/DiamondFactory.sol";
-import {DiamondCutFacet} from "../src/facets/DiamondCutFacet.sol";
-import {DiamondLoupeFacet} from "../src/facets/DiamondLoupeFacet.sol";
-import {IDiamondLoupe} from "../src/interfaces/IDiamondLoupe.sol";
-
-contract DiamondFactoryTest is Test {
-    DiamondFactory factory;
-    DiamondCutFacet cutFacet;
-    DiamondLoupeFacet loupeFacet;
-    address diamond;
-
-    function setUp() public {
-        cutFacet = new DiamondCutFacet();
-        loupeFacet = new DiamondLoupeFacet();
-        factory = new DiamondFactory();
-        address[] memory facets = new address[](2);
-        facets[0] = address(cutFacet);
-        facets[1] = address(loupeFacet);
-        bytes[] memory initData = new bytes[](2);
-        initData[0] = "";
-        initData[1] = "";
-        diamond = factory.deployDiamond(address(this), facets, initData);
-    }
-
-    function testDiamondDeployment() public {
-        assertTrue(diamond != address(0), "Diamond not deployed");
-    }
-
-    function testLoupeFunctions() public {
-        IDiamondLoupe loupe = IDiamondLoupe(diamond);
-        address[] memory facets = loupe.facetAddresses();
-        assertEq(facets.length, 2, "Incorrect number of facets");
-        assertEq(facets[0], address(cutFacet), "DiamondCutFacet not registered");
-        assertEq(facets[1], address(loupeFacet), "DiamondLoupeFacet not registered");
-    }
-}
-```
-Run tests with:
 ```shell
+git submodule update --init --recursive
+```
+
+## Build and test
+
+```shell
+forge build
 forge test
 ```
 
-## Benefits of the Diamond Garden
+Facets live under `src/garden/facets/`: the base facets (ownership, cut, upgrade, loupe) in `baseFacets/`, and every DeFi integration in `utilityFacets/<chain>/`, one folder per chain (`arbitrumOne`, `avalanche`, `ethereum`). Tests live under the mirrored path in `test/`. If you're only working on one facet, run just its tests:
 
-The Diamond Standard, paired with a factory-based deployment, offers:
+```shell
+forge test --match-contract OwnershipFacetTest
+```
 
-- **Modularity**: Add new features (facets) without redeploying the core contract.
-- **Scalability**: Deploy multiple diamonds for different users or use cases.
-- **Upgradability**: Update functionality without breaking existing contracts.
-- **Gas Efficiency**: Keep the diamond contract lightweight by offloading logic to facets.
+See the [Guide: Creating a New Diamond Facet](/en/builders/Guides/Facets) for the facet folder and file layout convention before you add anything new. Note the guide's test-folder convention is out of date, current tests are organized into `unit/`, `fuzz/`, and `invariant/` subfolders per facet, not the flat layout the guide describes.
 
-## Conclusion
+Before touching anything with its own storage library, note that `forge test` already runs three storage safety guards on every test suite: they catch slot collisions and stop you from accidentally renaming a storage library that's already deployed. If one of those fails, don't override it, see [Security Considerations](/en/builders/security-considerations) for why it exists.
 
-The Diamond Standard is a powerful tool for building modular, upgradable smart contract systems, akin to cultivating a garden where each plant (facet) contributes to a thriving ecosystem. By using `DiamondFactory.sol`, you can automate diamond deployment, making it easy to scale your garden across multiple instances. Whether you’re building a DeFi protocol, a DAO, or an NFT marketplace, the Diamond Standard offers the flexibility to grow and adapt.
+## Testing against a fork
 
+Some of the protocol's guardrails, like the Index rebalancer's oracle checks, are defined against real deployed addresses on whichever chain a Garden lives on. To exercise that code path faithfully, run your tests against a fork of the relevant chain instead of a clean local one:
 
-Happy gardening!
+```shell
+forge test --fork-url <rpc-url-for-that-chain>
+```
 
+## Where to go next
 
----
-
-# Overview
-Source: https://docs.blokcapital.io/en/builders/smart-contracts/overview
-Section: Builders
-
-## Gardens
-Gardens are programmable crypto portfolios implemented as ERC-2535 Diamond contracts. Each Garden acts as a smart “hub” for a user’s investments, enabling upgradable DeFi strategies while abstracting away gas and transaction complexity. Investors control Gardens via an ERC-721 NFT (unique token), which represents ownership of the portfolio. The system leverages Account Abstraction (ERC-4337) concepts (bundlers and paymasters) to make investing seamless and gas-efficient. A DAO-managed Facet Registry ensures only approved modules (facets) can be added, enabling a secure, governance-curated upgrade path.
-
-## Gardens as Diamond Portfolios
-Each Garden is an instance of an ERC-2535 Diamond proxy. The Diamond Standard defines a proxy that delegates calls to multiple facet contracts. In essence, “a diamond is a contract with external functions that are supplied by contracts called facets”. This modular pattern means Gardens have virtually unlimited size and can be extended with new logic post-deployment. By default, every Garden includes the reference facets for upgrades, introspection, and ownership control. The DiamondCut and DiamondLoupe facets enable adding/replacing/removing functionality on the fly, and the Ownership facet manages admin rights. In the standard implementation, DiamondCutFacet, DiamondLoupeFacet, and OwnershipFacet are deployed for each Garden. Together they allow a Garden to evolve: developers can call diamondCut on the proxy to plug in new modules (e.g. a lending module or swap integration) without needing a full contract redeployment.
-
-## DAO-Curated Facet Registry
-
-To maintain security and decentralization, the protocol uses a DAO-governed Facet Registry. All candidate facets (upgrade modules) must be registered and vetted before use. In practice, a new facet contract must be registered by the DAO’s governance process. Only facets in this on-chain registry can be added to Gardens by diamondCut. Upgrading a facet’s implementation also requires DAO approval, so arbitrary code cannot be injected. Each facet undergoes a stringent verification by auditors before registry inclusion. This model balances flexibility with security: the DAO ensures only trusted, reviewed modules (e.g. audited DEX or lending facets) are available for Gardens.
-
-## Default Facets (Cut, Loupe, Ownership)
-Every Garden includes the core Diamond facets from the outset. The DiamondCutFacet provides the diamondCut interface used to add, replace, or remove function selectors in the Garden proxy. The DiamondLoupeFacet offers introspection: it lets anyone query which facets are present and what functions they implement. The OwnershipFacet manages the Garden’s owner/admin (initially the user who created it). These default facets enforce upgradability and access control. By design, each new Garden deploys its own instances of these facets, so the user has full control (through their NFT-owner account) over their portfolio’s modules.
-
-## Composable DeFi Modules
-Beyond the defaults, Gardens can “plug in” various DeFi modules as needed. For instance, a Lending facet could integrate a lending/borrowing protocol, and a DEX facet could enable token swaps via an AMM. These facets are simply other contracts implementing financial logic. Via diamondCut, a user (or an authorized contract) can add these facets to their Garden, composing custom investment strategies. Because facets are stateless and reusable, a single lending facet deployment can serve many Gardens, saving gas. This modularity means Gardens can adapt: new protocols can be integrated simply by registering their facet and cutting it into the Garden when needed.
-
-## Garden Factory & NFT Ownership
-New Gardens are created by the Garden Factory (itself a Diamond facet). When a user calls the factory, it deploys a fresh Garden proxy with the user as owner. The factory takes two key parameters: the user’s address (msg.sender) and a new token ID. It then mints a corresponding ERC-721 token for that ID, binding it to the Garden. This NFT is the deed of the Garden: owning the NFT means owning the portfolio contract. In practice, if a user sells or transfers their NFT, the Garden goes with it: the new token owner has full control. We rely on ERC-721’s transfer functions (transferFrom/safeTransferFrom) and ownerOf checks to manage this ownership logic. Thus, Gardens are fully transferable portfolios – an NFT marketplace could let users buy and sell entire DeFi strategies in one transaction.
+- [Protocol Architecture V1](/en/builders/blok-capital-v1) for how the pieces fit together.
+- [Smart Contracts](/en/smart-contracts) for the full reference: entry point, facet registry, storage layout, and a suggested reading order through the repo.
+- [Security Considerations](/en/builders/security-considerations) before you write or review anything that touches funds.
 
 
 ---
 
-# Why Transparent proxy standard for Factory and Registries?
-Source: https://docs.blokcapital.io/en/builders/smart-contracts/transparent-proxy
+# Security Considerations
+Source: https://docs.blokcapital.io/en/builders/security-considerations
 Section: Builders
 
-## 1. ERC-1967: Preventing Storage Collisions
+Most of the security model in BLOK Capital comes from a handful of patterns repeated across every facet. If you're writing a new one, or reviewing someone else's, these are the things that actually matter.
 
-The **Transparent Proxy** implementation follows [EIP-1967](https://eips.ethereum.org/EIPS/eip-1967), which standardizes how proxies store the **implementation contract address**.
+## Access control
 
-* **Without a standard:** Each project could use arbitrary storage slots, and upgrading or composing contracts could lead to **storage collisions**, breaking state variables.
-* **With ERC-1967:** The implementation address is always stored in a deterministic storage slot (`bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`). This prevents collisions, makes the storage layout predictable, and allows tooling to rely on a shared convention.
+Every mutating function needs an explicit check on who's allowed to call it. The two patterns you'll see throughout the base facets are an owner check (`onlyGardenOwner`, transferable via `OwnershipFacet`) and a self-call check.
 
-## 2. Visibility on Blockscanners
+The self-call pattern shows up specifically for DEX and swap functions once a Garden is connected to an Index: `Facet.sol` restricts those calls to `msg.sender == address(this)`, meaning only the Garden itself, mid-rebalance, can trigger them. No external account or contract can call in and front-run a rebalance while it's in progress. If you're adding a function that moves funds, decide early which of these two checks it needs, and don't skip the check just because a function looks read-only at first glance.
 
-Since ERC-1967 is a widely recognized standard, **block explorers** (such as Etherscan, Basescan, and Polygonscan) automatically detect it.
+## Reentrancy
 
-* They show the link between the **proxy contract** (what users interact with) and the **implementation contract** (where the logic resides).
-* This transparency allows our community to verify which code is running and ensures confidence in upgrades.
-* Builders and auditors benefit because they can inspect the exact implementation contract behind each proxy.
+State-changing entry points that touch external contracts (swaps, transfers, upgrades) use `nonReentrant` or an equivalent custom guard. The Index facet, for example, tracks a `rebalancing` boolean in its own storage specifically so a rebalance can't be re-entered mid-flight. If your facet calls out to an external protocol (a DEX, a lending market), assume that call can re-enter you, and guard accordingly. Follow checks-effects-interactions: validate first, update your own state, then make the external call last.
 
-## 3. Transparent vs. UUPS and Other Patterns
+## Storage safety
 
-When choosing a proxy pattern, we evaluated **Transparent Proxy** against **UUPS (EIP-1822)** and other upgradeable models.
+Every facet's state lives at a storage slot derived from `keccak256` of its storage library's name (masked per EIP-7201), not at a fixed offset. This is what lets many facets share one Garden's storage without colliding, but it also means **the library name is the storage key**: rename a deployed storage library and every Garden using it loses access to that data permanently, it doesn't move with the rename.
 
-* **Transparent Proxy Pros**
+Two rules follow from that:
 
-  * **Maturity:** Transparent Proxy is the most widely adopted and audited pattern. It has been used for years across DeFi protocols, DAOs, and registries.
-  * **Battle-Tested:** Many critical contracts in production use it, proving its reliability under real conditions.
-  * **Immutable Upgrade Functionality:** The upgrade mechanism is embedded in the proxy itself and cannot be overridden or broken by future implementation contracts. This prevents accidental or malicious disabling of upgrades.
-  * **Developer Experience:** It is straightforward for builders: admins use the proxy admin for upgrades, while users only interact with the implementation logic.
+- Always derive the slot through `LibStorageSlot.deriveStorageSlot()`, never inline the formula yourself.
+- Never rename a storage library once it's deployed. If a rename is genuinely necessary, it takes a migration facet that reads the old slot and writes the new one, run against every deployed Garden, not a find-and-replace.
 
-* **Why Not UUPS?**
+You don't have to police this by memory. `forge test` runs three guards on every suite: one catches two different files reusing the same library name (a silent collision), one proves that detector actually works, and one fails if a library listed in `storage-registry.json` (the source of truth for every module's deployed storage libraries) no longer exists in the codebase. If you add a new facet with its own storage, give the library a name that's unique across the whole repo, and if it's a new module, register it and run the registry-sync script so `storage-registry.json` stays current.
 
-  * UUPS proxies require the upgrade logic to live in the implementation contract. If not carefully managed, this could introduce risk (e.g., losing the ability to upgrade if the upgrade function is removed or broken).
-  * While lighter in gas usage, the trade-off is more responsibility on developers to avoid errors.
+## The upgrade path is closed by default
 
-Given our need for **long-term stability and trustworthiness** in registry contracts, Transparent Proxy was the clear choice.
+`diamondCut` is blocked on every Garden. The only way a facet reaches a Garden is by being registered in the Facet Registry and explicitly allowed for that Garden's type, and the only way an existing Garden picks up a change is through the Upgrade facet's hash-verified sync with the registry. If you're proposing a new facet, expect it to go through registry approval, not a direct cut. This is deliberate: it means a compromised owner key can't unilaterally install arbitrary logic into a Garden, and the four base facets (ownership, cut, upgrade, loupe) can never be swapped out at all, even by governance.
 
-## 4. Why Different from Diamonds
+## Rebalancing-specific guardrails
 
-* For **registry contracts**, we prioritize **maturity, visibility, and safety**. Transparent Proxy is perfect here.
-* For **Garden contracts** (multi-feature accounts), we use the **Diamond Standard (EIP-2535)**, which supports modular and expandable logic.
-* Each choice fits its purpose: Transparent Proxy for stability and clarity, Diamonds for flexibility and composability.
+If your work touches the Index rebalancing path, know that it already assumes hostile conditions:
 
-## 5. References
+- **Flash-loan protection**: the intent and the actual rebalance must land in different blocks, so no single-transaction manipulation can bracket both.
+- **Value-loss guardrail**: a rebalance reverts if total portfolio value drops more than 0.5% versus before the swaps.
+- **Per-asset tolerance**: post-swap balances have to land within 2% of their target allocation.
 
-* [EIP-1967: Standard Proxy Storage Slots](https://eips.ethereum.org/EIPS/eip-1967)
-* [OpenZeppelin Transparent Proxy Docs](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent)
-* [EIP-1822: Universal Upgradeable Proxy Standard (UUPS)](https://eips.ethereum.org/EIPS/eip-1822)
-* [EIP-2535: Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535)
+Don't loosen any of these thresholds without understanding why they're there. They exist to bound what an off-chain relayer, or a compromised one, can do to a Garden's holdings. A separate Rebalancer contract, not the Garden itself, is what triggers this across every Garden of a given Index type at once, and it's permissionless once a cooldown has passed, so treat "anyone can call this" as the default assumption, not an edge case.
+
+## The protocol-wide kill switch
+
+Above the level of any single Garden, Protocol Status can put the whole protocol into one of three states: active, upgrades-disabled, or inactive. State changes aren't authorized by a simple owner key, they're authorized by a security council tracked through ENS domains. The Garden Factory checks this before deploying anything new, and refuses while the protocol is inactive. If you're integrating something that assumes the protocol is always available, it isn't; design for the inactive case.
+
+## This is a multi-chain codebase
+
+Facets are organized per chain (`arbitrumOne`, `avalanche`, `ethereum` today), and which integrations exist depends on which one you're looking at. Don't assume a pattern, a guardrail, or an integration you've seen on one chain exists on another, check the facet folder for that specific chain.
+
+## Where to go for detail
+
+This page is the checklist. For how each of these is actually implemented, see the individual facet references under [Blok-C-V1-Core](/en/builders/blok-c-v1-core), and the architecture-level explanation in [Smart Contracts](/en/smart-contracts).
 
 
 ---
@@ -3588,7 +3452,7 @@ From time to time BLOK Capital runs a separate contest, such as the "Explain BLO
 
 ## Community Walkthrough
 
-Community engineer [Rohit Purkait](https://x.com/codeswithroh) put together a full breakdown of this reward system in action: how AI scores every contribution, why every distribution needs unanimous signer approval, how it's all verified on-chain, and why followers or likes never factor into payouts.
+Our Developer Relations Engineer [Rohit Purkait](https://x.com/codeswithroh) put together a full breakdown of this reward system in action: how AI scores every contribution, why every distribution needs unanimous signer approval, how it's all verified on-chain, and why followers or likes never factor into payouts.
 
 [Watch the full breakdown on X](https://x.com/codeswithroh/status/2086068928082751815)
 

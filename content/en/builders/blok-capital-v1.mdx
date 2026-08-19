@@ -5,30 +5,46 @@ position: 2
 ---
 ![Protocol V1 architecture](/img/architect.png)
 
-## The core parts of our architecture is as follows :
+## The core parts of our architecture
 
 ### Wallet Infrastructure
 Onboarding new users is hindered by the complexity and risk of seed-phrase management. By integrating Web3Auth’s MPC solution, we eliminate seed phrases while preserving EOA security and offer advanced users the option to connect their own keys. Future upgrades will track Ethereum’s EIP-3074 and ERC-4337 account-abstraction standards, phasing out our MPC layer once native support matures. This hybrid approach delivers familiar Web2-style signup and wallet experiences, ensures secure key custody without single-point-of-failure, and paves the way for broader decentralized adoption.
 
 ### Protocol Infrastructure
 
-- Gardens : Smart contract acting as portfolio for the users. Gardens are deployed by the GardenFactory contract. A single user can own multiple Gardens.
-- Gardeners : Wealth managers who will be able to manage Gardens i.e. portfolio of users.
-- Garden Administration contracts : These contracts are responsible for maintaining proper admin checks and allow the Garden to access to power of DeFi protocol securely as voted on by the community.
-- Protocol registries : These registries are administered by the community through DAO votes and checks and balances used by the Garden Administration contracts to ensure that only community verified actions on DeFi protocols can be carried out.
-- DeFi integration contracts : Implementation contracts for different DeFi protocol integrations such as DEXs, Lending protocols, Staking etc.
+- Gardens: A Garden is a smart contract that acts as a user's portfolio. It's implemented as an EIP-2535 Diamond, so it's really a thin router that delegates to a set of facets rather than one large contract. Gardens are deployed by the GardenFactory at a deterministic address (CREATE2), up to 10 per user. Ownership of a Garden is an ERC-721 token: whoever holds the NFT controls the portfolio, and transferring it transfers the Garden.
+- Gardeners: Wealth managers who can manage Gardens on a user's behalf, within the permissions the user has granted.
+- Facet Registry: The DAO-governed catalog of facets a Garden is allowed to install. Before any facet reaches a Garden, it has to be registered here and explicitly allowed for that Garden's type. The four base facets, ownership, cut, upgrade, and loupe, are permanently protected: governance can add or retire feature facets, but it can never swap out the kernel.
+- Protocol Status: A protocol-wide switch between active, upgrades-disabled, and inactive. State changes are authorized by a security council tracked through ENS domains rather than a hot wallet list, and the Garden Factory itself refuses to deploy new Gardens while the protocol is inactive.
+- DeFi integration contracts: Implementation contracts for each protocol a Garden can use to invest. The list is chain-specific and grows as the community approves new ones, see DeFi Protocol Integrations below.
+
+### How Gardens Upgrade
+
+A standard EIP-2535 Diamond exposes `diamondCut`, letting the owner add or replace facets directly. BLOK Capital blocks that function on purpose. Calling it reverts.
+
+Instead, upgrades go through a dedicated Upgrade facet that checks a hash against what the Facet Registry has approved for that Garden's type before pulling in any change. This means an upgrade can only ever install something the DAO has already vetted, and it's the reason a Garden connected to an Index can be patched automatically, by anyone, without ever needing the owner's signature: the hash verification is what keeps that safe.
+
+### Index-Based Rebalancing
+
+Gardens that are connected to an Index rebalance in two steps. First, an intent locks in target allocations at a given block. Then, on a later block, the trades themselves execute, using swap instructions supplied by an off-chain relayer (a cron-triggered engine that shops for the best route across DEXs before submitting swap calldata). Requiring a later block closes the door on flash-loan manipulation between the two steps, and the protocol checks that total portfolio value hasn't dropped by more than 0.5% before it lets the rebalance go through.
+
+A separate Rebalancer contract batches this across every Garden that shares an Index type into one atomic transaction, rather than rebalancing each Garden individually. It's permissionless after a cooldown, anyone can trigger it, and it discovers pools entirely through the Liquidity Pool Registry, so adding support for a new DEX doesn't require changing the Rebalancer's code.
 
 ### BLOK Capital Subgraphs
-We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our gov-
-ernance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
+We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our governance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
 
 ### DAO architecture with Aragon
-We leverage the Aragon protocol to build and manage our DAO, benefiting from its highly customizable and modular governance infrastructure. Aragon provides the flexibility needed to tailor the DAO to our protocol’s specific requirements. The DAO governs key decisions and operations, ensuring that protocol development and
-resource allocation are driven by the community in a transparent, decentralized manner. This structure promotes accountability, resilience, and long-term sustain-
-ability.
+We leverage the Aragon protocol to build and manage our DAO, benefiting from its highly customizable and modular governance infrastructure. Aragon provides the flexibility needed to tailor the DAO to our protocol’s specific requirements. The DAO governs key decisions and operations, ensuring that protocol development and resource allocation are driven by the community in a transparent, decentralized manner. This structure promotes accountability, resilience, and long-term sustainability.
 
 ### DeFi Protocol Integrations
-Integrating different DeFi protocols would allow users to utilize their features without having to leave the BLOK Capital interface. The list of integrations would grow as the community grows with time.
-- Lending Protocols: Users can deposit crypto assets into integrated lending protocols like AAVE to earn interest and grow their portfolio, all within a unified interface.
-8
-- DEXs (Decentralized Exchanges): Users can swap or purchase tokens of their choice through integrated platforms like Uniswap, ensuring flexibility and ease of asset management.
+Integrating different DeFi protocols lets users use their features without leaving the BLOK Capital interface. Every integration is a facet, so it goes through the same DAO-governed Facet Registry as everything else, and which integrations are available depends on which chain a Garden is deployed on.
+
+- **Arbitrum**: Uniswap V2 and V3, Camelot V2 and V3, and GMX V2 for swaps and leveraged positions; Aave V3 for lending; Pendle V2 for yield-bearing positions; Circle's CCTP for moving USDC cross-chain; plus dedicated reward-collection and withdrawal facets.
+- **Ethereum**: Uniswap V2 and V3, SushiSwap V3, and Balancer V3 for swaps; Morpho Blue for lending; a withdrawal facet.
+- **Avalanche**: Trader Joe V2 for swaps.
+
+The list grows as the community approves new integrations, chain by chain.
+
+### Soulbound Reputation
+
+The GardenSBT layer issues non-transferable tokens (SBTs) tied to a user's on-chain activity within the protocol. Because they can't be sold or transferred, they work as a persistent, sybil-resistant reputation signal, something governance and future features can build on without trusting a self-reported identity.
