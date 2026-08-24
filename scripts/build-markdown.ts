@@ -41,6 +41,28 @@ function docTitle(doc: Doc): string {
   );
 }
 
+/**
+ * How each date was resolved. The mtime path is a legitimate fallback for a
+ * file that is genuinely untracked, but at scale it means something is wrong —
+ * see the warning in `build()`.
+ */
+const dateSource = { git: 0, mtime: 0 };
+
+/** True for a `--depth`-limited clone; false for full history or no git. */
+function isShallowRepo(): boolean {
+  try {
+    return (
+      execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
+        cwd: ROOT,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim() === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Last git commit date (ISO 8601) for a file; falls back to filesystem mtime. */
 function lastUpdated(relFile: string): string {
   try {
@@ -49,12 +71,17 @@ function lastUpdated(relFile: string): string {
       ["log", "-1", "--format=%cI", "--", relFile],
       { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
     ).trim();
-    if (out) return out;
+    if (out) {
+      dateSource.git++;
+      return out;
+    }
   } catch {
     /* git unavailable or file untracked — fall through to mtime */
   }
   try {
-    return fs.statSync(path.join(ROOT, relFile)).mtime.toISOString();
+    const iso = fs.statSync(path.join(ROOT, relFile)).mtime.toISOString();
+    dateSource.mtime++;
+    return iso;
   } catch {
     return "";
   }
@@ -105,6 +132,40 @@ function build(): void {
     }
   }
 
+  // Drop twins whose source doc no longer exists.
+  //
+  // This generator only ever wrote files, so a retired page kept serving its
+  // stale Markdown at `<href>.md` indefinitely. That is worse than it sounds:
+  // `builders/smart-contracts/*` was deleted precisely because its content was
+  // wrong, and while those URLs now 308-redirect in HTML, the orphaned twins
+  // would still hand an AI agent the retired copy at a 200.
+  const live = new Set(
+    routes.map((href) => path.join(PUBLIC, `${href.replace(/^\//, "")}.md`)),
+  );
+  let pruned = 0;
+  for (const locale of LOCALES) {
+    const root = path.join(PUBLIC, locale);
+    if (!fs.existsSync(root)) continue;
+    const dirs: string[] = [];
+    const stack = [root];
+    while (stack.length) {
+      const dir = stack.pop() as string;
+      dirs.push(dir);
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) stack.push(full);
+        else if (entry.name.endsWith(".md") && !live.has(full)) {
+          fs.rmSync(full);
+          pruned++;
+        }
+      }
+    }
+    // Remove directories the prune left empty, deepest first.
+    for (const dir of dirs.sort((a, b) => b.length - a.length)) {
+      if (dir !== root && fs.readdirSync(dir).length === 0) fs.rmdirSync(dir);
+    }
+  }
+
   routes.sort();
   fs.mkdirSync(GENERATED, { recursive: true });
   fs.writeFileSync(
@@ -117,8 +178,35 @@ function build(): void {
   );
 
   console.log(
-    `markdown: ${count} .md twins across ${LOCALES.length} locales; ${routes.length} routes indexed`,
+    `markdown: ${count} .md twins across ${LOCALES.length} locales; ${routes.length} routes indexed` +
+      (pruned ? `; ${pruned} stale twin(s) pruned` : ""),
   );
+
+  // "Last updated" is only meaningful with full history, and both ways of
+  // losing it are silent by default:
+  //
+  //  - Shallow clone (the default for actions/checkout and most deploy hosts).
+  //    The single grafted commit has no parent, so git reports it as having
+  //    created *every* file — `git log` returns a date for all of them, and it
+  //    is the same wrong date. This is why counting mtime fallbacks does not
+  //    detect it; ask git directly instead.
+  //  - No git at all (a source tarball), where everything falls to mtime.
+  //
+  // A wrong freshness date is worse than none, so both cases say so loudly.
+  if (isShallowRepo()) {
+    console.warn(
+      `[markdown] WARNING: shallow git clone — every page will show the same\n` +
+        `           "Last updated" date, not when it actually changed.\n` +
+        `           Fetch full history (actions/checkout: \`fetch-depth: 0\`,\n` +
+        `           or the deploy host's equivalent setting).`,
+    );
+  } else if (dateSource.mtime) {
+    const total = dateSource.git + dateSource.mtime;
+    console.warn(
+      `[markdown] WARNING: ${dateSource.mtime}/${total} "Last updated" dates came from file\n` +
+        `           mtime because git history was unavailable for those files.`,
+    );
+  }
 }
 
 build();

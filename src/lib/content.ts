@@ -131,7 +131,12 @@ function walkSection(
   out: Doc[],
 ): void {
   if (!fs.existsSync(dir)) return;
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  // Sorted so `getAllDocs` is stable across filesystems — sitemap.xml is
+  // emitted straight from this order, and an unsorted walk reshuffled it on
+  // every build. Codepoint order, not `localeCompare`, which is locale-derived.
+  const entries = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
   for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
@@ -270,9 +275,10 @@ function buildTree(
  * Descriptions do double duty: they are the meta description (so they must stay
  * in frontmatter) and they render as the visible lede. Many were generated as
  * excerpts of the body — sometimes truncated with an ellipsis — so displaying
- * them printed the same sentence twice, back to back. `fix-content-structure`
- * strips the exact duplicates from the source; this catches the truncated ones
- * and anything reintroduced later, at render time.
+ * them printed the same sentence twice, back to back. A one-off migration
+ * stripped the exact duplicates from the source and has since been removed;
+ * this stays because it also catches the truncated ones, and anything
+ * reintroduced later, at render time.
  */
 export function duplicatesLede(description: string, body: string): boolean {
   const norm = (s: string) =>

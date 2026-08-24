@@ -10,16 +10,24 @@
 /build
 
 # Generated
-/src/lib/search-index.json
 tsconfig.tsbuildinfo
 next-env.d.ts
-# Agent-facing Markdown twins + freshness map (rebuilt by predev/prebuild).
-# The route manifest (src/lib/generated/markdown-routes.json) IS committed —
-# typecheck and the edge middleware bundle import it without a prior build.
+# Build output rebuilt by predev/prebuild. None of it is imported by the app,
+# so none of it needs to be in the tree — and committing it meant every content
+# PR carried ~600 KB of unreviewable minified diff that any two concurrent PRs
+# would then conflict on.
+#
+# Everything under src/lib/generated/ IS committed, deliberately: DocImage,
+# the edge middleware, LocaleSwitcher and next.config.ts all import those at
+# build time, so typecheck and the middleware bundle must resolve them without
+# a prior build.
 /public/en/
 /public/es/
 /public/fr/
 /public/last-updated.json
+/public/search/
+/public/llms.txt
+/public/llms-full.txt
 
 # Misc
 .DS_Store

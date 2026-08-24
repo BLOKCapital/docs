@@ -179,7 +179,15 @@ function walk(
   out: Doc[],
 ): void {
   if (!fs.existsSync(dir)) return;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+  // Sorted by codepoint (not `localeCompare`, which reads the machine's default
+  // locale) so every generated artifact downstream of this walk — llms.txt,
+  // llms-full.txt, the search indexes, the .md twins, last-updated.json — is
+  // byte-identical for identical content. Left on raw `readdirSync` order, the
+  // output reshuffled between filesystems and each build looked like a change.
+  const entries = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
