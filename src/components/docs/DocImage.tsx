@@ -110,11 +110,21 @@ export function DocImage({
 
   return (
     <>
+      {/* The button carries the same intrinsic cap as the image it wraps, so
+          the hit area and the zoom cursor can never extend past the image.
+          Today that is a no-op: the zoom threshold (>700px) is already wider
+          than the 72ch column (~634px), so every zoomable image fills the
+          column and `w-full` happens to be exactly right. It stops being right
+          the moment `maxWidth.prose` grows past 700px — then an image between
+          the two sizes would sit centered in a full-width button, and clicking
+          the empty margin beside it would open the lightbox. Cheap guard
+          against a coupling that is otherwise invisible. */}
       <button
         type="button"
         onClick={() => setZoomed(true)}
         aria-label={`${enlargeLabel}${alt ? `: ${alt}` : ""}`}
-        className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
+        style={{ maxWidth: `min(100%, ${meta.width}px)` }}
+        className="mx-auto block w-full cursor-zoom-in border-0 bg-transparent p-0"
       >
         {img}
       </button>

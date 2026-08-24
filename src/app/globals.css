@@ -228,9 +228,13 @@ body {
   font-weight: 400;
   transition: opacity 150ms ease;
 }
+/* `:focus-visible` is not optional here. These anchors are real focusable
+   links, so hiding them on hover alone left a keyboard user with one invisible
+   tab stop per heading — a 2.4.7 failure. Matches `.code-copy` above. */
 .doc-prose h2:hover .heading-anchor,
 .doc-prose h3:hover .heading-anchor,
-.doc-prose h4:hover .heading-anchor {
+.doc-prose h4:hover .heading-anchor,
+.doc-prose .heading-anchor:focus-visible {
   opacity: 1;
 }
 
