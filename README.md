@@ -60,7 +60,7 @@ delivers that as a statically-generated Next.js app with built-in SEO, GEO
 ## Features
 
 - **MDX content** under `content/<locale>/<section>/…`, rendered with
-  `next-mdx-remote` (GFM, KaTeX math, Shiki syntax highlighting).
+  `next-mdx-remote` (GFM, Shiki syntax highlighting).
 - **Three locales** — `en`, `es`, `fr` — routed as `/<locale>/…` with a language
   switcher and correct `<html lang>` / `hreflang`. `npm run check:content`
   reports locale parity gaps.
@@ -180,17 +180,6 @@ and [AGENTS.md](AGENTS.md).
 | `npm run search:index` | Rebuild the search index |
 | `npm run llms` | Rebuild `llms.txt` + `llms-full.txt` |
 | `npm run md` | Rebuild per-page Markdown twins |
-
-### Re-migrating from Docusaurus
-
-The original Markdown was imported with:
-
-```bash
-npx tsx scripts/migrate-content.ts "<path to old documentation repo>"
-```
-
-It normalizes frontmatter, converts admonitions and HTML comments, rewrites
-internal links, and copies `static/img` → `public/img`.
 
 ## SEO & discoverability
 

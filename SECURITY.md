@@ -33,5 +33,7 @@ is supported. Fixes land on `main` and ship on the next deploy.
 
 - Baseline security headers (HSTS, `X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy`, `Permissions-Policy`) via `next.config.ts`.
-- Automated dependency updates (Dependabot) and an `npm audit` step in CI.
+- A dependency audit gate in CI (`npm run audit:gate`) that fails the build on
+  any high or critical advisory not explicitly acknowledged, with its reason,
+  in `scripts/audit-gate.ts`.
 - Build-time content validation (`npm run check:content`).

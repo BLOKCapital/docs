@@ -51,9 +51,9 @@ LLM-optimized documentation site.
 | Language   | TypeScript (strict mode) |
 | Styling    | Tailwind CSS 3 |
 | Content    | MDX (`next-mdx-remote`), `gray-matter` frontmatter |
-| Rendering  | KaTeX (math), Shiki (syntax highlighting), Mermaid (diagrams) |
+| Rendering  | Shiki (syntax highlighting, via rehype-pretty-code) |
 | Search     | FlexSearch (client) over a build-time index |
-| Tooling    | `tsx` (TS build scripts), ESLint, Dependabot, GitHub Actions |
+| Tooling    | `tsx` (TS build scripts), ESLint, GitHub Actions |
 | Hosting    | Vercel |
 
 ## Architecture
