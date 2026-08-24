@@ -95,12 +95,13 @@ function build(): void {
     );
     if (!items.length) continue;
     const sectionTitle = SECTION_TITLES[section] ?? titleFromSlug(section);
+    // The section heading carries the blurb; there is deliberately no link for
+    // the section itself. `/<locale>/<section>` was dropped from the sitemap and
+    // turned into a 308 to the section's first doc, so a link here would spend
+    // an agent's fetch on a redirect and add nothing to llms-txt-coverage —
+    // which is measured against sitemap doc pages, and those are all listed
+    // below as direct `.md` URLs.
     lines.push(`## ${sectionTitle}`, "");
-    // The section landing page is in the sitemap but has no Markdown twin, so
-    // link its HTML URL — keeps llms.txt coverage at 100% (llms-txt-coverage).
-    lines.push(
-      `- [${sectionTitle} overview](${SITE_URL}/en/${section}): ${SECTION_BLURB_EN[section] ?? ""}`,
-    );
     for (const doc of items) {
       const desc =
         (doc.data.description as string | undefined)?.trim() ||

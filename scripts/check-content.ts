@@ -44,12 +44,36 @@ function isPublicAsset(target: string): boolean {
   return PUBLIC_PREFIXES.some((p) => target === p || target.startsWith(p + "/"));
 }
 
+/**
+ * Blank out code before link scanning.
+ *
+ * `LINK_RE` cannot tell markdown from source, so it read Solidity like
+ * `new bytes4[](3)` as a relative link to "3". That was noise — but the same
+ * regex raises a hard *error* for an unresolvable `/{locale}/…` target, so a
+ * snippet containing a path-like string in `](…)` form would have failed CI on
+ * a link that does not exist. Mirrors the `inFence` loop in `collectHeadings`
+ * and `extractToc`, which have always skipped fences.
+ */
+function withoutCode(body: string): string {
+  const out: string[] = [];
+  let inFence = false;
+  for (const line of body.split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      out.push("");
+      continue;
+    }
+    out.push(inFence ? "" : line.replace(/`[^`]*`/g, " "));
+  }
+  return out.join("\n");
+}
+
 for (const doc of allDocs) {
   if (!doc.data.title) err(`${doc.file}: missing "title" frontmatter`);
   else if (!doc.data.description)
     warn(`${doc.file}: missing "description" frontmatter`);
 
-  for (const m of doc.content.matchAll(LINK_RE)) {
+  for (const m of withoutCode(doc.content).matchAll(LINK_RE)) {
     const raw = (m[1] ?? m[2] ?? "").trim();
     if (!raw) continue;
     const target = raw.split("#")[0].split("?")[0];
@@ -73,7 +97,10 @@ for (const doc of allDocs) {
 }
 
 /* 3. Locale parity ------------------------------------------------------- */
-const keyOf = (d: Doc) => `${d.section}/${d.segments.join("/")}`;
+// `segments` already begins with the section slug (see `walkLocale`), so
+// prefixing it again printed every parity warning against a doubled path that
+// does not exist — "resources/resources/brand-guidelines/logo-design".
+const keyOf = (d: Doc) => d.segments.join("/");
 const perLocaleKeys: Record<string, Set<string>> = Object.fromEntries(
   LOCALES.map((l): [string, Set<string>] => [l, new Set(byLocale[l].map(keyOf))]),
 );
