@@ -15,7 +15,8 @@
     "md": "tsx scripts/build-markdown.ts",
     "images": "tsx scripts/build-image-manifest.ts",
     "sections": "tsx scripts/build-section-entries.ts",
-    "check:content": "tsx scripts/check-content.ts"
+    "check:content": "tsx scripts/check-content.ts",
+    "audit:gate": "tsx scripts/audit-gate.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -19,7 +19,14 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      # Full history, not the default shallow clone. `scripts/build-markdown.ts`
+      # derives each page's "Last updated" date from `git log -1 -- <file>`,
+      # which returns nothing at depth 1 for any file the tip commit did not
+      # touch — so the date silently fell back to the checkout mtime and every
+      # one of the 136 pages was stamped with the build date.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -41,9 +48,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Informational for now: a known high-severity advisory lives in a
-      # transitive dep whose fix is a breaking major bump. Make this a hard gate
-      # (drop continue-on-error) once that's resolved. Dependabot tracks fixes.
+      # A real gate. `npm audit --audit-level=high` fails on every open
+      # advisory, so keeping CI green while a fix waits on a semver-major
+      # upgrade previously meant `continue-on-error: true` — which also hid new
+      # advisories. audit-gate.ts fails only on advisories that are not
+      # explicitly acknowledged in its ACCEPTED list, so a newly introduced
+      # high-severity dependency breaks the build the way it should.
       - name: Audit dependencies
-        run: npm audit --audit-level=high
-        continue-on-error: true
+        run: npm run audit:gate
