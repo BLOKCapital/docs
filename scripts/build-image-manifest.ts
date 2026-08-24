@@ -95,9 +95,18 @@ function measure(file: string): ImageMeta | null {
   return null;
 }
 
+// Entries are sorted so the manifest is byte-identical for identical input.
+// `readdirSync` order is filesystem-dependent, so without this the generated
+// JSON reshuffles between machines and every build shows up as a diff on a
+// file whose contents did not actually change.
 function walk(dir: string, out: string[] = []): string[] {
   if (!fs.existsSync(dir)) return out;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+  // Plain codepoint comparison, not `localeCompare` — that reads the runtime's
+  // default locale, which is itself machine-dependent.
+  const entries = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full, out);
     else if (/\.(png|jpe?g|svg)$/i.test(entry.name)) out.push(full);
