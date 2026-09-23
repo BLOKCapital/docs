@@ -41,7 +41,7 @@ Los facets viven bajo `src/garden/facets/`: los facets base (ownership, cut, upg
 forge test --match-contract OwnershipFacetTest
 ```
 
-Consulta la [Guía: Crear un Nuevo Facet de Diamond](/es/builders/Guides/Facets) para la convención de carpetas y archivos de un facet antes de añadir algo nuevo. Ten en cuenta que la convención de carpetas de pruebas de la guía está desactualizada: las pruebas actuales se organizan en subcarpetas `unit/`, `fuzz/` e `invariant/` por facet, no en la estructura plana que describe la guía.
+Consulta la [Guía: Crear un Nuevo Facet de Diamond](/es/builders/Guides/Facets) para las convenciones de carpetas, archivos y pruebas antes de añadir algo nuevo.
 
 Antes de tocar cualquier cosa con su propia librería de almacenamiento, ten en cuenta que `forge test` ya ejecuta tres protecciones de seguridad de almacenamiento en cada suite de pruebas: detectan colisiones de slots y evitan que renombres por accidente una librería de almacenamiento que ya está desplegada. Si alguna falla, no la ignores, consulta [Consideraciones de Seguridad](/es/builders/security-considerations) para entender por qué existe.
 

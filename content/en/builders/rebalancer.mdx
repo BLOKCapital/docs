@@ -1,0 +1,86 @@
+---
+title: The Batched Rebalancer
+description: 'How the Rebalancer contract rebalances many Gardens at once: batch sizing, rebalance rounds, the pooled swap model, and the guards around it.'
+position: 5
+---
+
+Rebalancing a Garden one at a time works, but it scales badly: a thousand Gardens tracking the same Index means a thousand separate sets of swaps, each paying its own gas and its own slippage. The Rebalancer contract exists to do the whole group together instead.
+
+## What it does
+
+Every Garden connected to the same Index type (BLOKC2, BLOKC5, and so on) gets rebalanced together, in batches, in a single transaction per batch.
+
+- The DAO sets **how many Gardens go in one batch**, per index type.
+- A large group is processed across **several calls**, with a cursor remembering the position.
+- Within a batch, tokens are pulled from every Garden, **swapped once as a combined pot**, then returned pro-rata.
+- The **24 hour cooldown gates the start of a round**, not each batch inside it.
+
+## Setting the batch size
+
+Batch size is DAO-controlled and set per index type:
+
+```solidity
+function setMaxGardensPerBatch(bytes32 indexTypeId, uint256 batchSize) external onlyOwner
+```
+
+BLOKC2 and BLOKC10 can carry different batch sizes. The value cannot be zero, and if it was never set for an index type, `cumulativeRebalance` reverts with `Rebalancer_BatchSizeNotSet` rather than silently doing nothing.
+
+Choosing the number is a gas trade-off. Larger batches amortize the swap cost across more Gardens, but every batch has to fit in one block's gas limit, so there is a ceiling in practice.
+
+## How a rebalance round works
+
+A round is one full pass over every Garden of an index type. The contract tracks progress in `gardenCursor[indexTypeId]`.
+
+Each call to `cumulativeRebalance(indexTypeId, deadline)` handles up to `batchSize` Gardens starting from the cursor, then either:
+
+- **More Gardens remain**: the cursor advances and `BatchRebalanceCompleted` is emitted. Someone has to call again to continue.
+- **That was the last batch**: the cursor resets to zero, `lastRebalanceTimestamp` is recorded, and `CumulativeRebalanceCompleted` is emitted.
+
+So 500 Gardens with a batch size of 50 takes ten calls to complete one round.
+
+<Admonition kind="info" title="The cooldown applies per round, not per batch">
+The 24 hour interval is only checked when the cursor is at zero, which is to say
+only when a new round begins. Once a round is underway, the remaining batches
+can be submitted back to back with no waiting. The next round is what has to
+wait a day.
+</Admonition>
+
+## The pooled swap model
+
+This is where the saving comes from, and it explains why Index-connected Gardens grant the Rebalancer an allowance.
+
+1. **Prices are cached once.** Every oracle price the rebalance needs is read up front and reused for the rest of the transaction, so the before and after valuations are compared against the same snapshot. A Chainlink round landing mid-transaction would otherwise make the value-loss check compare inconsistent numbers, and could either mask a real loss or trigger a false revert.
+2. **Tokens are pulled in.** Each Garden's component balances move into the Rebalancer, and the contract records what each one contributed.
+3. **Swaps run on the combined pot.** One set of trades for the whole batch, not one per Garden.
+4. **Tokens are redistributed.** Each Garden receives its share back in proportion to what it put in.
+
+The contribution accounting in steps 2 and 4 is what keeps this fair: a Garden holding 2% of the batch's value gets 2% of the rebalanced result.
+
+## How Gardens are found
+
+An index type can have more than one Index contract registered against it. When collecting a batch, the Rebalancer walks every registered Index, pulling Gardens through paginated `getConnectedGardens(offset, limit)` calls, and handles the awkward cases:
+
+- **Duplicates are skipped.** A Garden connected to two Indices of the same type is only processed once per batch.
+- **Removals mid-round are survivable.** If Gardens were removed and the cursor now points past the end, it resets and starts a fresh round rather than reverting.
+- **Short batches are trimmed.** If there are fewer Gardens left than the batch size, the batch shrinks to fit.
+
+## Guards on the call
+
+`cumulativeRebalance` is permissionless, so it is written on the assumption that the caller may be hostile:
+
+- **Deadline bounds.** The deadline must be in the future, and no more than one hour ahead. A caller cannot submit a transaction with an open-ended deadline and let it sit in the mempool.
+- **Reentrancy lock.** Held across the whole pull, swap and redistribute sequence.
+- **Zero-value check.** A batch whose total value is zero reverts instead of proceeding.
+
+These sit alongside the per-rebalance guardrails described in [Security Considerations](/en/builders/security-considerations): the 0.5% maximum value loss, the 2% per-asset tolerance, and the intent cooldown.
+
+## Events worth watching
+
+If you are monitoring rebalances, these are the signals:
+
+| Event | Meaning |
+| ----- | ------- |
+| `CumulativeRebalanceStarted` | A new round began, with the total Garden count and starting value |
+| `BatchRebalanceCompleted` | One batch finished, more remain in this round |
+| `CumulativeRebalanceCompleted` | The round finished, with the timestamp the next one becomes available |
+| `MaxGardensPerBatchSet` | The DAO changed the batch size for an index type |

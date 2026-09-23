@@ -6,7 +6,7 @@ position: 3
 ## Concepto Central: La canalización en dos pasos
 
 1. **`_rebalanceIntent()`:** Bloquea los precios de mercado actuales y calcula las asignaciones objetivo según los pesos del Índice. Almacena el número de bloque.
-2. **`_rebalance(SwapStep[])`:** Ejecuta las operaciones reales según las instrucciones del CRE.
+2. **`_rebalance(SwapStep[])`:** Ejecuta las operaciones reales según las instrucciones proporcionadas por el llamante.
 
 ## Fragmento crucial para Builders: Protección frente a Flash Loans y Slippage
 

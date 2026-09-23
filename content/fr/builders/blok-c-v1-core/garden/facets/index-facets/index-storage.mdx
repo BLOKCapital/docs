@@ -16,11 +16,13 @@ Les Builders doivent comprendre ces seuils codés en dur. Par exemple, une route
 ```solidity
 // Rebalancing Parameters
 uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
-uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant REBALANCE_INTERVAL = 1 days; // Minimum cooldown
 uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
 uint256 internal constant INTENT_EXPIRY = 10 minutes;
+uint256 internal constant INTENT_INTERVAL = 11 minutes; // Must exceed INTENT_EXPIRY
+uint256 internal constant STORAGE_LAYOUT_VERSION = 2;
 
-// Diamond Storage Layout
+// Diamond Storage Layout (v2)
 struct Layout {
     address indexAddress;
     uint256 lastRebalanceTimestamp;
@@ -28,5 +30,22 @@ struct Layout {
     bool rebalancing; // Custom reentrancy guard
     PendingIntent pendingIntent;
     uint256 lastIntentBlock; // Flash loan protection
+
+    // Ajoutés en v2 : configurés à l'installation, pas des constantes de compilation
+    address indexFactory;
+    address indexComponentRegistry;
+    address poolRegistry;
 }
 ```
+
+Deux détails à retenir ici.
+
+Le **délai entre rééquilibrages est d'une journée complète**, pas d'une heure. Comme chaque exécution ne peut perdre au maximum que 0,5 % de la valeur du portefeuille, un intervalle quotidien est ce qui borne l'extraction dans le pire des cas en déclenchant de façon répétée un rééquilibrage permissionless.
+
+`INTENT_INTERVAL` **doit rester strictement supérieur à** `INTENT_EXPIRY`. Si les deux étaient égaux, une nouvelle intention pourrait écraser une intention en attente encore valide exactement à la limite d'expiration, ce qui permettrait de faire du griefing ou du front-running sur un rééquilibrage en cours.
+
+## Les adresses des registres sont passées en stockage (v2)
+
+Les versions antérieures codaient en dur les adresses d'IndexFactory, IndexComponentRegistry et LiquidityPoolRegistry comme constantes de compilation dans cette librairie. Elles vivent désormais dans la disposition du stockage, définies par le déployeur au moment de l'installation.
+
+La raison est pratique : redéployer un composant du protocole n'exige plus de recompiler et de re-couper chaque facet qui le référençait. Si vous lisez un déploiement plus ancien, attendez-vous à trouver ces adresses intégrées au bytecode plutôt que lisibles depuis le stockage.

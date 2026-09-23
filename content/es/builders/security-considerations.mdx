@@ -38,8 +38,23 @@ Si tu trabajo toca el camino de rebalanceo del Index, ten en cuenta que ya asume
 - **Protección contra flash loans**: la intención y el rebalanceo real deben caer en bloques diferentes, así que ninguna manipulación en una sola transacción puede abarcar ambos.
 - **Protección contra pérdida de valor**: un rebalanceo revierte si el valor total del portafolio cae más de un 0.5% respecto a antes de los swaps.
 - **Tolerancia por activo**: los balances después del swap tienen que quedar dentro de un 2% de su asignación objetivo.
+- **Enfriamiento del rebalanceo**: al menos 24 horas entre ejecuciones. Combinado con el límite de pérdida del 0.5%, esto acota cuánto valor podría drenarse activándolo repetidamente.
+- **Enfriamiento de la intención**: no se puede crear una nueva intención dentro de los 11 minutos posteriores a la anterior. Las intenciones expiran a los 10, así que la ventana más larga significa que una intención vigente nunca puede sobrescribirse antes de expirar, lo que de otro modo permitiría a alguien hacer griefing o front-running de un rebalanceo en curso.
 
-No relajes ninguno de estos umbrales sin entender por qué existen. Están ahí para limitar lo que un relayer fuera de la cadena, comprometido o no, puede hacerle a las posiciones de un Jardín. Un contrato Rebalancer independiente, no el propio Jardín, es lo que activa esto para todos los Jardines de un tipo de Index a la vez, y es permissionless una vez pasado un período de enfriamiento, así que trata "cualquiera puede llamar a esto" como la suposición por defecto, no como un caso extremo.
+No relajes ninguno de estos umbrales sin entender por qué existen. Están ahí para limitar lo que quien suministra los pasos de swap, incluido un llamante comprometido, puede hacerle a las posiciones de un Jardín. Un contrato Rebalancer independiente, no el propio Jardín, es lo que activa esto para todos los Jardines de un tipo de Index a la vez, y es permissionless una vez pasado el período de enfriamiento, así que trata "cualquiera puede llamar a esto" como la suposición por defecto, no como un caso extremo.
+
+## Pasa siempre un deadline de swap explícito
+
+`SwapInstruction` incluye un `deadline`, y tiene una trampa. Pasar `0` no significa "sin deadline" en el sentido seguro: cada facet sustituye ese valor por `block.timestamp + 30 minutos`, que por definición sigue estando en el futuro para la transacción que se está ejecutando. Así que un `deadline` de `0` no te da ninguna protección real.
+
+Si quieres que un deadline sirva de algo, pasa uno de verdad. Esto importa sobre todo en cualquier cosa que pueda quedarse en el mempool antes de confirmarse, donde una transacción rancia ejecutándose más tarde a peor precio es exactamente el riesgo que un deadline debería cubrir.
+
+## Los Jardines de Index mantienen una allowance ilimitada permanente
+
+El Rebalancer mueve tokens extrayéndolos de los Jardines, lo que significa que un Jardín conectado a un Index le ha otorgado una allowance ilimitada sobre cada token componente (establecida por el propietario mediante el facet de Approve). De ahí se derivan dos cosas:
+
+- El contrato Rebalancer está dentro del perímetro de confianza de los tokens componentes de cualquier Jardín conectado a un Index. Al revisar cambios en él, revísalos como cambios en algo que puede mover fondos de usuarios, porque puede.
+- Si añades un nuevo token componente a un Index, también hay que otorgar su allowance. La aprobación es por token, no general, así que un token que nadie haya aprobado simplemente fallará al rebalancear en lugar de omitirse en silencio.
 
 ## El interruptor de emergencia a nivel de protocolo
 
@@ -51,4 +66,4 @@ Los facets están organizados por cadena (`arbitrumOne`, `avalanche`, `ethereum`
 
 ## Dónde ir para más detalle
 
-Esta página es la lista de verificación. Para ver cómo se implementa cada uno de estos puntos, consulta las referencias de cada facet en [Blok-C-V1-Core](/es/builders/blok-c-v1-core), y la explicación a nivel de arquitectura en [Smart Contracts](/es/smart-contracts).
+Esta página es la lista de verificación. Para ver cómo se implementa cada uno de estos puntos, consulta las referencias de cada facet en [Blok-C-V1-Core](/es/builders/blok-c-v1-core/garden/facets/facet), y la explicación a nivel de arquitectura en [Smart Contracts](/es/smart-contracts).

@@ -40,8 +40,9 @@ position: 1
 | Index Calculation Strategy (Estrategia de Calculo del Indice) | Contrato conectable que calcula los pesos de los activos (por ejemplo, MarketCapWeighted). |
 | Rebalance (Rebalanceo) | Proceso de ajustar las tenencias del Garden para coincidir con las asignaciones objetivo del Indice. |
 | Rebalance Intent (Intencion de Rebalanceo) | Un rebalanceo pendiente que contiene valores actuales, valores objetivo y pesos para todos los componentes. |
-| Rebalance Interval (Intervalo de Rebalanceo) | Tiempo minimo (1 hora) entre rebalanceos consecutivos. |
-| Swap Call (Llamada de Intercambio) | Instruccion individual de intercambio del CRE que contiene selector, datos codificados, token de salida y salida minima. |
+| Rebalance Interval (Intervalo de Rebalanceo) | Tiempo minimo (24 horas) entre rebalanceos consecutivos. |
+| Intent Interval (Intervalo de Intencion) | Tiempo minimo (11 minutos) entre creaciones de intenciones de rebalanceo. Se mantiene mayor que la expiracion de 10 minutos para que una intencion vigente no pueda sobrescribirse. |
+| Swap Call (Llamada de Intercambio) | Instruccion individual de intercambio proporcionada por el llamante, que contiene selector, datos codificados, token de salida, salida minima y un deadline. |
 | Component Weights (Pesos de Componentes) | Porcentajes de asignacion normalizados para los componentes del Indice (escalados a 1e18). |
 | Market Cap Weighted (Ponderado por Capitalizacion de Mercado) | Estrategia que pondera los componentes proporcionalmente a su capitalizacion de mercado. |
 

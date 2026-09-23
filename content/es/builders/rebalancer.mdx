@@ -1,0 +1,86 @@
+---
+title: El Rebalanceador por Lotes
+description: 'Cómo el contrato Rebalancer rebalancea muchos Jardines a la vez: tamaño de lote, rondas de rebalanceo, el modelo de swap agrupado y las protecciones que lo rodean.'
+position: 5
+---
+
+Rebalancear un Jardín a la vez funciona, pero escala mal: mil Jardines siguiendo el mismo Index significan mil conjuntos de swaps separados, cada uno pagando su propio gas y su propio slippage. El contrato Rebalancer existe para hacer todo el grupo junto.
+
+## Qué hace
+
+Cada Jardín conectado al mismo tipo de Index (BLOKC2, BLOKC5, etc.) se rebalancea en conjunto, por lotes, en una sola transacción por lote.
+
+- La DAO define **cuántos Jardines entran en un lote**, por tipo de Index.
+- Un grupo grande se procesa en **varias llamadas**, con un cursor que recuerda la posición.
+- Dentro de un lote, los tokens se extraen de cada Jardín, se **intercambian una sola vez como un fondo común** y luego se devuelven a prorrata.
+- El **enfriamiento de 24 horas limita el inicio de una ronda**, no cada lote dentro de ella.
+
+## Configurar el tamaño del lote
+
+El tamaño del lote lo controla la DAO y se define por tipo de Index:
+
+```solidity
+function setMaxGardensPerBatch(bytes32 indexTypeId, uint256 batchSize) external onlyOwner
+```
+
+BLOKC2 y BLOKC10 pueden tener tamaños de lote distintos. El valor no puede ser cero, y si nunca se definió para un tipo de Index, `cumulativeRebalance` revierte con `Rebalancer_BatchSizeNotSet` en lugar de no hacer nada en silencio.
+
+Elegir el número es un compromiso de gas. Los lotes más grandes reparten el coste de los swaps entre más Jardines, pero cada lote debe caber en el límite de gas de un bloque, así que en la práctica hay un techo.
+
+## Cómo funciona una ronda de rebalanceo
+
+Una ronda es una pasada completa por todos los Jardines de un tipo de Index. El contrato registra el progreso en `gardenCursor[indexTypeId]`.
+
+Cada llamada a `cumulativeRebalance(indexTypeId, deadline)` procesa hasta `batchSize` Jardines a partir del cursor, y luego:
+
+- **Quedan Jardines**: el cursor avanza y se emite `BatchRebalanceCompleted`. Alguien debe volver a llamar para continuar.
+- **Era el último lote**: el cursor se reinicia a cero, se registra `lastRebalanceTimestamp` y se emite `CumulativeRebalanceCompleted`.
+
+Así que 500 Jardines con un tamaño de lote de 50 requieren diez llamadas para completar una ronda.
+
+<Admonition kind="info" title="El enfriamiento aplica por ronda, no por lote">
+El intervalo de 24 horas solo se comprueba cuando el cursor está en cero, es
+decir, solo cuando empieza una ronda nueva. Una vez la ronda está en marcha, los
+lotes restantes pueden enviarse uno tras otro sin esperar. Lo que tiene que
+esperar un día es la ronda siguiente.
+</Admonition>
+
+## El modelo de swap agrupado
+
+Aquí es donde está el ahorro, y explica por qué los Jardines conectados a un Index otorgan una allowance al Rebalancer.
+
+1. **Los precios se cachean una vez.** Cada precio de oráculo que necesita el rebalanceo se lee al principio y se reutiliza durante el resto de la transacción, así las valoraciones de antes y después se comparan contra la misma instantánea. Una ronda de Chainlink que llegara a mitad de transacción haría que la comprobación de pérdida de valor comparase números inconsistentes, y podría tanto ocultar una pérdida real como provocar un revert falso.
+2. **Los tokens se extraen.** Los balances de componentes de cada Jardín pasan al Rebalancer, y el contrato registra cuánto aportó cada uno.
+3. **Los swaps se ejecutan sobre el fondo común.** Un solo conjunto de operaciones para todo el lote, no uno por Jardín.
+4. **Los tokens se redistribuyen.** Cada Jardín recibe su parte de vuelta en proporción a lo que aportó.
+
+La contabilidad de aportaciones de los pasos 2 y 4 es lo que mantiene esto justo: un Jardín que representa el 2 % del valor del lote recibe el 2 % del resultado rebalanceado.
+
+## Cómo se encuentran los Jardines
+
+Un tipo de Index puede tener más de un contrato Index registrado. Al reunir un lote, el Rebalancer recorre cada Index registrado, obteniendo Jardines mediante llamadas paginadas a `getConnectedGardens(offset, limit)`, y gestiona los casos incómodos:
+
+- **Los duplicados se omiten.** Un Jardín conectado a dos Indices del mismo tipo solo se procesa una vez por lote.
+- **Las eliminaciones a mitad de ronda son recuperables.** Si se eliminaron Jardines y el cursor ahora apunta más allá del final, se reinicia y empieza una ronda nueva en lugar de revertir.
+- **Los lotes cortos se recortan.** Si quedan menos Jardines que el tamaño del lote, el lote se ajusta.
+
+## Protecciones de la llamada
+
+`cumulativeRebalance` es permissionless, así que está escrita asumiendo que quien llama puede ser hostil:
+
+- **Límites del deadline.** El deadline debe estar en el futuro, y no más de una hora por delante. Quien llama no puede enviar una transacción con un deadline abierto y dejarla reposando en el mempool.
+- **Bloqueo de reentrada.** Se mantiene durante toda la secuencia de extracción, swap y redistribución.
+- **Comprobación de valor cero.** Un lote cuyo valor total sea cero revierte en lugar de continuar.
+
+Estas conviven con las protecciones por rebalanceo descritas en [Consideraciones de Seguridad](/es/builders/security-considerations): la pérdida máxima de valor del 0,5 %, la tolerancia del 2 % por activo y el enfriamiento de intención.
+
+## Eventos que vale la pena vigilar
+
+Si monitorizas rebalanceos, estas son las señales:
+
+| Evento | Significado |
+| ------ | ----------- |
+| `CumulativeRebalanceStarted` | Empezó una ronda nueva, con el número total de Jardines y el valor inicial |
+| `BatchRebalanceCompleted` | Terminó un lote, quedan más en esta ronda |
+| `CumulativeRebalanceCompleted` | La ronda terminó, con el momento en que estará disponible la siguiente |
+| `MaxGardensPerBatchSet` | La DAO cambió el tamaño de lote de un tipo de Index |

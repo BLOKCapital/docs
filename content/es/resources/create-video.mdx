@@ -4,7 +4,7 @@ description: 'BLOKC prospera gracias a las contribuciones abiertas, y nuestra do
 position: 7
 ---
 Seas desarrollador, diseñador o miembro de la comunidad, tu aporte ayuda a que nuestros docs sean más útiles e inclusivos para todos.
-Esta guía te acompaña en la configuración básica y el conocimiento necesario para empezar a contribuir a la documentación de BLOKC alojada en [GitHub](https://github.com/BLOKCapital/documentation).
+Esta guía te acompaña en la configuración básica y el conocimiento necesario para empezar a contribuir a la documentación de BLOKC alojada en [GitHub](https://github.com/BLOKCapital/docs).
 
 ## Requisitos previos
 Antes de comenzar, asegúrate de tener instaladas las siguientes herramientas en tu sistema:
@@ -14,7 +14,7 @@ Se utiliza para clonar el repositorio y gestionar el control de versiones.
 [Instalar Git](https://git-scm.com/downloads)
 
 2. **Node.js y npm**
-Necesarios para ejecutar Docusaurus localmente.
+Necesarios para ejecutar localmente el sitio de documentación en Next.js.
 [Instalar Node.js (versión LTS)](https://nodejs.org/en)
 
 3. **VS Code o cualquier editor de texto**
@@ -22,7 +22,7 @@ Facilita la edición de archivos Markdown y la navegación por el proyecto.
 [Descargar VS Code](https://code.visualstudio.com/download)
 
 4. **Conocimientos básicos de Markdown**
-Nuestra documentación está escrita en archivos .md y .mdx.
+Nuestra documentación está escrita en archivos .mdx.
 
 ## Flujo de contribución
 Para contribuir a la documentación de BLOKC, sigue los pasos a continuación para configurar tu entorno local y comprender la estructura del repositorio de documentación.
@@ -35,17 +35,17 @@ Para contribuir a la documentación de BLOKC, sigue los pasos a continuación pa
    Dirígete al repositorio oficial de documentación de BLOKC en GitHub.
 
 2. **Haz un fork del repositorio**
-   Haz clic en el botón **"Fork"**, GitHub creará una copia del repo en tu cuenta. (ej: https://github.com/tu-usuario/documentation).
+   Haz clic en el botón **"Fork"**, GitHub creará una copia del repo en tu cuenta. (ej: https://github.com/tu-usuario/docs).
 
 2. **Clona el repositorio**  
    Usa el siguiente comando para clonar el proyecto en tu máquina local:  
    ```bash
-   git clone https://github.com/tu-usuario/documentation
+   git clone https://github.com/tu-usuario/docs
    ```
 
 3. **Navega al directorio del proyecto**  
    ```bash
-   cd documentation
+   cd docs
    ```
 
 4. **Instala las dependencias**  
@@ -57,7 +57,7 @@ Para contribuir a la documentación de BLOKC, sigue los pasos a continuación pa
 5. **Ejecuta la documentación localmente**  
    Inicia el servidor de desarrollo local con:  
    ```bash
-   npm start
+   npm run dev
    ```
 
 ---
@@ -68,7 +68,7 @@ Antes de contribuir, es útil entender cómo está organizada la documentación:
 
 - Cada **carpeta** en el directorio `/docs` representa una sección principal de la documentación.
 - Cada **archivo** dentro de esas carpetas es una subsección o página de contenido.
-- Todos los archivos están escritos en **Markdown** (`.md`).
+- Todos los archivos están escritos en **MDX** (`.mdx`).
 
 ---
 
@@ -92,19 +92,19 @@ Puedes contribuir a la documentación de las siguientes maneras:
 #### 1. Actualizar una sección o subsección existente
 
 - Identifica la sección o archivo que deseas actualizar.
-- Abre el archivo `.md` correspondiente.
+- Abre el archivo `.mdx` correspondiente.
 - Realiza tus ediciones directamente: agrega, elimina o corrige según sea necesario.
 
 #### 2. Agregar una nueva subsección
 
 - Ubica la carpeta de la sección correspondiente.
-- Crea un nuevo archivo con extensión `.md` (ej: `nueva-subseccion.md`).
+- Crea un nuevo archivo con extensión `.mdx` (ej: `nueva-subseccion.mdx`).
 - Agrega tu contenido en formato Markdown.
 
 #### 3. Agregar una nueva sección
 
 - Crea una nueva carpeta bajo el directorio `/docs` con un nombre apropiado.
-- Dentro de esa carpeta, crea un nuevo archivo `.md` para tu contenido.
+- Dentro de esa carpeta, crea un nuevo archivo `.mdx` para tu contenido.
 - Tu nueva sección y su contenido ahora serán reconocidos por el sistema de documentación.
 
 ---
@@ -140,20 +140,22 @@ Una vez que hayas terminado tus cambios, sigue estos pasos para subirlos y abrir
 ## Mira el tutorial en video
 ¿Prefieres una guía visual? Mira este video rápido donde te guiamos por todo el proceso de contribución, desde clonar el repositorio hasta enviar tu primer pull request.
 
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/CMHOX2Wq31g"
-  title="YouTube video player"
-  frameBorder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowFullScreen
-></iframe>
+<div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9' }}>
+  <iframe
+    src="https://www.youtube.com/embed/CMHOX2Wq31g"
+    title="YouTube video player"
+    loading="lazy"
+    frameBorder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+  ></iframe>
+</div>
 
 
 
 ## Recursos
-- [Docusaurus Docs](https://docusaurus.io/docs) – Aprende cómo funciona Docusaurus, desde la configuración hasta la escritura de plugins personalizados.
+- [Next.js Docs](https://nextjs.org/docs) – Cómo funciona el framework sobre el que está construido este sitio.
 
 - [Guía Markdown](https://www.markdownguide.org/cheat-sheet/) – Un resumen rápido de la sintaxis Markdown.
 

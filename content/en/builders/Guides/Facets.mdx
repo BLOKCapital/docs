@@ -7,44 +7,60 @@ position: 3
 In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic. For example, “A Facets can be compared to an implementation contract… [it] holds the external function logic the proxy (Diamond) will call”. Facets allow us to split functionality into separate contracts that can be upgraded independently. Each facet has its own isolated state (using the Diamond Storage pattern) to avoid storage conflicts. This guide explains our conventions for adding a new facet, including folder structure, contract layout, and testing.
 
 ## Folder Structure
-Each new facet has its own subfolder under src/facets/, containing five Solidity files, plus corresponding tests under test/facets/. For example, a Transfer facet would use:
-- `src/facets/transfer/TransferFacet.sol` – the public facet contract.
-- `src/facets/transfer/TransferBase.sol` – an abstract contract with internal logic.
-- `src/facets/transfer/TransferStorage.sol` – a library (or contract) defining the storage layout.
-- `src/facets/transfer/ITransfer.sol` – interface for external (public) functions.
-- `src/facets/transfer/ITransferBase.sol` – interface for internal types (errors, structs, events).
 
-Tests mirror this structure in `test/facets/transfer/`. You should create:
+Facets live under `src/garden/facets/`, grouped by what they are:
 
-- `test/facets/transfer/transfer.sol` – an abstract test contract(TransferFacetTest) that sets up the diamond with this facet and a helper(TransferFacetHelper) that provides facet address, selectors, etc.
-- A behavior/ subfolder for unit tests (one Solidity contract per facet method, named `<Facet>_<method>.t.sol`).
+```
+src/garden/facets/
+├── baseFacets/<name>/                 # the kernel: ownership, cut, upgrade, loupe
+├── indexFacets/                       # index connection and rebalancing
+└── utilityFacets/<chain>/<protocol>/  # DeFi integrations, one folder per chain
+```
 
+A new DeFi integration therefore goes in `utilityFacets/<chain>/<protocol>/`, for example `utilityFacets/arbitrumOne/uniswapV3/`. Put it under the chain it targets; the same protocol on two chains gets a folder under each.
 
-This naming convention ensures clarity and allows isolating tests via Foundry’s `--match-contract` flag.
+Each facet folder holds the files it actually needs, not a fixed set:
+
+- `<Name>Facet.sol` – the external facet contract. Always present.
+- `<Name>Base.sol` – abstract contract with the internal logic. Always present.
+- `<Name>Storage.sol` – the storage library. Only if the facet keeps state. A stateless facet (most swap integrations) has none.
+- `I<Name>.sol` – the external interface. Utility facets define their own; base facets usually implement a standard that already lives in `src/interfaces/` (for example `IERC173` for ownership).
+
+Tests mirror the `src` path under `test/`, with a subfolder per test kind:
+
+```
+test/garden/facets/baseFacets/ownership/unit/OwnershipFacet.t.sol
+```
+
+`unit/` is the one every facet has. `fuzz/` and `invariant/` exist where that facet warrants them. One test contract per facet, named `<Facet>Test`, in `<Facet>.t.sol`, which keeps `forge test --match-contract OwnershipFacetTest` useful.
 
 ## Facet Contract Layout
 Within each facet folder, we follow a strict contract layout:
 
-- `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Declare a `bytes32 constant STORAGE_SLOT = keccak256("blokc.<facet>.storage")`, a struct Layout with all facet state variables, and a function (often named layout()) that returns a pointer to that storage slot using inline assembly. For example:
+- `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Derive the slot through `LibStorageSlot.deriveStorageSlot(type(YourStorage).name)`, never by hardcoding a string or inlining the hash formula. Declare a `STORAGE_LAYOUT_VERSION`, and make `_storageLayoutVersion` the **first field** of the struct: upgrades validate it, so a layout with it anywhere else is wrong. For example:
 
 ```js
 library TransferStorage {
-    bytes32 internal constant STORAGE_SLOT = keccak256("blokc.transfer.storage");
+    uint256 internal constant STORAGE_LAYOUT_VERSION = 1;
 
     struct Layout {
-        // Add required variables
+        /// @notice Storage layout version — MUST be first field. Validated during upgrades.
+        uint256 _storageLayoutVersion;
+        // Add required variables after it, append-only
         uint256 lastTransferBlock;
     }
 
+    /// @dev Storage slot is derived from keccak256(bytes(type(TransferStorage).name))
     function layout() internal pure returns (Layout storage l) {
-        bytes32 slot = STORAGE_SLOT;
+        bytes32 position = LibStorageSlot.deriveStorageSlot(type(TransferStorage).name);
         assembly {
-            l.slot := slot
+            l.slot := position
         }
     }
 }
 ```
-This isolates the facet’s state so that each facet “can be understood as its own unit”.
+
+This isolates the facet's state so that each facet can be understood as its own unit. Two consequences worth knowing before you pick a name: the library name **is** the storage key, so it can never be renamed once deployed, and new struct fields may only be appended. See [Security Considerations](/en/builders/security-considerations) for what enforces this.
 
 - `<FacetName>Base.sol`: An abstract contract defining internal functions and logic. This contract imports the storage library and any required interfaces, and implements internal (or internal view) functions. It may also read/write storage via Layout `storage s = <FacetName>Storage.layout()`. For example, a Transfer facet’s base might have:
 ```js
@@ -112,94 +128,45 @@ interface ITransferBase {
 }
 ```
 ## Testing Facets
-We test facets by deploying them into a Diamond using the provided Foundry test framework. The key conventions are:
-- **Helper Contract** (`<FacetName>Helper`): Write a helper that creates the facet, and returns its address, selectors array, initializer function, and supported interface IDs. This is used by tests to assemble the Diamond configuration. For example, a TransferFacetHelper might implement facet() (return the facet address) and selectors() (array of function selectors to add).
+
+Facet tests deploy a real Garden through the test harness and then call the facet through the Garden address, which is the only way the facet is ever reached in production. The harness lives in `test/base/`:
+
+- `BaseTest.sol` – shared setup and common test actors.
+- `DiamondTestBase.sol` – what most facet tests extend. Gives you helpers to register a garden type and deploy a Garden.
+- `DexFacetTestBase.sol` – for swap integrations, which need pool and router fixtures on top of the above.
+
+### The shape of a facet test
+
+Extend the right base, deploy a Garden in `setUp()`, then exercise the facet through an interface cast on the Garden address:
+
 ```js
-contract TransferFacetHelper is FacetHelper {
-    TransferFacet public transferFacet;
-
-    constructor() {
-        transferFacet = new TransferFacet();
-    }
-
-    function facet() public view override returns (address) {
-        return address(transferFacet);
-    }
-
-    function selectors() public view override returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4 ;
-        selectors_[0] = transferFacet.transferEth.selector;
-        selectors_[1] = transferFacet.erc20Transfer.selector;
-        selectors_[2] = transferFacet.erc20TransferFrom.selector;
-    }
-
-    function initializer() public view override returns (bytes4) {
-        return bytes4(0); // No initializer for TransferFacet
-    }
-
-    function supportedInterfaces() public pure override returns (bytes4[] memory interfaces) {
-        interfaces = new bytes4 ;
-        interfaces[0] = type(ITransfer).interfaceId;
-    }
-
-    function creationCode() public pure override returns (bytes memory) {
-        return type(TransferFacet).creationCode;
-    }
-}
-```
-- **Abstract Test** (`<FacetName>FacetTest`): Write an abstract test contract extending the base `FacetTest`. In `setUp()`, deploy the helper; override `diamondInitParams()` to return a `Diamond.InitParams` struct that includes adding your facet (via `helper.makeFacetCut(...)`) and any init calls. This attaches the facet’s interface to the Diamond. For example, see how a Uniswap facet is tested:
-```js
-abstract contract TransferFacetTest is FacetTest, ITransfer {
-    TransferFacetHelper public transferFacetHelper;
-
-    function setUp() public virtual override {
-        super.setUp();
-        transferFacetHelper = new TransferFacetHelper();
-    }
-
-    function diamondInitParams() public override returns (Diamond.InitParams memory) {
-        FacetCut ;
-        baseFacets[0] = transferFacetHelper.makeFacetCut(FacetCutAction.Add);
-
-        MultiInit ;
-        diamondInitData[0] = transferFacetHelper.makeInitData("");
-
-        return Diamond.InitParams({
-            baseFacets: baseFacets,
-            init: address(0),
-            initData: ""
-        });
-    }
-}
-```
-
-- **Unit Tests**: For each external function in the facet, create a separate test contract named `<FacetName>_<MethodName>.t.sol` (following Foundry’s naming convention) inside the behavior/ folder. In these, use the Diamond’s address to call the facet functions via the interface (`ITransfer(address(diamond))`). Tests should call `I<FacetName>` functions and check state or revert reasons. By reusing `I<FacetName>Base` types, you can also assert on custom errors or events. Naming one contract per method allows running specific tests with -`-match-contract`.
-```js
-contract TransferFacet_Behavior is TransferFacetTest {
-    MockERC20 token;
-    address user = address(0x123);
-    address recipient = address(0x456);
+contract OwnershipFacetTest is DiamondTestBase {
+    address public garden;
 
     function setUp() public override {
         super.setUp();
-        token = new MockERC20();
-        token.setBalance(address(this), 100 ether);
-        token.setAllowance(address(this), address(this), 100 ether);
+        _addGardenTypeEmpty(GARDEN_TYPE_1);
+        garden = _deployGarden(GARDEN_TYPE_1, gardenOwner);
     }
 
-    function test_Transfer_Success() public {
-        uint256 amount = 1 ether;
-        vm.expectEmit(address(this));
-        emit ITransfer.TransferExecuted(address(token), address(this), recipient, amount);
-        transferFacetHelper.facet().call(
-            abi.encodeWithSelector(
-                ITransfer.erc20Transfer.selector,
-                address(token),
-                recipient,
-                amount
-            )
-        );
-        assertEq(token.balanceOf(recipient), amount);
+    function test_owner_returnsGardenOwner() public view {
+        assertEq(IERC173(garden).owner(), gardenOwner);
+    }
+
+    function test_transferOwnership_updatesOwner() public {
+        vm.prank(gardenOwner);
+        IERC173(garden).transferOwnership(alice);
+        assertEq(IERC173(garden).owner(), alice);
     }
 }
 ```
+
+Note the cast: `IERC173(garden)`, not the facet contract directly. Calling the facet's own address would run its code against the facet's own storage rather than the Garden's, which is not how it behaves in production and will give you misleading results.
+
+### Naming and placement
+
+One test contract per facet, named `<Facet>Test`, in `<Facet>.t.sol`, under the mirrored `src` path plus `unit/`. Group tests inside the contract by the function under test rather than splitting them across files. Add `fuzz/` or `invariant/` siblings only when the facet has properties worth testing that way.
+
+### Before you open a PR
+
+`forge test` also runs three storage guards inherited by every suite. They catch two libraries sharing a name, and they fail if a storage library recorded in `storage-registry.json` has disappeared from the codebase. If one of those fails after you add a facet, the storage library name you chose collides with an existing one, so pick another rather than working around the guard.

@@ -1,19 +1,21 @@
 ---
 title: IIndex.sol
-description: Esta interfaz define las estructuras de datos esenciales que se intercambian entre el Centralized Relayer Engine (CRE) off-chain y el protocolo on-chain.
+description: Esta interfaz define las estructuras de datos esenciales que un llamante proporciona para rebalancear un jardín, y la intención pendiente contra la que el protocolo las verifica.
 position: 2
 ---
 ## Concepto Central: Instrucciones de Swap e Intents
 
-Para ejecutar un rebalanceo, el CRE debe proporcionar un array de instrucciones `SwapStep`. El protocolo compara el resultado de estos pasos con el `PendingIntent` previamente bloqueado.
+Para ejecutar un rebalanceo, el llamante debe proporcionar un array de instrucciones `SwapStep`. El protocolo compara el resultado de estos pasos con el `PendingIntent` previamente bloqueado.
+
+Tanto `rebalanceIntent()` como `rebalance()` son permissionless: cualquiera puede llamarlas una vez pasados los períodos de enfriamiento. Versiones anteriores de esta documentación describían esto como la tarea de un motor de retransmisión off-chain, y en la práctica suele ser un llamante automatizado el que lo activa, pero nada en la interfaz privilegia a ese llamante sobre cualquier otro.
 
 ## Fragmento crucial para Builders: Los Tipos de Ejecución
 
 ```solidity
-/// @notice A single swap step provided by the CRE to rebalance the garden.
+/// @notice A single swap step used to rebalance the garden.
 struct SwapStep {
     bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
-    SwapInstruction instruction; // Contains tokens, pools, and amounts
+    SwapInstruction instruction; // Contains tokens, pools, amounts and a deadline
 }
 
 /// @notice Pending rebalance intent data (slimmed for gas efficiency)
@@ -24,3 +26,11 @@ struct PendingIntent {
     uint256[] targetValues; // Desired USD value per token
 }
 ```
+
+<Admonition kind="warning" title="Establece el deadline explícitamente">
+El `SwapInstruction` anidado incluye un `deadline`. Pasar `0` no es un "sin
+deadline" seguro: cada facet lo sustituye por `block.timestamp + 30 minutos`,
+que siempre está en el futuro para la transacción que se ejecuta, así que un
+`deadline` de `0` no ofrece ninguna protección. Pasa un timestamp real si
+quieres que se aplique uno.
+</Admonition>

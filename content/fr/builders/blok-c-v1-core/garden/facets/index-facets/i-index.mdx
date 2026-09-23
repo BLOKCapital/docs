@@ -1,19 +1,21 @@
 ---
 title: IIndex.sol
-description: Cette interface définit les structures de données essentielles échangées entre le Centralized Relayer Engine (CRE) off-chain et le protocole on-chain.
+description: Cette interface définit les structures de données essentielles qu'un appelant fournit pour rééquilibrer un jardin, et l'intention en attente contre laquelle le protocole les vérifie.
 position: 2
 ---
 ## Concept Central : Instructions de Swap et Intents
 
-Pour exécuter un rééquilibrage, le CRE doit fournir un tableau d'instructions `SwapStep`. Le protocole compare le résultat de ces étapes au `PendingIntent` préalablement verrouillé.
+Pour exécuter un rééquilibrage, l'appelant doit fournir un tableau d'instructions `SwapStep`. Le protocole compare le résultat de ces étapes au `PendingIntent` préalablement verrouillé.
+
+`rebalanceIntent()` et `rebalance()` sont tous deux permissionless : n'importe qui peut les appeler une fois les délais passés. Des versions antérieures de cette documentation décrivaient cela comme le travail d'un moteur de relais hors chaîne, et en pratique c'est généralement un appelant automatisé qui le déclenche, mais rien dans l'interface ne privilégie cet appelant par rapport à un autre.
 
 ## Extrait crucial pour les Builders : Les Types d'Exécution
 
 ```solidity
-/// @notice A single swap step provided by the CRE to rebalance the garden.
+/// @notice A single swap step used to rebalance the garden.
 struct SwapStep {
     bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
-    SwapInstruction instruction; // Contains tokens, pools, and amounts
+    SwapInstruction instruction; // Contains tokens, pools, amounts and a deadline
 }
 
 /// @notice Pending rebalance intent data (slimmed for gas efficiency)
@@ -24,3 +26,11 @@ struct PendingIntent {
     uint256[] targetValues; // Desired USD value per token
 }
 ```
+
+<Admonition kind="warning" title="Définissez le deadline explicitement">
+Le `SwapInstruction` imbriqué embarque un `deadline`. Passer `0` n'est pas un
+« aucun deadline » sûr : chaque facet le remplace par
+`block.timestamp + 30 minutes`, toujours dans le futur pour la transaction en
+cours, donc un `deadline` à `0` n'offre aucune protection. Passez un vrai
+timestamp si vous voulez qu'un deadline s'applique.
+</Admonition>

@@ -1,34 +1,95 @@
 ---
 title: Adresses des Smart Contracts
-description: 'Adresses des contrats déployés de BLOK Capital. Le déploiement sur mainnet est en cours ; les adresses vérifiées seront publiées ici et dans le dépôt des audits.'
+description: 'Adresses des contrats déployés de BLOK Capital V1 sur Arbitrum One, couvrant les registres principaux, les facets de base, la couche Index et le rééquilibreur.'
 position: 4
 ---
 
-<Admonition kind="info" title="Pas encore déployé">
-BLOK Capital V1 n'a pas encore été déployé sur mainnet : il n'y a donc pas
-encore d'adresses à vérifier. Cette page listera chaque contrat déployé avec son
-réseau, son adresse et le lien vers l'explorateur de blocs dès que le
-déploiement sera terminé.
+BLOK Capital V1 est déployé sur **Arbitrum One** (chain ID `42161`). Chaque adresse ci-dessous renvoie vers sa page Arbiscan afin que vous puissiez inspecter le contrat vous-même.
+
+<Admonition kind="warning" title="En attente de vérification finale">
+Cette liste est en cours de recoupement avec les registres de déploiement. En
+attendant, vérifiez toute adresse avec laquelle vous comptez transiger également
+auprès du [dépôt public des audits](https://github.com/BLOKCapital/audits), et
+considérez tout écart entre les deux sources comme une raison de vous arrêter et
+de poser la question.
 </Admonition>
 
-## Où les adresses seront publiées
+## Token
 
-Au lancement de V1, chaque contrat sera listé ici avec :
+Le token $BLOKC a été déployé avant les contrats du protocole V1 et est actif indépendamment de ceux-ci.
 
-- le **réseau** et le chain ID sur lequel il est déployé ;
-- l'**adresse vérifiée**, liée à l'explorateur de blocs ;
-- le **facet ou module** qu'il implémente, avec un renvoi vers sa page dans
-  [Smart Contracts](/fr/smart-contracts) ;
-- le **rapport d'audit** qui le couvre, depuis [Aperçu de la Sécurité](/fr/resources/audits-and-security/audits).
+| Contrat | Adresse |
+| ------- | ------- |
+| **BLOKC (ERC-20)** | [`0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0`](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
 
-## Vérifier une adresse en attendant
+Voir [Le Token](/fr/resources/Tokenomics/the-token) pour les détails d'offre et de standard.
 
-Considérez comme non vérifiée toute adresse circulant avant cette publication.
-BLOK Capital ne publiera jamais d'adresses ailleurs que dans deux endroits :
-cette page et le [dépôt public des audits](https://github.com/BLOKCapital/audits).
-Toute adresse publiée ailleurs, y compris dans des canaux de discussion ou des
-messages privés, doit être considérée comme hostile tant que vous ne l'avez pas
-recoupée avec l'une de ces deux sources.
+## Protocole principal
+
+Les registres et la fabrique. Ce sont les contrats qui gouvernent tout le reste.
+
+| Contrat | Adresse |
+| ------- | ------- |
+| **FacetRegistry** | [`0x2b661a5c6b21fe2c824582e91f06b8c816076e33`](https://arbiscan.io/address/0x2b661a5c6b21fe2c824582e91f06b8c816076e33) |
+| **ProtocolStatus** | [`0x4aa3d2eaa8acc8087912d6827fd88395e059ba1b`](https://arbiscan.io/address/0x4aa3d2eaa8acc8087912d6827fd88395e059ba1b) |
+| **GardenFactory** | [`0xD93FD02a41dc150f54FdC8c68c34eb42348b3854`](https://arbiscan.io/address/0xD93FD02a41dc150f54FdC8c68c34eb42348b3854) |
+| **LiquidityPoolRegistry** | [`0xF0F7B0a68B777539Ff7d416eEAC56E0FB3e8B30C`](https://arbiscan.io/address/0xF0F7B0a68B777539Ff7d416eEAC56E0FB3e8B30C) |
+
+L'adresse du LiquidityPoolRegistry est en outre inscrite dans le code source lui-même, comme constante de compilation dans `ArbitrumOneAddresses.sol`, et les scripts de déploiement la vérifient : un déploiement avec une valeur obsolète s'interrompt au lieu de passer silencieusement. Celle-là, vous pouvez la vérifier contre le dépôt, pas seulement contre cette page.
+
+## Facets de base
+
+Les quatre facets présents dans chaque Jardin. Ils sont protégés en permanence : la gouvernance peut ajouter ou retirer des facets de fonctionnalités, mais elle ne peut jamais remplacer ceux-ci. Voir [Comment les Jardins se Mettent à Jour](/fr/builders/blok-capital-v1) pour comprendre pourquoi c'est important.
+
+| Facet | Adresse |
+| ----- | ------- |
+| **DiamondCutFacet** | [`0xeede3a0fef9c8d5c0ce7b4ca8b7bad50fce98328`](https://arbiscan.io/address/0xeede3a0fef9c8d5c0ce7b4ca8b7bad50fce98328) |
+| **DiamondLoupeFacet** | [`0x5db7a2c3a41f3dc4bcd5ef6348ab8bee11bc0631`](https://arbiscan.io/address/0x5db7a2c3a41f3dc4bcd5ef6348ab8bee11bc0631) |
+| **OwnershipFacet** | [`0x13432bfbb0fd0b1cf6ae04e26cf2f27b3b61e7b9`](https://arbiscan.io/address/0x13432bfbb0fd0b1cf6ae04e26cf2f27b3b61e7b9) |
+| **UpgradeFacet** | [`0x52fda8a1d601374463626052382f3044049fe7d3`](https://arbiscan.io/address/0x52fda8a1d601374463626052382f3044049fe7d3) |
+
+## Couche Index
+
+La fabrique, les registres de gouvernance qui contraignent ce qu'un Index peut détenir, et les contrats de calcul et d'offre qui alimentent ses pondérations.
+
+| Contrat | Adresse |
+| ------- | ------- |
+| **IndexFactory** | [`0x140e23c5521ba0c4f9eed52942acb86ce8c93b3e`](https://arbiscan.io/address/0x140e23c5521ba0c4f9eed52942acb86ce8c93b3e) |
+| **IndexComponentRegistry** | [`0x16bcfb42d60c2579639c621b3977f9e160a4b85d`](https://arbiscan.io/address/0x16bcfb42d60c2579639c621b3977f9e160a4b85d) |
+| **IndexCalculationRegistry** | [`0x5b68cb266998b735f75f6353e5580eed9b4ca35a`](https://arbiscan.io/address/0x5b68cb266998b735f75f6353e5580eed9b4ca35a) |
+| **MarketCapWeighted** | [`0x07f6977bd64a8cf061723635313181a26f152432`](https://arbiscan.io/address/0x07f6977bd64a8cf061723635313181a26f152432) |
+| **HardcodedCirculatingSupply** | [`0x4978880152d086626c0a5c70d5e15708ce1bd3fd`](https://arbiscan.io/address/0x4978880152d086626c0a5c70d5e15708ce1bd3fd) |
+
+## Produits Index
+
+Les indices déployés. Chacun est une instance d'`Index` issue de la fabrique ci-dessus, avec un ensemble de composants différent.
+
+| Index | Adresse |
+| ----- | ------- |
+| **BLOKC2** | [`0xAC50333f462D3b6e16a8f5DF891D03ad92100775`](https://arbiscan.io/address/0xAC50333f462D3b6e16a8f5DF891D03ad92100775) |
+| **BLOKC5** | [`0xFe8F6C9fE6f0F055f61A2AbCeAc5575B2Ed8323F`](https://arbiscan.io/address/0xFe8F6C9fE6f0F055f61A2AbCeAc5575B2Ed8323F) |
+| **BLOKC10** | [`0xf8b32bec7c0e77472a100c626c81f6209e31dd44`](https://arbiscan.io/address/0xf8b32bec7c0e77472a100c626c81f6209e31dd44) |
+
+## Rééquilibrage
+
+| Contrat | Adresse |
+| ------- | ------- |
+| **Rebalancer** | [`0x4c0917e65bc851ce86f6a448f653604378e89b19`](https://arbiscan.io/address/0x4c0917e65bc851ce86f6a448f653604378e89b19) |
+
+Notez que `cumulativeRebalance` est permissionless une fois son délai de récupération passé : n'importe qui peut donc déclencher un rééquilibrage pour un type d'Index donné. Consultez les [Considérations de Sécurité](/fr/builders/security-considerations) avant de construire dessus.
+
+## Les Jardins n'ont pas d'adresse fixe
+
+Un Jardin n'est pas listé ici car il n'y a pas une seule adresse à lister. Les Jardins sont déployés par utilisateur via le GardenFactory à une adresse déterministe (CREATE2), jusqu'à 10 par utilisateur, et la propriété de chacun est un token ERC-721. Pour trouver un Jardin précis, interrogez la fabrique plutôt que de le chercher sur cette page.
+
+## Vérifier une adresse
+
+BLOK Capital ne publie d'adresses que dans deux endroits : cette page et le [dépôt public des audits](https://github.com/BLOKCapital/audits). Toute adresse publiée ailleurs, y compris dans des canaux de discussion ou des messages privés, doit être considérée comme hostile tant que vous ne l'avez pas recoupée avec l'une de ces deux sources.
+
+Deux vérifications à faire vous-même avant de transiger :
+
+- Ouvrez le lien Arbiscan et confirmez que le contrat a du code et correspond au nom ci-dessus.
+- Pour un facet, appelez `facets()` sur le Jardin qui vous intéresse (via DiamondLoupeFacet) et confirmez que l'adresse du facet vers laquelle ce Jardin route réellement est bien celle listée ici. Qu'un facet soit déployé ne signifie pas qu'un Jardin donné l'utilise.
 
 ## Suivre le déploiement
 

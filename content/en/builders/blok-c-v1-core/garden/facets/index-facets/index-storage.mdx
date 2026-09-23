@@ -16,11 +16,13 @@ Builders must understand these hardcoded thresholds. For example, a swap route t
 ```solidity
 // Rebalancing Parameters
 uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
-uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant REBALANCE_INTERVAL = 1 days; // Minimum cooldown
 uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
 uint256 internal constant INTENT_EXPIRY = 10 minutes;
+uint256 internal constant INTENT_INTERVAL = 11 minutes; // Must exceed INTENT_EXPIRY
+uint256 internal constant STORAGE_LAYOUT_VERSION = 2;
 
-// Diamond Storage Layout
+// Diamond Storage Layout (v2)
 struct Layout {
     address indexAddress;
     uint256 lastRebalanceTimestamp;
@@ -28,5 +30,22 @@ struct Layout {
     bool rebalancing; // Custom reentrancy guard
     PendingIntent pendingIntent;
     uint256 lastIntentBlock; // Flash loan protection
+
+    // Appended in v2: configured at install, not compile-time constants
+    address indexFactory;
+    address indexComponentRegistry;
+    address poolRegistry;
 }
 ```
+
+Two details worth noting here.
+
+The **rebalance cooldown is a full day**, not an hour. Because each execution can lose at most 0.5% of portfolio value, a daily interval is what bounds worst-case extraction from repeatedly triggering a permissionless rebalance.
+
+`INTENT_INTERVAL` **must stay strictly greater than** `INTENT_EXPIRY`. If the two were equal, a new intent could overwrite a still-valid pending one at the exact expiry boundary, which would let someone grief or front-run an in-flight rebalance.
+
+## Registry addresses moved into storage (v2)
+
+Earlier versions hardcoded the IndexFactory, IndexComponentRegistry and LiquidityPoolRegistry addresses as compile-time constants in this library. They now live in the storage layout instead, set by the deployer at install time.
+
+The reason is practical: redeploying a protocol component no longer requires recompiling and re-cutting every facet that referenced it. If you're reading an older deployment, expect to find those addresses baked into the bytecode rather than readable from storage.
