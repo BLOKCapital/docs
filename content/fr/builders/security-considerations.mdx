@@ -38,8 +38,23 @@ Si votre travail touche au chemin de rééquilibrage de l'Index, sachez qu'il su
 - **Protection contre les flash loans** : l'intention et le rééquilibrage réel doivent tomber sur des blocs différents, afin qu'aucune manipulation en une seule transaction ne puisse englober les deux.
 - **Protection contre la perte de valeur** : un rééquilibrage échoue si la valeur totale du portefeuille chute de plus de 0,5 % par rapport à avant les swaps.
 - **Tolérance par actif** : les soldes après swap doivent se situer à moins de 2 % de leur allocation cible.
+- **Délai entre rééquilibrages** : au moins 24 heures entre deux exécutions. Combiné au plafond de perte de 0,5 %, cela borne la valeur qui pourrait être drainée par des déclenchements répétés.
+- **Délai entre intentions** : une nouvelle intention ne peut pas être créée dans les 11 minutes suivant la précédente. Les intentions expirant au bout de 10, cette fenêtre plus longue garantit qu'une intention vivante ne peut jamais être écrasée avant son expiration, ce qui permettrait sinon de faire du griefing ou du front-running sur un rééquilibrage en cours.
 
-N'assouplissez aucun de ces seuils sans comprendre pourquoi ils existent. Ils servent à limiter ce qu'un relayeur hors chaîne, compromis ou non, peut faire aux avoirs d'un Jardin. Un contrat Rebalancer distinct, pas le Jardin lui-même, déclenche cela pour tous les Jardins d'un type d'Index donné à la fois, et c'est permissionless après un délai de récupération, donc considérez « n'importe qui peut appeler ceci » comme l'hypothèse par défaut, pas comme un cas limite.
+N'assouplissez aucun de ces seuils sans comprendre pourquoi ils existent. Ils servent à limiter ce que celui qui fournit les étapes de swap, y compris un appelant compromis, peut faire aux avoirs d'un Jardin. Un contrat Rebalancer distinct, pas le Jardin lui-même, déclenche cela pour tous les Jardins d'un type d'Index donné à la fois, et c'est permissionless une fois le délai de récupération passé, donc considérez « n'importe qui peut appeler ceci » comme l'hypothèse par défaut, pas comme un cas limite.
+
+## Passez toujours un deadline de swap explicite
+
+`SwapInstruction` embarque un `deadline`, et il contient un piège. Passer `0` ne signifie pas « aucun deadline » au sens sûr : chaque facet le remplace par `block.timestamp + 30 minutes`, qui est par définition toujours dans le futur pour la transaction en cours d'exécution. Un `deadline` à `0` ne vous offre donc aucune protection réelle.
+
+Si vous voulez qu'un deadline serve à quelque chose, passez-en un vrai. Cela compte surtout pour tout ce qui peut stagner dans le mempool avant d'être inclus, où une transaction périmée exécutée plus tard à un moins bon prix est exactement le risque qu'un deadline est censé couvrir.
+
+## Les Jardins d'Index portent une allowance illimitée permanente
+
+Le Rebalancer déplace les tokens en les extrayant des Jardins, ce qui signifie qu'un Jardin connecté à un Index lui a accordé une allowance illimitée sur chaque token composant (définie par le propriétaire via le facet Approve). Deux conséquences :
+
+- Le contrat Rebalancer se situe à l'intérieur du périmètre de confiance des tokens composants de tout Jardin connecté à un Index. Lorsque vous relisez des modifications le concernant, relisez-les comme des modifications sur quelque chose qui peut déplacer des fonds d'utilisateurs, parce que c'est le cas.
+- Si vous ajoutez un nouveau token composant à un Index, son allowance doit aussi être accordée. L'approbation est par token, pas globale : un token que personne n'a approuvé échouera au rééquilibrage plutôt que d'être ignoré silencieusement.
 
 ## L'interrupteur d'urgence à l'échelle du protocole
 
@@ -51,4 +66,4 @@ Les facets sont organisés par chaîne (`arbitrumOne`, `avalanche`, `ethereum` p
 
 ## Pour aller plus loin
 
-Cette page est la checklist. Pour voir comment chacun de ces points est réellement implémenté, consultez les références de chaque facet sous [Blok-C-V1-Core](/fr/builders/blok-c-v1-core), et l'explication au niveau de l'architecture dans [Smart Contracts](/fr/smart-contracts).
+Cette page est la checklist. Pour voir comment chacun de ces points est réellement implémenté, consultez les références de chaque facet sous [Blok-C-V1-Core](/fr/builders/blok-c-v1-core/garden/facets/facet), et l'explication au niveau de l'architecture dans [Smart Contracts](/fr/smart-contracts).

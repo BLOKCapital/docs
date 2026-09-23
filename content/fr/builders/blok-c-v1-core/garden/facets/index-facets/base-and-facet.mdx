@@ -6,7 +6,7 @@ position: 3
 ## Concept Central : Le pipeline en deux étapes
 
 1. **`_rebalanceIntent()` :** Verrouille les prix de marché actuels et calcule les allocations cibles selon les pondérations de l'Indice. Stocke le numéro de bloc.
-2. **`_rebalance(SwapStep[])` :** Exécute les transactions réelles selon les instructions du CRE.
+2. **`_rebalance(SwapStep[])` :** Exécute les transactions réelles selon les instructions fournies par l'appelant.
 
 ## Extrait crucial pour les Builders : Protection contre Flash Loans et Slippage
 

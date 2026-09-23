@@ -109,8 +109,9 @@ Section: Concepts
 | Index Calculation Strategy | Pluggable contract that computes asset weights (e.g., MarketCapWeighted). |
 | Rebalance | Process of adjusting Garden holdings to match target Index allocations. |
 | Rebalance Intent | A pending rebalance containing current values, target values, and weights for all components. |
-| Rebalance Interval | Minimum time (1 hour) between consecutive rebalances. |
-| Swap Call | Individual swap instruction from CRE containing selector, encoded data, output token, and minimum output. |
+| Rebalance Interval | Minimum time (24 hours) between consecutive rebalances. |
+| Intent Interval | Minimum time (11 minutes) between rebalance intent creations. Kept longer than the 10-minute intent expiry so a live intent cannot be overwritten. |
+| Swap Call | Individual swap instruction supplied by the caller, containing selector, encoded data, output token, minimum output and a deadline. |
 | Component Weights | Normalized allocation percentages for Index components (scaled to 1e18). |
 | Market Cap Weighted | Strategy that weights components proportionally to their market cap. |
 
@@ -1452,7 +1453,7 @@ Section: Builders
 ## Core Concept: The Two-Step Pipeline
 
 1. **`_rebalanceIntent()`:** Locks in the current market prices and calculates the target allocations based on the Index weights. It stores the block number.
-2. **`_rebalance(SwapStep[])`:** Executes the actual trades based on the CRE's instructions.
+2. **`_rebalance(SwapStep[])`:** Executes the actual trades based on the caller's supplied instructions.
 
 ## Crucial Builder Snippet: Flash Loan & Slippage Protection
 
@@ -1499,15 +1500,17 @@ Section: Builders
 
 ## Core Concept: Swap Instructions & Intents
 
-To execute a rebalance, the CRE must provide an array of `SwapStep` instructions. The protocol compares the outcome of these steps against the locked `PendingIntent`.
+To execute a rebalance, the caller must provide an array of `SwapStep` instructions. The protocol compares the outcome of these steps against the locked `PendingIntent`.
+
+Both `rebalanceIntent()` and `rebalance()` are permissionless: anyone can call them once the cooldowns have passed. Earlier versions of these docs described this as the job of an off-chain relayer engine, and in practice an automated caller is what usually triggers it, but nothing in the interface privileges that caller over any other.
 
 ## Crucial Builder Snippet: The Execution Types
 
 ```solidity
-/// @notice A single swap step provided by the CRE to rebalance the garden.
+/// @notice A single swap step used to rebalance the garden.
 struct SwapStep {
     bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
-    SwapInstruction instruction; // Contains tokens, pools, and amounts
+    SwapInstruction instruction; // Contains tokens, pools, amounts and a deadline
 }
 
 /// @notice Pending rebalance intent data (slimmed for gas efficiency)
@@ -1518,6 +1521,14 @@ struct PendingIntent {
     uint256[] targetValues; // Desired USD value per token
 }
 ```
+
+**Set the deadline explicitly**
+
+
+The nested `SwapInstruction` carries a `deadline`. Passing `0` is not a safe
+"no deadline": each facet substitutes `block.timestamp + 30 minutes`, which is
+always in the future for the executing transaction, so a `0` deadline provides
+no protection. Pass a real timestamp if you want one to apply.
 
 
 ---
@@ -1539,11 +1550,13 @@ Builders must understand these hardcoded thresholds. For example, a swap route t
 ```solidity
 // Rebalancing Parameters
 uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
-uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant REBALANCE_INTERVAL = 1 days; // Minimum cooldown
 uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
 uint256 internal constant INTENT_EXPIRY = 10 minutes;
+uint256 internal constant INTENT_INTERVAL = 11 minutes; // Must exceed INTENT_EXPIRY
+uint256 internal constant STORAGE_LAYOUT_VERSION = 2;
 
-// Diamond Storage Layout
+// Diamond Storage Layout (v2)
 struct Layout {
     address indexAddress;
     uint256 lastRebalanceTimestamp;
@@ -1551,8 +1564,25 @@ struct Layout {
     bool rebalancing; // Custom reentrancy guard
     PendingIntent pendingIntent;
     uint256 lastIntentBlock; // Flash loan protection
+
+    // Appended in v2: configured at install, not compile-time constants
+    address indexFactory;
+    address indexComponentRegistry;
+    address poolRegistry;
 }
 ```
+
+Two details worth noting here.
+
+The **rebalance cooldown is a full day**, not an hour. Because each execution can lose at most 0.5% of portfolio value, a daily interval is what bounds worst-case extraction from repeatedly triggering a permissionless rebalance.
+
+`INTENT_INTERVAL` **must stay strictly greater than** `INTENT_EXPIRY`. If the two were equal, a new intent could overwrite a still-valid pending one at the exact expiry boundary, which would let someone grief or front-run an in-flight rebalance.
+
+## Registry addresses moved into storage (v2)
+
+Earlier versions hardcoded the IndexFactory, IndexComponentRegistry and LiquidityPoolRegistry addresses as compile-time constants in this library. They now live in the storage layout instead, set by the deployer at install time.
+
+The reason is practical: redeploying a protocol component no longer requires recompiling and re-cutting every facet that referenced it. If you're reading an older deployment, expect to find those addresses baked into the bytecode rather than readable from storage.
 
 
 ---
@@ -1587,6 +1617,14 @@ Instead, upgrades go through a dedicated Upgrade facet that checks a hash agains
 Gardens that are connected to an Index rebalance in two steps. First, an intent locks in target allocations at a given block. Then, on a later block, the trades themselves execute, using swap instructions supplied by an off-chain relayer (a cron-triggered engine that shops for the best route across DEXs before submitting swap calldata). Requiring a later block closes the door on flash-loan manipulation between the two steps, and the protocol checks that total portfolio value hasn't dropped by more than 0.5% before it lets the rebalance go through.
 
 A separate Rebalancer contract batches this across every Garden that shares an Index type into one atomic transaction, rather than rebalancing each Garden individually. It's permissionless after a cooldown, anyone can trigger it, and it discovers pools entirely through the Liquidity Pool Registry, so adding support for a new DEX doesn't require changing the Rebalancer's code.
+
+### Gardens Grant the Rebalancer an Allowance
+
+Worth understanding before you connect a Garden to an Index: the Rebalancer doesn't instruct your Garden to trade on its own behalf. It **pulls the component tokens out of the Garden** into itself, swaps them, and returns them.
+
+For that to work, the Garden has to have approved the Rebalancer to move its tokens first. A Diamond can't call `approve` on itself, so the Garden owner does it explicitly through an Approve facet, which grants the Rebalancer an unlimited allowance on each component token. The facet is owner-only, and it uses `forceApprove`, so it can safely be re-run if the spender ever changes or a previous setup was incomplete.
+
+The practical consequence: an Index-connected Garden has standing, unlimited approval for the Rebalancer contract on its component tokens. That approval is what makes batched rebalancing possible, and it's why the Rebalancer's own guardrails (a value-loss cap, a cooldown, registry-driven routing) matter as much as they do.
 
 ### BLOK Capital Subgraphs
 We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our governance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
@@ -2082,44 +2120,60 @@ Section: Builders
 In this project we use the EIP-2535 “Diamond” pattern to compose modular contracts. A Diamond is a proxy that delegates calls to multiple Facets, each holding related logic. For example, “A Facets can be compared to an implementation contract… [it] holds the external function logic the proxy (Diamond) will call”. Facets allow us to split functionality into separate contracts that can be upgraded independently. Each facet has its own isolated state (using the Diamond Storage pattern) to avoid storage conflicts. This guide explains our conventions for adding a new facet, including folder structure, contract layout, and testing.
 
 ## Folder Structure
-Each new facet has its own subfolder under src/facets/, containing five Solidity files, plus corresponding tests under test/facets/. For example, a Transfer facet would use:
-- `src/facets/transfer/TransferFacet.sol` – the public facet contract.
-- `src/facets/transfer/TransferBase.sol` – an abstract contract with internal logic.
-- `src/facets/transfer/TransferStorage.sol` – a library (or contract) defining the storage layout.
-- `src/facets/transfer/ITransfer.sol` – interface for external (public) functions.
-- `src/facets/transfer/ITransferBase.sol` – interface for internal types (errors, structs, events).
 
-Tests mirror this structure in `test/facets/transfer/`. You should create:
+Facets live under `src/garden/facets/`, grouped by what they are:
 
-- `test/facets/transfer/transfer.sol` – an abstract test contract(TransferFacetTest) that sets up the diamond with this facet and a helper(TransferFacetHelper) that provides facet address, selectors, etc.
-- A behavior/ subfolder for unit tests (one Solidity contract per facet method, named `<Facet>_<method>.t.sol`).
+```
+src/garden/facets/
+├── baseFacets/<name>/                 # the kernel: ownership, cut, upgrade, loupe
+├── indexFacets/                       # index connection and rebalancing
+└── utilityFacets/<chain>/<protocol>/  # DeFi integrations, one folder per chain
+```
 
+A new DeFi integration therefore goes in `utilityFacets/<chain>/<protocol>/`, for example `utilityFacets/arbitrumOne/uniswapV3/`. Put it under the chain it targets; the same protocol on two chains gets a folder under each.
 
-This naming convention ensures clarity and allows isolating tests via Foundry’s `--match-contract` flag.
+Each facet folder holds the files it actually needs, not a fixed set:
+
+- `<Name>Facet.sol` – the external facet contract. Always present.
+- `<Name>Base.sol` – abstract contract with the internal logic. Always present.
+- `<Name>Storage.sol` – the storage library. Only if the facet keeps state. A stateless facet (most swap integrations) has none.
+- `I<Name>.sol` – the external interface. Utility facets define their own; base facets usually implement a standard that already lives in `src/interfaces/` (for example `IERC173` for ownership).
+
+Tests mirror the `src` path under `test/`, with a subfolder per test kind:
+
+```
+test/garden/facets/baseFacets/ownership/unit/OwnershipFacet.t.sol
+```
+
+`unit/` is the one every facet has. `fuzz/` and `invariant/` exist where that facet warrants them. One test contract per facet, named `<Facet>Test`, in `<Facet>.t.sol`, which keeps `forge test --match-contract OwnershipFacetTest` useful.
 
 ## Facet Contract Layout
 Within each facet folder, we follow a strict contract layout:
 
-- `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Declare a `bytes32 constant STORAGE_SLOT = keccak256("blokc.<facet>.storage")`, a struct Layout with all facet state variables, and a function (often named layout()) that returns a pointer to that storage slot using inline assembly. For example:
+- `<FacetName>Storage.sol`: Implements the Diamond Storage pattern. Derive the slot through `LibStorageSlot.deriveStorageSlot(type(YourStorage).name)`, never by hardcoding a string or inlining the hash formula. Declare a `STORAGE_LAYOUT_VERSION`, and make `_storageLayoutVersion` the **first field** of the struct: upgrades validate it, so a layout with it anywhere else is wrong. For example:
 
 ```js
 library TransferStorage {
-    bytes32 internal constant STORAGE_SLOT = keccak256("blokc.transfer.storage");
+    uint256 internal constant STORAGE_LAYOUT_VERSION = 1;
 
     struct Layout {
-        // Add required variables
+        /// @notice Storage layout version — MUST be first field. Validated during upgrades.
+        uint256 _storageLayoutVersion;
+        // Add required variables after it, append-only
         uint256 lastTransferBlock;
     }
 
+    /// @dev Storage slot is derived from keccak256(bytes(type(TransferStorage).name))
     function layout() internal pure returns (Layout storage l) {
-        bytes32 slot = STORAGE_SLOT;
+        bytes32 position = LibStorageSlot.deriveStorageSlot(type(TransferStorage).name);
         assembly {
-            l.slot := slot
+            l.slot := position
         }
     }
 }
 ```
-This isolates the facet’s state so that each facet “can be understood as its own unit”.
+
+This isolates the facet's state so that each facet can be understood as its own unit. Two consequences worth knowing before you pick a name: the library name **is** the storage key, so it can never be renamed once deployed, and new struct fields may only be appended. See [Security Considerations](/en/builders/security-considerations) for what enforces this.
 
 - `<FacetName>Base.sol`: An abstract contract defining internal functions and logic. This contract imports the storage library and any required interfaces, and implements internal (or internal view) functions. It may also read/write storage via Layout `storage s = <FacetName>Storage.layout()`. For example, a Transfer facet’s base might have:
 ```js
@@ -2187,97 +2241,48 @@ interface ITransferBase {
 }
 ```
 ## Testing Facets
-We test facets by deploying them into a Diamond using the provided Foundry test framework. The key conventions are:
-- **Helper Contract** (`<FacetName>Helper`): Write a helper that creates the facet, and returns its address, selectors array, initializer function, and supported interface IDs. This is used by tests to assemble the Diamond configuration. For example, a TransferFacetHelper might implement facet() (return the facet address) and selectors() (array of function selectors to add).
+
+Facet tests deploy a real Garden through the test harness and then call the facet through the Garden address, which is the only way the facet is ever reached in production. The harness lives in `test/base/`:
+
+- `BaseTest.sol` – shared setup and common test actors.
+- `DiamondTestBase.sol` – what most facet tests extend. Gives you helpers to register a garden type and deploy a Garden.
+- `DexFacetTestBase.sol` – for swap integrations, which need pool and router fixtures on top of the above.
+
+### The shape of a facet test
+
+Extend the right base, deploy a Garden in `setUp()`, then exercise the facet through an interface cast on the Garden address:
+
 ```js
-contract TransferFacetHelper is FacetHelper {
-    TransferFacet public transferFacet;
-
-    constructor() {
-        transferFacet = new TransferFacet();
-    }
-
-    function facet() public view override returns (address) {
-        return address(transferFacet);
-    }
-
-    function selectors() public view override returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4 ;
-        selectors_[0] = transferFacet.transferEth.selector;
-        selectors_[1] = transferFacet.erc20Transfer.selector;
-        selectors_[2] = transferFacet.erc20TransferFrom.selector;
-    }
-
-    function initializer() public view override returns (bytes4) {
-        return bytes4(0); // No initializer for TransferFacet
-    }
-
-    function supportedInterfaces() public pure override returns (bytes4[] memory interfaces) {
-        interfaces = new bytes4 ;
-        interfaces[0] = type(ITransfer).interfaceId;
-    }
-
-    function creationCode() public pure override returns (bytes memory) {
-        return type(TransferFacet).creationCode;
-    }
-}
-```
-- **Abstract Test** (`<FacetName>FacetTest`): Write an abstract test contract extending the base `FacetTest`. In `setUp()`, deploy the helper; override `diamondInitParams()` to return a `Diamond.InitParams` struct that includes adding your facet (via `helper.makeFacetCut(...)`) and any init calls. This attaches the facet’s interface to the Diamond. For example, see how a Uniswap facet is tested:
-```js
-abstract contract TransferFacetTest is FacetTest, ITransfer {
-    TransferFacetHelper public transferFacetHelper;
-
-    function setUp() public virtual override {
-        super.setUp();
-        transferFacetHelper = new TransferFacetHelper();
-    }
-
-    function diamondInitParams() public override returns (Diamond.InitParams memory) {
-        FacetCut ;
-        baseFacets[0] = transferFacetHelper.makeFacetCut(FacetCutAction.Add);
-
-        MultiInit ;
-        diamondInitData[0] = transferFacetHelper.makeInitData("");
-
-        return Diamond.InitParams({
-            baseFacets: baseFacets,
-            init: address(0),
-            initData: ""
-        });
-    }
-}
-```
-
-- **Unit Tests**: For each external function in the facet, create a separate test contract named `<FacetName>_<MethodName>.t.sol` (following Foundry’s naming convention) inside the behavior/ folder. In these, use the Diamond’s address to call the facet functions via the interface (`ITransfer(address(diamond))`). Tests should call `I<FacetName>` functions and check state or revert reasons. By reusing `I<FacetName>Base` types, you can also assert on custom errors or events. Naming one contract per method allows running specific tests with -`-match-contract`.
-```js
-contract TransferFacet_Behavior is TransferFacetTest {
-    MockERC20 token;
-    address user = address(0x123);
-    address recipient = address(0x456);
+contract OwnershipFacetTest is DiamondTestBase {
+    address public garden;
 
     function setUp() public override {
         super.setUp();
-        token = new MockERC20();
-        token.setBalance(address(this), 100 ether);
-        token.setAllowance(address(this), address(this), 100 ether);
+        _addGardenTypeEmpty(GARDEN_TYPE_1);
+        garden = _deployGarden(GARDEN_TYPE_1, gardenOwner);
     }
 
-    function test_Transfer_Success() public {
-        uint256 amount = 1 ether;
-        vm.expectEmit(address(this));
-        emit ITransfer.TransferExecuted(address(token), address(this), recipient, amount);
-        transferFacetHelper.facet().call(
-            abi.encodeWithSelector(
-                ITransfer.erc20Transfer.selector,
-                address(token),
-                recipient,
-                amount
-            )
-        );
-        assertEq(token.balanceOf(recipient), amount);
+    function test_owner_returnsGardenOwner() public view {
+        assertEq(IERC173(garden).owner(), gardenOwner);
+    }
+
+    function test_transferOwnership_updatesOwner() public {
+        vm.prank(gardenOwner);
+        IERC173(garden).transferOwnership(alice);
+        assertEq(IERC173(garden).owner(), alice);
     }
 }
 ```
+
+Note the cast: `IERC173(garden)`, not the facet contract directly. Calling the facet's own address would run its code against the facet's own storage rather than the Garden's, which is not how it behaves in production and will give you misleading results.
+
+### Naming and placement
+
+One test contract per facet, named `<Facet>Test`, in `<Facet>.t.sol`, under the mirrored `src` path plus `unit/`. Group tests inside the contract by the function under test rather than splitting them across files. Add `fuzz/` or `invariant/` siblings only when the facet has properties worth testing that way.
+
+### Before you open a PR
+
+`forge test` also runs three storage guards inherited by every suite. They catch two libraries sharing a name, and they fail if a storage library recorded in `storage-registry.json` has disappeared from the codebase. If one of those fails after you add a facet, the storage library name you chose collides with an existing one, so pick another rather than working around the guard.
 
 
 ---
@@ -2288,9 +2293,9 @@ Section: Builders
 
 This section is for anyone writing code against BLOK Capital, whether that's a new facet, an integration, or an audit.
 
-Start with [Quickstart](/en/builders/quickstart) to get the contracts building and testing locally. [Protocol Architecture V1](/en/builders/blok-capital-v1) covers how the pieces fit together, and [Blok-C-V1-Core](/en/builders/blok-c-v1-core) has the per-facet reference if you need to see exactly how something is implemented. For the deepest architectural detail, including a suggested reading order through the repository, see the [Smart Contracts](/en/smart-contracts) section.
+Start with [Quickstart](/en/builders/quickstart) to get the contracts building and testing locally. [Protocol Architecture V1](/en/builders/blok-capital-v1) covers how the pieces fit together, and the [per-facet reference](/en/builders/blok-c-v1-core/garden/facets/facet) shows exactly how something is implemented. For the deepest architectural detail, including a suggested reading order through the repository, see the [Smart Contracts](/en/smart-contracts) section.
 
-Before you write anything that touches funds, read [Security Considerations](/en/builders/security-considerations). If you're adding a new facet, follow the [Guides](/en/builders/Guides) for folder structure, naming, and style. [DAO Governance](/en/builders/dao-governance) covers how protocol changes get proposed and approved.
+The [Batched Rebalancer](/en/builders/rebalancer) covers how many Gardens get rebalanced together in one transaction. Before you write anything that touches funds, read [Security Considerations](/en/builders/security-considerations). If you're adding a new facet, follow the [facet creation guide](/en/builders/Guides/Facets) for folder structure, naming, and style. [DAO Governance](/en/builders/dao-governance/blokc-proposal) covers how protocol changes get proposed and approved.
 
 
 ---
@@ -2336,7 +2341,7 @@ Facets live under `src/garden/facets/`: the base facets (ownership, cut, upgrade
 forge test --match-contract OwnershipFacetTest
 ```
 
-See the [Guide: Creating a New Diamond Facet](/en/builders/Guides/Facets) for the facet folder and file layout convention before you add anything new. Note the guide's test-folder convention is out of date, current tests are organized into `unit/`, `fuzz/`, and `invariant/` subfolders per facet, not the flat layout the guide describes.
+See the [Guide: Creating a New Diamond Facet](/en/builders/Guides/Facets) for the folder, file and test layout conventions before you add anything new.
 
 Before touching anything with its own storage library, note that `forge test` already runs three storage safety guards on every test suite: they catch slot collisions and stop you from accidentally renaming a storage library that's already deployed. If one of those fails, don't override it, see [Security Considerations](/en/builders/security-considerations) for why it exists.
 
@@ -2353,6 +2358,96 @@ forge test --fork-url <rpc-url-for-that-chain>
 - [Protocol Architecture V1](/en/builders/blok-capital-v1) for how the pieces fit together.
 - [Smart Contracts](/en/smart-contracts) for the full reference: entry point, facet registry, storage layout, and a suggested reading order through the repo.
 - [Security Considerations](/en/builders/security-considerations) before you write or review anything that touches funds.
+
+
+---
+
+# The Batched Rebalancer
+Source: https://docs.blokcapital.io/en/builders/rebalancer
+Section: Builders
+
+Rebalancing a Garden one at a time works, but it scales badly: a thousand Gardens tracking the same Index means a thousand separate sets of swaps, each paying its own gas and its own slippage. The Rebalancer contract exists to do the whole group together instead.
+
+## What it does
+
+Every Garden connected to the same Index type (BLOKC2, BLOKC5, and so on) gets rebalanced together, in batches, in a single transaction per batch.
+
+- The DAO sets **how many Gardens go in one batch**, per index type.
+- A large group is processed across **several calls**, with a cursor remembering the position.
+- Within a batch, tokens are pulled from every Garden, **swapped once as a combined pot**, then returned pro-rata.
+- The **24 hour cooldown gates the start of a round**, not each batch inside it.
+
+## Setting the batch size
+
+Batch size is DAO-controlled and set per index type:
+
+```solidity
+function setMaxGardensPerBatch(bytes32 indexTypeId, uint256 batchSize) external onlyOwner
+```
+
+BLOKC2 and BLOKC10 can carry different batch sizes. The value cannot be zero, and if it was never set for an index type, `cumulativeRebalance` reverts with `Rebalancer_BatchSizeNotSet` rather than silently doing nothing.
+
+Choosing the number is a gas trade-off. Larger batches amortize the swap cost across more Gardens, but every batch has to fit in one block's gas limit, so there is a ceiling in practice.
+
+## How a rebalance round works
+
+A round is one full pass over every Garden of an index type. The contract tracks progress in `gardenCursor[indexTypeId]`.
+
+Each call to `cumulativeRebalance(indexTypeId, deadline)` handles up to `batchSize` Gardens starting from the cursor, then either:
+
+- **More Gardens remain**: the cursor advances and `BatchRebalanceCompleted` is emitted. Someone has to call again to continue.
+- **That was the last batch**: the cursor resets to zero, `lastRebalanceTimestamp` is recorded, and `CumulativeRebalanceCompleted` is emitted.
+
+So 500 Gardens with a batch size of 50 takes ten calls to complete one round.
+
+**The cooldown applies per round, not per batch**
+
+
+The 24 hour interval is only checked when the cursor is at zero, which is to say
+only when a new round begins. Once a round is underway, the remaining batches
+can be submitted back to back with no waiting. The next round is what has to
+wait a day.
+
+
+## The pooled swap model
+
+This is where the saving comes from, and it explains why Index-connected Gardens grant the Rebalancer an allowance.
+
+1. **Prices are cached once.** Every oracle price the rebalance needs is read up front and reused for the rest of the transaction, so the before and after valuations are compared against the same snapshot. A Chainlink round landing mid-transaction would otherwise make the value-loss check compare inconsistent numbers, and could either mask a real loss or trigger a false revert.
+2. **Tokens are pulled in.** Each Garden's component balances move into the Rebalancer, and the contract records what each one contributed.
+3. **Swaps run on the combined pot.** One set of trades for the whole batch, not one per Garden.
+4. **Tokens are redistributed.** Each Garden receives its share back in proportion to what it put in.
+
+The contribution accounting in steps 2 and 4 is what keeps this fair: a Garden holding 2% of the batch's value gets 2% of the rebalanced result.
+
+## How Gardens are found
+
+An index type can have more than one Index contract registered against it. When collecting a batch, the Rebalancer walks every registered Index, pulling Gardens through paginated `getConnectedGardens(offset, limit)` calls, and handles the awkward cases:
+
+- **Duplicates are skipped.** A Garden connected to two Indices of the same type is only processed once per batch.
+- **Removals mid-round are survivable.** If Gardens were removed and the cursor now points past the end, it resets and starts a fresh round rather than reverting.
+- **Short batches are trimmed.** If there are fewer Gardens left than the batch size, the batch shrinks to fit.
+
+## Guards on the call
+
+`cumulativeRebalance` is permissionless, so it is written on the assumption that the caller may be hostile:
+
+- **Deadline bounds.** The deadline must be in the future, and no more than one hour ahead. A caller cannot submit a transaction with an open-ended deadline and let it sit in the mempool.
+- **Reentrancy lock.** Held across the whole pull, swap and redistribute sequence.
+- **Zero-value check.** A batch whose total value is zero reverts instead of proceeding.
+
+These sit alongside the per-rebalance guardrails described in [Security Considerations](/en/builders/security-considerations): the 0.5% maximum value loss, the 2% per-asset tolerance, and the intent cooldown.
+
+## Events worth watching
+
+If you are monitoring rebalances, these are the signals:
+
+| Event | Meaning |
+| ----- | ------- |
+| `CumulativeRebalanceStarted` | A new round began, with the total Garden count and starting value |
+| `BatchRebalanceCompleted` | One batch finished, more remain in this round |
+| `CumulativeRebalanceCompleted` | The round finished, with the timestamp the next one becomes available |
+| `MaxGardensPerBatchSet` | The DAO changed the batch size for an index type |
 
 
 ---
@@ -2395,8 +2490,23 @@ If your work touches the Index rebalancing path, know that it already assumes ho
 - **Flash-loan protection**: the intent and the actual rebalance must land in different blocks, so no single-transaction manipulation can bracket both.
 - **Value-loss guardrail**: a rebalance reverts if total portfolio value drops more than 0.5% versus before the swaps.
 - **Per-asset tolerance**: post-swap balances have to land within 2% of their target allocation.
+- **Rebalance cooldown**: at least 24 hours between executions. Combined with the 0.5% loss cap, this bounds how much value repeated triggering could drain.
+- **Intent cooldown**: a new intent can't be created within 11 minutes of the last one. Intents expire after 10, so the longer window means a live intent can never be overwritten before it expires, which would otherwise let someone grief or front-run an in-flight rebalance.
 
-Don't loosen any of these thresholds without understanding why they're there. They exist to bound what an off-chain relayer, or a compromised one, can do to a Garden's holdings. A separate Rebalancer contract, not the Garden itself, is what triggers this across every Garden of a given Index type at once, and it's permissionless once a cooldown has passed, so treat "anyone can call this" as the default assumption, not an edge case.
+Don't loosen any of these thresholds without understanding why they're there. They exist to bound what whoever supplies the swap steps, including a compromised caller, can do to a Garden's holdings. A separate Rebalancer contract, not the Garden itself, is what triggers this across every Garden of a given Index type at once, and it's permissionless once the cooldown has passed, so treat "anyone can call this" as the default assumption, not an edge case.
+
+## Always pass an explicit swap deadline
+
+`SwapInstruction` carries a `deadline`, and it has a trap in it. Passing `0` does not mean "no deadline" in the safe sense: each facet substitutes `block.timestamp + 30 minutes`, which is by definition still in the future for the transaction currently executing. So a `0` deadline gives you no meaningful protection at all.
+
+If you want a deadline to actually do something, pass a real one. This matters most for anything that can sit in the mempool before landing, where a stale transaction executing later at a worse price is the exact risk a deadline is supposed to cover.
+
+## Index Gardens carry a standing unlimited allowance
+
+The Rebalancer moves tokens by pulling them out of Gardens, which means an Index-connected Garden has granted it an unlimited allowance on each component token (set by the owner through the Approve facet). Two things follow from that:
+
+- The Rebalancer contract is inside the trust boundary for any Index-connected Garden's component tokens. When reviewing changes to it, review them as changes to something that can move user funds, because it can.
+- If you add a new component token to an Index, the allowance for it has to be granted too. The approval is per token, not blanket, so a token nobody approved will simply fail to rebalance rather than silently skipping.
 
 ## The protocol-wide kill switch
 
@@ -2408,7 +2518,7 @@ Facets are organized per chain (`arbitrumOne`, `avalanche`, `ethereum` today), a
 
 ## Where to go for detail
 
-This page is the checklist. For how each of these is actually implemented, see the individual facet references under [Blok-C-V1-Core](/en/builders/blok-c-v1-core), and the architecture-level explanation in [Smart Contracts](/en/smart-contracts).
+This page is the checklist. For how each of these is actually implemented, see the individual facet references under [Blok-C-V1-Core](/en/builders/blok-c-v1-core/garden/facets/facet), and the architecture-level explanation in [Smart Contracts](/en/smart-contracts).
 
 
 ---
@@ -2907,7 +3017,7 @@ Source: https://docs.blokcapital.io/en/resources/create-video
 Section: Resources
 
 Whether you're a developer, designer, or community member, your input helps make our docs more helpful and inclusive for everyone.
-This guide walks you through the basic setup and knowledge you’ll need to start contributing to the BLOKC documentation hosted on [GitHub](https://github.com/BLOKCapital/documentation).
+This guide walks you through the basic setup and knowledge you’ll need to start contributing to the BLOKC documentation hosted on [GitHub](https://github.com/BLOKCapital/docs).
 
 ## Prerequisites
 Before you begin, ensure you have the following tools installed on your local system:
@@ -2917,7 +3027,7 @@ Used to clone the repository and manage version control.
 [Install Git](https://git-scm.com/downloads)
 
 2. **Node.js and npm**
-Required to run Docusaurus locally.
+Required to run the Next.js documentation site locally.
 [Install Node.js (LTS version)](https://nodejs.org/en)
 
 3. **VS Code or any text editor**
@@ -2925,7 +3035,7 @@ Makes editing Markdown files and navigating the project easier.
 [Download VS Code](https://code.visualstudio.com/download)
 
 4. **Basic understanding of Markdown**
-Our documentation is written in .md and .mdx files.
+Our documentation is written in .mdx files.
 
 ## Contribution workflow
 To contribute to the BLOKC documentation, follow the steps below to set up your local environment and understand the structure of the documentation repository.
@@ -2938,17 +3048,17 @@ To contribute to the BLOKC documentation, follow the steps below to set up your 
    Navigate to the official BLOKC documentation repository on GitHub.
 
 2. **Fork the Repository**
-   Click **"Fork"** button, GitHub will create a copy of the repo in your account. (e.g., https://github.com/your-username/documentation).
+   Click **"Fork"** button, GitHub will create a copy of the repo in your account. (e.g., https://github.com/your-username/docs).
 
 2. **Clone the Repository**  
    Use the following command to clone the project to your local machine:  
    ```bash
-   git clone https://github.com/your-username/documentation
+   git clone https://github.com/your-username/docs
    ```
 
 3. **Navigate to the Project Directory**  
    ```bash
-   cd documentation
+   cd docs
    ```
 
 4. **Install Dependencies**  
@@ -2960,7 +3070,7 @@ To contribute to the BLOKC documentation, follow the steps below to set up your 
 5. **Run the Documentation Locally**  
    Launch the local development server with:  
    ```bash
-   npm start
+   npm run dev
    ```
 
 ---
@@ -2969,9 +3079,9 @@ To contribute to the BLOKC documentation, follow the steps below to set up your 
 
 Before contributing, it’s helpful to understand how the documentation is organized:
 
-- Each **folder** in the `/docs` directory represents a major section of the documentation.
+- Each **folder** under `content/<locale>/` represents a major section of the documentation, one folder per language (`en`, `es`, `fr`).
 - Each **file** within those folders is a subsection or content page.
-- All files are written in **Markdown** (`.md`) format.
+- All files are written in **MDX** (`.mdx`) format.
 
 ---
 
@@ -2995,19 +3105,19 @@ You can contribute to the documentation in the following ways:
 #### 1. Updating an Existing Section or Subsection
 
 - Identify the section or file you want to update.
-- Open the corresponding `.md` file.
+- Open the corresponding `.mdx` file.
 - Make your edits directly: additions, deletions, or corrections as needed.
 
 #### 2. Adding a New Subsection
 
 - Locate the relevant section folder.
-- Create a new file with a `.md` extension (e.g., `new-subsection.md`).
+- Create a new file with an `.mdx` extension (e.g., `new-subsection.mdx`).
 - Add your content in Markdown format.
 
 #### 3. Adding a New Section
 
-- Create a new folder under the `/docs` directory with an appropriate name.
-- Inside that folder, create a new `.md` file for your content.
+- Create a new folder under `content/<locale>/` with an appropriate name.
+- Inside that folder, create a new `.mdx` file for your content.
 - Your new section and its content will now be recognized by the documentation system.
 
 ---
@@ -3044,20 +3154,22 @@ Once your updates are complete, follow these steps to push your changes and open
 Prefer a visual guide? Watch this quick video where we walk you through the entire contribution process, from cloning the repository to submitting your first pull request.
 
 
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/CMHOX2Wq31g"
-  title="YouTube video player"
-  frameBorder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowFullScreen
-></iframe>
+<div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9' }}>
+  <iframe
+    src="https://www.youtube.com/embed/CMHOX2Wq31g"
+    title="YouTube video player"
+    loading="lazy"
+    frameBorder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+  ></iframe>
+</div>
 
 
 
 ## Resources
-- [Docusaurus Docs](https://docusaurus.io/docs) – Learn how Docusaurus works, from configuration to writing custom plugins.
+- [Next.js Docs](https://nextjs.org/docs) – How the framework this site is built on works.
 
 - [Markdown Guide](https://www.markdownguide.org/cheat-sheet/) – A quick overview of Markdown syntax.
 
@@ -3463,31 +3575,93 @@ Our Developer Relations Engineer [Rohit Purkait](https://x.com/codeswithroh) put
 Source: https://docs.blokcapital.io/en/resources/smart-contract-address
 Section: Resources
 
-**Not yet deployed**
+BLOK Capital V1 is deployed on **Arbitrum One** (chain ID `42161`). Every address below links to its Arbiscan page so you can inspect the contract yourself.
+
+**Pending final verification**
 
 
-BLOK Capital V1 has not been deployed to mainnet, so there are no addresses to
-verify yet. This page will list every deployed contract with its network,
-address and block explorer link as soon as deployment completes.
+This list is being cross-checked against the deployment records. Until that
+finishes, verify any address you intend to transact with against the
+[public audits repository](https://github.com/BLOKCapital/audits) as well, and
+treat a mismatch between the two as a reason to stop and ask.
 
 
-## Where addresses will be published
+## Token
 
-When V1 ships, each contract will be listed here with:
+The $BLOKC token was deployed before the V1 protocol contracts and is live independently of them.
 
-- the **network** and chain ID it is deployed on;
-- the **verified address**, linked to the block explorer;
-- the **facet or module** it implements, cross-referenced to its page in
-  [Smart Contracts](/en/smart-contracts);
-- the **audit report** covering it, from [Security Overview](/en/resources/audits-and-security/audits).
+| Contract | Address |
+| -------- | ------- |
+| **BLOKC (ERC-20)** | [`0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0`](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
 
-## Verifying an address in the meantime
+See [The Token](/en/resources/Tokenomics/the-token) for supply and standard details.
 
-Treat any address circulating before that as unverified. BLOK Capital will only
-ever publish addresses in two places: this page and the
-[public audits repository](https://github.com/BLOKCapital/audits). Anything
-posted elsewhere, including in chat channels or direct messages, should be
-assumed hostile until you have matched it against one of those two sources.
+## Core protocol
+
+The registries and the factory. These are the contracts everything else is governed by.
+
+| Contract | Address |
+| -------- | ------- |
+| **FacetRegistry** | [`0x2b661a5c6b21fe2c824582e91f06b8c816076e33`](https://arbiscan.io/address/0x2b661a5c6b21fe2c824582e91f06b8c816076e33) |
+| **ProtocolStatus** | [`0x4aa3d2eaa8acc8087912d6827fd88395e059ba1b`](https://arbiscan.io/address/0x4aa3d2eaa8acc8087912d6827fd88395e059ba1b) |
+| **GardenFactory** | [`0xD93FD02a41dc150f54FdC8c68c34eb42348b3854`](https://arbiscan.io/address/0xD93FD02a41dc150f54FdC8c68c34eb42348b3854) |
+| **LiquidityPoolRegistry** | [`0xF0F7B0a68B777539Ff7d416eEAC56E0FB3e8B30C`](https://arbiscan.io/address/0xF0F7B0a68B777539Ff7d416eEAC56E0FB3e8B30C) |
+
+The LiquidityPoolRegistry address is additionally checked into the source itself, as a compile-time constant in `ArbitrumOneAddresses.sol`, and the deploy scripts assert against it so a deployment with a stale value aborts rather than shipping quietly. You can verify that one against the repository, not just against this page.
+
+## Base facets
+
+The four facets every Garden ships with. They are permanently protected: governance can add or retire feature facets, but it can never swap these out. See [How Gardens Upgrade](/en/builders/blok-capital-v1) for why that matters.
+
+| Facet | Address |
+| ----- | ------- |
+| **DiamondCutFacet** | [`0xeede3a0fef9c8d5c0ce7b4ca8b7bad50fce98328`](https://arbiscan.io/address/0xeede3a0fef9c8d5c0ce7b4ca8b7bad50fce98328) |
+| **DiamondLoupeFacet** | [`0x5db7a2c3a41f3dc4bcd5ef6348ab8bee11bc0631`](https://arbiscan.io/address/0x5db7a2c3a41f3dc4bcd5ef6348ab8bee11bc0631) |
+| **OwnershipFacet** | [`0x13432bfbb0fd0b1cf6ae04e26cf2f27b3b61e7b9`](https://arbiscan.io/address/0x13432bfbb0fd0b1cf6ae04e26cf2f27b3b61e7b9) |
+| **UpgradeFacet** | [`0x52fda8a1d601374463626052382f3044049fe7d3`](https://arbiscan.io/address/0x52fda8a1d601374463626052382f3044049fe7d3) |
+
+## Index layer
+
+The factory, the governance registries that constrain what an Index may hold, and the calculation and supply contracts that feed its weights.
+
+| Contract | Address |
+| -------- | ------- |
+| **IndexFactory** | [`0x140e23c5521ba0c4f9eed52942acb86ce8c93b3e`](https://arbiscan.io/address/0x140e23c5521ba0c4f9eed52942acb86ce8c93b3e) |
+| **IndexComponentRegistry** | [`0x16bcfb42d60c2579639c621b3977f9e160a4b85d`](https://arbiscan.io/address/0x16bcfb42d60c2579639c621b3977f9e160a4b85d) |
+| **IndexCalculationRegistry** | [`0x5b68cb266998b735f75f6353e5580eed9b4ca35a`](https://arbiscan.io/address/0x5b68cb266998b735f75f6353e5580eed9b4ca35a) |
+| **MarketCapWeighted** | [`0x07f6977bd64a8cf061723635313181a26f152432`](https://arbiscan.io/address/0x07f6977bd64a8cf061723635313181a26f152432) |
+| **HardcodedCirculatingSupply** | [`0x4978880152d086626c0a5c70d5e15708ce1bd3fd`](https://arbiscan.io/address/0x4978880152d086626c0a5c70d5e15708ce1bd3fd) |
+
+## Index products
+
+The deployed indices. Each one is an `Index` instance from the factory above, holding a different component set.
+
+| Index | Address |
+| ----- | ------- |
+| **BLOKC2** | [`0xAC50333f462D3b6e16a8f5DF891D03ad92100775`](https://arbiscan.io/address/0xAC50333f462D3b6e16a8f5DF891D03ad92100775) |
+| **BLOKC5** | [`0xFe8F6C9fE6f0F055f61A2AbCeAc5575B2Ed8323F`](https://arbiscan.io/address/0xFe8F6C9fE6f0F055f61A2AbCeAc5575B2Ed8323F) |
+| **BLOKC10** | [`0xf8b32bec7c0e77472a100c626c81f6209e31dd44`](https://arbiscan.io/address/0xf8b32bec7c0e77472a100c626c81f6209e31dd44) |
+
+## Rebalancing
+
+| Contract | Address |
+| -------- | ------- |
+| **Rebalancer** | [`0x4c0917e65bc851ce86f6a448f653604378e89b19`](https://arbiscan.io/address/0x4c0917e65bc851ce86f6a448f653604378e89b19) |
+
+Note that `cumulativeRebalance` is permissionless once its cooldown has passed, so anyone can trigger a rebalance for a given Index type. See [Security Considerations](/en/builders/security-considerations) before you build against it.
+
+## Gardens don't have a fixed address
+
+A Garden isn't listed here because there isn't one address to list. Gardens are deployed per user by the GardenFactory at a deterministic address (CREATE2), up to 10 per user, and ownership of each one is an ERC-721 token. To find a specific Garden, query the factory rather than looking for it on this page.
+
+## Verifying an address
+
+BLOK Capital only publishes addresses in two places: this page and the [public audits repository](https://github.com/BLOKCapital/audits). Anything posted elsewhere, including in chat channels or direct messages, should be assumed hostile until you have matched it against one of those two sources.
+
+Two checks worth doing yourself before you transact:
+
+- Open the Arbiscan link and confirm the contract has code and matches the name above.
+- For a facet, call `facets()` on the Garden you care about (via DiamondLoupeFacet) and confirm the facet address the Garden actually routes to is the one listed here. A facet being deployed doesn't mean a given Garden uses it.
 
 ## Follow the deployment
 
@@ -3528,7 +3702,8 @@ Section: Resources
 | **Blockchain**   | Arbitrum                                                                           |
 | **Symbol**       | BLOKC                                                                              |
 | **Standard**     | ERC-20                                                                             |
-| **Contract**     | [Arbscan.io](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
+| **Contract**     | `0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0` |
+| **Explorer**     | [View on Arbiscan](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
 
 
 ---

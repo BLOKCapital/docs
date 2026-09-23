@@ -1,32 +1,94 @@
 ---
 title: Smart Contract Addresses
-description: 'Deployed BLOK Capital contract addresses. Mainnet deployment is in progress; verified addresses will be published here and in the audits repository.'
+description: 'Deployed BLOK Capital V1 contract addresses on Arbitrum One, covering the core registries, base facets, index layer and rebalancer.'
 position: 4
 ---
 
-<Admonition kind="info" title="Not yet deployed">
-BLOK Capital V1 has not been deployed to mainnet, so there are no addresses to
-verify yet. This page will list every deployed contract with its network,
-address and block explorer link as soon as deployment completes.
+BLOK Capital V1 is deployed on **Arbitrum One** (chain ID `42161`). Every address below links to its Arbiscan page so you can inspect the contract yourself.
+
+<Admonition kind="warning" title="Pending final verification">
+This list is being cross-checked against the deployment records. Until that
+finishes, verify any address you intend to transact with against the
+[public audits repository](https://github.com/BLOKCapital/audits) as well, and
+treat a mismatch between the two as a reason to stop and ask.
 </Admonition>
 
-## Where addresses will be published
+## Token
 
-When V1 ships, each contract will be listed here with:
+The $BLOKC token was deployed before the V1 protocol contracts and is live independently of them.
 
-- the **network** and chain ID it is deployed on;
-- the **verified address**, linked to the block explorer;
-- the **facet or module** it implements, cross-referenced to its page in
-  [Smart Contracts](/en/smart-contracts);
-- the **audit report** covering it, from [Security Overview](/en/resources/audits-and-security/audits).
+| Contract | Address |
+| -------- | ------- |
+| **BLOKC (ERC-20)** | [`0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0`](https://arbiscan.io/token/0xbc4d9d3dfe6ab1d36ede90050ce96fcb937469f0) |
 
-## Verifying an address in the meantime
+See [The Token](/en/resources/Tokenomics/the-token) for supply and standard details.
 
-Treat any address circulating before that as unverified. BLOK Capital will only
-ever publish addresses in two places: this page and the
-[public audits repository](https://github.com/BLOKCapital/audits). Anything
-posted elsewhere, including in chat channels or direct messages, should be
-assumed hostile until you have matched it against one of those two sources.
+## Core protocol
+
+The registries and the factory. These are the contracts everything else is governed by.
+
+| Contract | Address |
+| -------- | ------- |
+| **FacetRegistry** | [`0x2b661a5c6b21fe2c824582e91f06b8c816076e33`](https://arbiscan.io/address/0x2b661a5c6b21fe2c824582e91f06b8c816076e33) |
+| **ProtocolStatus** | [`0x4aa3d2eaa8acc8087912d6827fd88395e059ba1b`](https://arbiscan.io/address/0x4aa3d2eaa8acc8087912d6827fd88395e059ba1b) |
+| **GardenFactory** | [`0xD93FD02a41dc150f54FdC8c68c34eb42348b3854`](https://arbiscan.io/address/0xD93FD02a41dc150f54FdC8c68c34eb42348b3854) |
+| **LiquidityPoolRegistry** | [`0xF0F7B0a68B777539Ff7d416eEAC56E0FB3e8B30C`](https://arbiscan.io/address/0xF0F7B0a68B777539Ff7d416eEAC56E0FB3e8B30C) |
+
+The LiquidityPoolRegistry address is additionally checked into the source itself, as a compile-time constant in `ArbitrumOneAddresses.sol`, and the deploy scripts assert against it so a deployment with a stale value aborts rather than shipping quietly. You can verify that one against the repository, not just against this page.
+
+## Base facets
+
+The four facets every Garden ships with. They are permanently protected: governance can add or retire feature facets, but it can never swap these out. See [How Gardens Upgrade](/en/builders/blok-capital-v1) for why that matters.
+
+| Facet | Address |
+| ----- | ------- |
+| **DiamondCutFacet** | [`0xeede3a0fef9c8d5c0ce7b4ca8b7bad50fce98328`](https://arbiscan.io/address/0xeede3a0fef9c8d5c0ce7b4ca8b7bad50fce98328) |
+| **DiamondLoupeFacet** | [`0x5db7a2c3a41f3dc4bcd5ef6348ab8bee11bc0631`](https://arbiscan.io/address/0x5db7a2c3a41f3dc4bcd5ef6348ab8bee11bc0631) |
+| **OwnershipFacet** | [`0x13432bfbb0fd0b1cf6ae04e26cf2f27b3b61e7b9`](https://arbiscan.io/address/0x13432bfbb0fd0b1cf6ae04e26cf2f27b3b61e7b9) |
+| **UpgradeFacet** | [`0x52fda8a1d601374463626052382f3044049fe7d3`](https://arbiscan.io/address/0x52fda8a1d601374463626052382f3044049fe7d3) |
+
+## Index layer
+
+The factory, the governance registries that constrain what an Index may hold, and the calculation and supply contracts that feed its weights.
+
+| Contract | Address |
+| -------- | ------- |
+| **IndexFactory** | [`0x140e23c5521ba0c4f9eed52942acb86ce8c93b3e`](https://arbiscan.io/address/0x140e23c5521ba0c4f9eed52942acb86ce8c93b3e) |
+| **IndexComponentRegistry** | [`0x16bcfb42d60c2579639c621b3977f9e160a4b85d`](https://arbiscan.io/address/0x16bcfb42d60c2579639c621b3977f9e160a4b85d) |
+| **IndexCalculationRegistry** | [`0x5b68cb266998b735f75f6353e5580eed9b4ca35a`](https://arbiscan.io/address/0x5b68cb266998b735f75f6353e5580eed9b4ca35a) |
+| **MarketCapWeighted** | [`0x07f6977bd64a8cf061723635313181a26f152432`](https://arbiscan.io/address/0x07f6977bd64a8cf061723635313181a26f152432) |
+| **HardcodedCirculatingSupply** | [`0x4978880152d086626c0a5c70d5e15708ce1bd3fd`](https://arbiscan.io/address/0x4978880152d086626c0a5c70d5e15708ce1bd3fd) |
+
+## Index products
+
+The deployed indices. Each one is an `Index` instance from the factory above, holding a different component set.
+
+| Index | Address |
+| ----- | ------- |
+| **BLOKC2** | [`0xAC50333f462D3b6e16a8f5DF891D03ad92100775`](https://arbiscan.io/address/0xAC50333f462D3b6e16a8f5DF891D03ad92100775) |
+| **BLOKC5** | [`0xFe8F6C9fE6f0F055f61A2AbCeAc5575B2Ed8323F`](https://arbiscan.io/address/0xFe8F6C9fE6f0F055f61A2AbCeAc5575B2Ed8323F) |
+| **BLOKC10** | [`0xf8b32bec7c0e77472a100c626c81f6209e31dd44`](https://arbiscan.io/address/0xf8b32bec7c0e77472a100c626c81f6209e31dd44) |
+
+## Rebalancing
+
+| Contract | Address |
+| -------- | ------- |
+| **Rebalancer** | [`0x4c0917e65bc851ce86f6a448f653604378e89b19`](https://arbiscan.io/address/0x4c0917e65bc851ce86f6a448f653604378e89b19) |
+
+Note that `cumulativeRebalance` is permissionless once its cooldown has passed, so anyone can trigger a rebalance for a given Index type. See [Security Considerations](/en/builders/security-considerations) before you build against it.
+
+## Gardens don't have a fixed address
+
+A Garden isn't listed here because there isn't one address to list. Gardens are deployed per user by the GardenFactory at a deterministic address (CREATE2), up to 10 per user, and ownership of each one is an ERC-721 token. To find a specific Garden, query the factory rather than looking for it on this page.
+
+## Verifying an address
+
+BLOK Capital only publishes addresses in two places: this page and the [public audits repository](https://github.com/BLOKCapital/audits). Anything posted elsewhere, including in chat channels or direct messages, should be assumed hostile until you have matched it against one of those two sources.
+
+Two checks worth doing yourself before you transact:
+
+- Open the Arbiscan link and confirm the contract has code and matches the name above.
+- For a facet, call `facets()` on the Garden you care about (via DiamondLoupeFacet) and confirm the facet address the Garden actually routes to is the one listed here. A facet being deployed doesn't mean a given Garden uses it.
 
 ## Follow the deployment
 

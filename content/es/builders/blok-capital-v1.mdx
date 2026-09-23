@@ -30,6 +30,14 @@ Los Jardines conectados a un Index se rebalancean en dos pasos. Primero, una int
 
 Un contrato Rebalancer independiente agrupa esto entre todos los Jardines que comparten un tipo de Index en una sola transacción atómica, en lugar de rebalancear cada Jardín individualmente. Es permissionless tras un período de enfriamiento, cualquiera puede activarlo, y descubre los pools enteramente a través del Liquidity Pool Registry, así que añadir soporte para un nuevo DEX no requiere cambiar el código del Rebalancer.
 
+### Los Jardines Otorgan una Allowance al Rebalancer
+
+Vale la pena entender esto antes de conectar un Jardín a un Index: el Rebalancer no le indica al Jardín que opere por su cuenta. **Extrae los tokens componentes del Jardín** hacia sí mismo, los intercambia y los devuelve.
+
+Para que eso funcione, el Jardín debe haber aprobado antes que el Rebalancer mueva sus tokens. Un Diamond no puede llamar a `approve` sobre sí mismo, así que el propietario del Jardín lo hace explícitamente mediante un facet de Approve, que otorga al Rebalancer una allowance ilimitada sobre cada token componente. El facet es solo para el propietario y usa `forceApprove`, así que puede reejecutarse con seguridad si el spender cambia o si una configuración previa quedó incompleta.
+
+La consecuencia práctica: un Jardín conectado a un Index tiene una aprobación permanente e ilimitada para el contrato Rebalancer sobre sus tokens componentes. Esa aprobación es lo que hace posible el rebalanceo por lotes, y es la razón por la que las protecciones del propio Rebalancer (un límite de pérdida de valor, un período de enfriamiento, enrutamiento basado en registros) importan tanto como importan.
+
 ### Subgráficos de BLOK Capital
 Aprovechamos los subgráficos del protocolo The Graph para consultar eventos on-chain, eliminando la necesidad de servicios de datos off-chain centralizados. Estos subgráficos impulsan nuestra interfaz de gobernanza al indexar eventos clave como propuestas y votos, y también se utilizan en nuestros contratos de registro. Al indexar la actividad on-chain, los subgráficos aseguran que todas las interacciones con el protocolo sean transparentes, verificables y fácilmente accesibles por la comunidad. Este enfoque es fundamental para mantener la confianza y la visibilidad en las operaciones y decisiones de gobernanza del protocolo.
 

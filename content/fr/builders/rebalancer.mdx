@@ -1,0 +1,86 @@
+---
+title: Le Rééquilibreur par Lots
+description: 'Comment le contrat Rebalancer rééquilibre plusieurs Jardins à la fois : taille des lots, tours de rééquilibrage, modèle de swap mutualisé et garde-fous associés.'
+position: 5
+---
+
+Rééquilibrer un Jardin à la fois fonctionne, mais passe mal à l'échelle : mille Jardins suivant le même Index, ce sont mille séries de swaps distinctes, chacune payant son propre gas et son propre slippage. Le contrat Rebalancer existe pour traiter tout le groupe d'un coup.
+
+## Ce qu'il fait
+
+Chaque Jardin connecté au même type d'Index (BLOKC2, BLOKC5, etc.) est rééquilibré avec les autres, par lots, en une seule transaction par lot.
+
+- La DAO définit **combien de Jardins entrent dans un lot**, par type d'Index.
+- Un grand groupe est traité en **plusieurs appels**, un curseur mémorisant la position.
+- Au sein d'un lot, les tokens sont extraits de chaque Jardin, **échangés une seule fois comme un pot commun**, puis rendus au prorata.
+- Le **délai de 24 heures encadre le début d'un tour**, pas chaque lot à l'intérieur.
+
+## Définir la taille des lots
+
+La taille des lots est contrôlée par la DAO et définie par type d'Index :
+
+```solidity
+function setMaxGardensPerBatch(bytes32 indexTypeId, uint256 batchSize) external onlyOwner
+```
+
+BLOKC2 et BLOKC10 peuvent avoir des tailles de lot différentes. La valeur ne peut pas être zéro, et si elle n'a jamais été définie pour un type d'Index, `cumulativeRebalance` échoue avec `Rebalancer_BatchSizeNotSet` au lieu de ne rien faire silencieusement.
+
+Choisir ce nombre est un arbitrage de gas. Des lots plus grands répartissent le coût des swaps sur davantage de Jardins, mais chaque lot doit tenir dans la limite de gas d'un bloc, il existe donc un plafond en pratique.
+
+## Comment se déroule un tour de rééquilibrage
+
+Un tour est un passage complet sur tous les Jardins d'un type d'Index. Le contrat suit la progression dans `gardenCursor[indexTypeId]`.
+
+Chaque appel à `cumulativeRebalance(indexTypeId, deadline)` traite jusqu'à `batchSize` Jardins à partir du curseur, puis :
+
+- **Il reste des Jardins** : le curseur avance et `BatchRebalanceCompleted` est émis. Quelqu'un doit rappeler pour continuer.
+- **C'était le dernier lot** : le curseur revient à zéro, `lastRebalanceTimestamp` est enregistré, et `CumulativeRebalanceCompleted` est émis.
+
+Ainsi, 500 Jardins avec une taille de lot de 50 demandent dix appels pour terminer un tour.
+
+<Admonition kind="info" title="Le délai s'applique par tour, pas par lot">
+L'intervalle de 24 heures n'est vérifié que lorsque le curseur est à zéro,
+c'est-à-dire seulement au démarrage d'un nouveau tour. Une fois le tour lancé,
+les lots restants peuvent être soumis les uns après les autres sans attente.
+C'est le tour suivant qui doit attendre une journée.
+</Admonition>
+
+## Le modèle de swap mutualisé
+
+C'est là que se trouve l'économie, et cela explique pourquoi les Jardins connectés à un Index accordent une allowance au Rebalancer.
+
+1. **Les prix sont mis en cache une fois.** Chaque prix d'oracle nécessaire au rééquilibrage est lu en amont et réutilisé pour le reste de la transaction, afin que les valorisations avant et après soient comparées à la même capture. Un round Chainlink arrivant en milieu de transaction ferait comparer des chiffres incohérents au contrôle de perte de valeur, ce qui pourrait masquer une perte réelle ou provoquer un échec injustifié.
+2. **Les tokens sont extraits.** Les soldes de composants de chaque Jardin passent dans le Rebalancer, et le contrat enregistre la contribution de chacun.
+3. **Les swaps s'exécutent sur le pot commun.** Une seule série de transactions pour tout le lot, pas une par Jardin.
+4. **Les tokens sont redistribués.** Chaque Jardin récupère sa part au prorata de ce qu'il a apporté.
+
+La comptabilisation des contributions aux étapes 2 et 4 est ce qui rend l'opération équitable : un Jardin représentant 2 % de la valeur du lot reçoit 2 % du résultat rééquilibré.
+
+## Comment les Jardins sont collectés
+
+Un type d'Index peut avoir plusieurs contrats Index enregistrés. Pour constituer un lot, le Rebalancer parcourt chaque Index enregistré, en récupérant les Jardins via des appels paginés à `getConnectedGardens(offset, limit)`, et gère les cas délicats :
+
+- **Les doublons sont ignorés.** Un Jardin connecté à deux Index du même type n'est traité qu'une fois par lot.
+- **Les suppressions en cours de tour sont absorbées.** Si des Jardins ont été retirés et que le curseur pointe désormais au-delà de la fin, il est réinitialisé et un nouveau tour démarre au lieu d'échouer.
+- **Les lots incomplets sont ajustés.** S'il reste moins de Jardins que la taille du lot, le lot est réduit en conséquence.
+
+## Garde-fous sur l'appel
+
+`cumulativeRebalance` est permissionless, il est donc écrit en supposant que l'appelant peut être hostile :
+
+- **Bornes du deadline.** Le deadline doit être dans le futur, et pas au-delà d'une heure. Un appelant ne peut pas soumettre une transaction au deadline ouvert et la laisser traîner dans le mempool.
+- **Verrou de réentrance.** Maintenu pendant toute la séquence extraction, swap et redistribution.
+- **Contrôle de valeur nulle.** Un lot dont la valeur totale est nulle échoue au lieu de poursuivre.
+
+Ces garde-fous s'ajoutent à ceux décrits dans les [Considérations de Sécurité](/fr/builders/security-considerations) : la perte de valeur maximale de 0,5 %, la tolérance de 2 % par actif, et le délai entre intentions.
+
+## Événements à surveiller
+
+Si vous surveillez les rééquilibrages, voici les signaux :
+
+| Événement | Signification |
+| --------- | ------------- |
+| `CumulativeRebalanceStarted` | Un nouveau tour a commencé, avec le nombre total de Jardins et la valeur de départ |
+| `BatchRebalanceCompleted` | Un lot est terminé, d'autres restent dans ce tour |
+| `CumulativeRebalanceCompleted` | Le tour est terminé, avec l'horodatage de disponibilité du suivant |
+| `MaxGardensPerBatchSet` | La DAO a modifié la taille des lots pour un type d'Index |

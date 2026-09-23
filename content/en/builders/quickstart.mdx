@@ -41,7 +41,7 @@ Facets live under `src/garden/facets/`: the base facets (ownership, cut, upgrade
 forge test --match-contract OwnershipFacetTest
 ```
 
-See the [Guide: Creating a New Diamond Facet](/en/builders/Guides/Facets) for the facet folder and file layout convention before you add anything new. Note the guide's test-folder convention is out of date, current tests are organized into `unit/`, `fuzz/`, and `invariant/` subfolders per facet, not the flat layout the guide describes.
+See the [Guide: Creating a New Diamond Facet](/en/builders/Guides/Facets) for the folder, file and test layout conventions before you add anything new.
 
 Before touching anything with its own storage library, note that `forge test` already runs three storage safety guards on every test suite: they catch slot collisions and stop you from accidentally renaming a storage library that's already deployed. If one of those fails, don't override it, see [Security Considerations](/en/builders/security-considerations) for why it exists.
 

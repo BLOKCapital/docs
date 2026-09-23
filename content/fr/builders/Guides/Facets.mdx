@@ -13,45 +13,59 @@ Ce guide décrit nos conventions pour ajouter un nouveau Facet, incluant la stru
 ---
 
 ## Structure des Dossiers
-Chaque nouveau Facet possède son propre sous-dossier dans `src/facets/`, contenant cinq fichiers Solidity, ainsi que des tests correspondants dans `test/facets/`.
 
-Par exemple, un Facet `Transfer` utilisera :
-- `src/facets/transfer/TransferFacet.sol` – le contrat Facet public.
-- `src/facets/transfer/TransferBase.sol` – un contrat abstrait avec la logique interne.
-- `src/facets/transfer/TransferStorage.sol` – une bibliothèque (ou contrat) définissant le layout de stockage.
-- `src/facets/transfer/ITransfer.sol` – l’interface pour les fonctions externes.
-- `src/facets/transfer/ITransferBase.sol` – l’interface pour les types internes (erreurs, structures, événements).
+Les facets vivent sous `src/garden/facets/`, regroupés selon leur nature :
 
-Les tests reflètent cette structure dans `test/facets/transfer/`. Créez :
+```
+src/garden/facets/
+├── baseFacets/<name>/                 # le noyau : ownership, cut, upgrade, loupe
+├── indexFacets/                       # connexion à l'Index et rééquilibrage
+└── utilityFacets/<chain>/<protocol>/  # intégrations DeFi, un dossier par chaîne
+```
 
-- `test/facets/transfer/transfer.sol` – un contrat de test abstrait (`TransferFacetTest`) qui initialise le Diamond avec ce Facet, et un helper (`TransferFacetHelper`) qui fournit l’adresse du Facet, ses sélecteurs, etc.
-- Un sous-dossier `behavior/` pour les tests unitaires (un contrat Solidity par méthode, nommé `<Facet>_<method>.t.sol`).
+Une nouvelle intégration DeFi va donc dans `utilityFacets/<chain>/<protocol>/`, par exemple `utilityFacets/arbitrumOne/uniswapV3/`. Placez-la sous la chaîne qu'elle cible ; le même protocole sur deux chaînes obtient un dossier sous chacune.
 
-Cette convention de nommage assure la clarté et permet d’isoler les tests avec l’option `--match-contract` de Foundry.
+Chaque dossier de facet contient les fichiers dont il a réellement besoin, pas un ensemble fixe :
 
----
+- `<Name>Facet.sol` – le contrat facet externe. Toujours présent.
+- `<Name>Base.sol` – contrat abstrait contenant la logique interne. Toujours présent.
+- `<Name>Storage.sol` – la librairie de stockage. Uniquement si le facet conserve un état. Un facet sans état (la plupart des intégrations de swap) n'en a pas.
+- `I<Name>.sol` – l'interface externe. Les facets utilitaires définissent la leur ; les facets de base implémentent généralement un standard qui vit déjà dans `src/interfaces/` (par exemple `IERC173` pour ownership).
 
+Les tests reflètent le chemin de `src` sous `test/`, avec un sous-dossier par type de test :
+
+```
+test/garden/facets/baseFacets/ownership/unit/OwnershipFacet.t.sol
+```
+
+`unit/` est celui que possède chaque facet. `fuzz/` et `invariant/` existent lorsque le facet le justifie. Un contrat de test par facet, nommé `<Facet>Test`, dans `<Facet>.t.sol`, ce qui garde `forge test --match-contract OwnershipFacetTest` utile.
 ## Organisation du Contrat Facet
 
 ### `<FacetName>Storage.sol`
-Implémente le Diamond Storage pattern. Déclare une constante `bytes32 STORAGE_SLOT`, une structure `Layout` avec les variables de stockage, et une fonction `layout()` pour y accéder via l’assembly :
+Implémente le Diamond Storage pattern. Dérivez l'emplacement via `LibStorageSlot.deriveStorageSlot(type(YourStorage).name)`, jamais en codant une chaîne en dur ni en inscrivant la formule de hash en ligne. Déclarez un `STORAGE_LAYOUT_VERSION` et faites de `_storageLayoutVersion` le **premier champ** de la structure : les mises à jour le valident, donc un layout qui le place ailleurs est incorrect.
 
 ```solidity
 library TransferStorage {
-    bytes32 internal constant STORAGE_SLOT = keccak256("blokc.transfer.storage");
+    uint256 internal constant STORAGE_LAYOUT_VERSION = 1;
 
     struct Layout {
+        /// @notice Storage layout version — MUST be first field. Validated during upgrades.
+        uint256 _storageLayoutVersion;
+        // Ajoutez les variables nécessaires après, uniquement par ajout
         uint256 lastTransferBlock;
     }
 
+    /// @dev Storage slot is derived from keccak256(bytes(type(TransferStorage).name))
     function layout() internal pure returns (Layout storage l) {
-        bytes32 slot = STORAGE_SLOT;
+        bytes32 position = LibStorageSlot.deriveStorageSlot(type(TransferStorage).name);
         assembly {
-            l.slot := slot
+            l.slot := position
         }
     }
 }
-````
+```
+
+Deux conséquences à connaître avant de choisir un nom : le nom de la librairie **est** la clé de stockage, il ne peut donc jamais être renommé une fois déployé, et les nouveaux champs de la structure ne peuvent qu'être ajoutés à la fin. Voir les [Considérations de Sécurité](/fr/builders/security-considerations) pour ce qui l'applique.
 
 ### `<FacetName>Base.sol`
 
@@ -132,97 +146,44 @@ interface ITransferBase {
 
 ## Tests des Facets
 
-On teste les Facets en les déployant dans un Diamond via Foundry.
+Les tests de facet déploient un vrai Jardin via le harness de test, puis appellent le facet à travers l'adresse du Jardin, qui est la seule façon dont le facet est atteint en production. Le harness vit dans `test/base/` :
 
-### **Helper Contract** (`<FacetName>Helper`)
+- `BaseTest.sol` – configuration partagée et acteurs de test communs.
+- `DiamondTestBase.sol` – ce que la plupart des tests de facet étendent. Fournit des helpers pour enregistrer un type de Jardin et déployer un Jardin.
+- `DexFacetTestBase.sol` – pour les intégrations de swap, qui ont besoin de fixtures de pools et de routers en plus de ce qui précède.
 
-Un helper qui crée le Facet et retourne son adresse, ses sélecteurs, l’initialiseur, et les interfaces supportées :
+### La forme d'un test de facet
 
-```solidity
-contract TransferFacetHelper is FacetHelper {
-    TransferFacet public transferFacet;
+Étendez la bonne base, déployez un Jardin dans `setUp()`, puis exercez le facet via un cast d'interface sur l'adresse du Jardin :
 
-    constructor() {
-        transferFacet = new TransferFacet();
-    }
-
-    function facet() public view override returns (address) {
-        return address(transferFacet);
-    }
-
-    function selectors() public view override returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4 ;
-        selectors_[0] = transferFacet.transferEth.selector;
-        selectors_[1] = transferFacet.erc20Transfer.selector;
-        selectors_[2] = transferFacet.erc20TransferFrom.selector;
-    }
-
-    function initializer() public view override returns (bytes4) {
-        return bytes4(0); // Pas d’initialiseur
-    }
-
-    function supportedInterfaces() public pure override returns (bytes4[] memory interfaces) {
-        interfaces = new bytes4 ;
-        interfaces[0] = type(ITransfer).interfaceId;
-    }
-
-    function creationCode() public pure override returns (bytes memory) {
-        return type(TransferFacet).creationCode;
-    }
-}
-```
-
-### **Test Abstrait** (`<FacetName>FacetTest`)
-
-Un contrat de test abstrait qui configure le Diamond avec ce Facet :
-
-```solidity
-abstract contract TransferFacetTest is FacetTest, ITransfer {
-    TransferFacetHelper public transferFacetHelper;
-
-    function setUp() public virtual override {
-        super.setUp();
-        transferFacetHelper = new TransferFacetHelper();
-    }
-
-    function diamondInitParams() public override returns (Diamond.InitParams memory) {
-        FacetCut ;
-        baseFacets[0] = transferFacetHelper.makeFacetCut(FacetCutAction.Add);
-
-        return Diamond.InitParams({
-            baseFacets: baseFacets,
-            init: address(0),
-            initData: ""
-        });
-    }
-}
-```
-
-### **Tests Unitaires**
-
-Créez un contrat de test par méthode externe, dans `behavior/`, nommé `<Facet>_<Method>.t.sol`. Exemple :
-
-```solidity
-contract TransferFacet_Behavior is TransferFacetTest {
-    MockERC20 token;
-    address user = address(0x123);
-    address recipient = address(0x456);
+```js
+contract OwnershipFacetTest is DiamondTestBase {
+    address public garden;
 
     function setUp() public override {
         super.setUp();
-        token = new MockERC20();
-        token.setBalance(address(this), 100 ether);
-        token.setAllowance(address(this), address(this), 100 ether);
+        _addGardenTypeEmpty(GARDEN_TYPE_1);
+        garden = _deployGarden(GARDEN_TYPE_1, gardenOwner);
     }
 
-    function test_Transfer_Success() public {
-        uint256 amount = 1 ether;
-        vm.expectEmit(address(this));
-        emit ITransfer.ERC20TransferExecuted(address(token), address(this), recipient, amount);
-        ITransfer(address(diamond)).erc20Transfer(address(token), recipient, amount);
-        assertEq(token.balanceOf(recipient), amount);
+    function test_owner_returnsGardenOwner() public view {
+        assertEq(IERC173(garden).owner(), gardenOwner);
+    }
+
+    function test_transferOwnership_updatesOwner() public {
+        vm.prank(gardenOwner);
+        IERC173(garden).transferOwnership(alice);
+        assertEq(IERC173(garden).owner(), alice);
     }
 }
 ```
 
----
+Notez le cast : `IERC173(garden)`, et non le contrat du facet directement. Appeler l'adresse propre du facet exécuterait son code contre le stockage du facet plutôt que celui du Jardin, ce qui n'est pas son comportement en production et vous donnera des résultats trompeurs.
+
+### Nommage et emplacement
+
+Un contrat de test par facet, nommé `<Facet>Test`, dans `<Facet>.t.sol`, sous le chemin miroir de `src` plus `unit/`. Regroupez les tests à l'intérieur du contrat par fonction testée plutôt que de les répartir entre plusieurs fichiers. N'ajoutez des voisins `fuzz/` ou `invariant/` que lorsque le facet possède des propriétés qui méritent d'être testées ainsi.
+
+### Avant d'ouvrir une PR
+
+`forge test` exécute aussi trois protections de stockage héritées par chaque suite. Elles détectent deux librairies partageant un nom, et échouent si une librairie de stockage enregistrée dans `storage-registry.json` a disparu du code. Si l'une d'elles échoue après l'ajout d'un facet, le nom de librairie de stockage que vous avez choisi entre en collision avec un nom existant : choisissez-en un autre plutôt que de contourner la protection.

@@ -38,8 +38,23 @@ If your work touches the Index rebalancing path, know that it already assumes ho
 - **Flash-loan protection**: the intent and the actual rebalance must land in different blocks, so no single-transaction manipulation can bracket both.
 - **Value-loss guardrail**: a rebalance reverts if total portfolio value drops more than 0.5% versus before the swaps.
 - **Per-asset tolerance**: post-swap balances have to land within 2% of their target allocation.
+- **Rebalance cooldown**: at least 24 hours between executions. Combined with the 0.5% loss cap, this bounds how much value repeated triggering could drain.
+- **Intent cooldown**: a new intent can't be created within 11 minutes of the last one. Intents expire after 10, so the longer window means a live intent can never be overwritten before it expires, which would otherwise let someone grief or front-run an in-flight rebalance.
 
-Don't loosen any of these thresholds without understanding why they're there. They exist to bound what an off-chain relayer, or a compromised one, can do to a Garden's holdings. A separate Rebalancer contract, not the Garden itself, is what triggers this across every Garden of a given Index type at once, and it's permissionless once a cooldown has passed, so treat "anyone can call this" as the default assumption, not an edge case.
+Don't loosen any of these thresholds without understanding why they're there. They exist to bound what whoever supplies the swap steps, including a compromised caller, can do to a Garden's holdings. A separate Rebalancer contract, not the Garden itself, is what triggers this across every Garden of a given Index type at once, and it's permissionless once the cooldown has passed, so treat "anyone can call this" as the default assumption, not an edge case.
+
+## Always pass an explicit swap deadline
+
+`SwapInstruction` carries a `deadline`, and it has a trap in it. Passing `0` does not mean "no deadline" in the safe sense: each facet substitutes `block.timestamp + 30 minutes`, which is by definition still in the future for the transaction currently executing. So a `0` deadline gives you no meaningful protection at all.
+
+If you want a deadline to actually do something, pass a real one. This matters most for anything that can sit in the mempool before landing, where a stale transaction executing later at a worse price is the exact risk a deadline is supposed to cover.
+
+## Index Gardens carry a standing unlimited allowance
+
+The Rebalancer moves tokens by pulling them out of Gardens, which means an Index-connected Garden has granted it an unlimited allowance on each component token (set by the owner through the Approve facet). Two things follow from that:
+
+- The Rebalancer contract is inside the trust boundary for any Index-connected Garden's component tokens. When reviewing changes to it, review them as changes to something that can move user funds, because it can.
+- If you add a new component token to an Index, the allowance for it has to be granted too. The approval is per token, not blanket, so a token nobody approved will simply fail to rebalance rather than silently skipping.
 
 ## The protocol-wide kill switch
 
@@ -51,4 +66,4 @@ Facets are organized per chain (`arbitrumOne`, `avalanche`, `ethereum` today), a
 
 ## Where to go for detail
 
-This page is the checklist. For how each of these is actually implemented, see the individual facet references under [Blok-C-V1-Core](/en/builders/blok-c-v1-core), and the architecture-level explanation in [Smart Contracts](/en/smart-contracts).
+This page is the checklist. For how each of these is actually implemented, see the individual facet references under [Blok-C-V1-Core](/en/builders/blok-c-v1-core/garden/facets/facet), and the architecture-level explanation in [Smart Contracts](/en/smart-contracts).

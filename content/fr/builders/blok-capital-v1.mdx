@@ -30,6 +30,14 @@ Les Jardins connectés à un Index se rééquilibrent en deux étapes. D'abord, 
 
 Un contrat Rebalancer distinct regroupe ceci pour tous les Jardins qui partagent un type d'Index en une seule transaction atomique, plutôt que de rééquilibrer chaque Jardin individuellement. Il est permissionless après un délai de récupération, n'importe qui peut le déclencher, et il découvre les pools entièrement via le Liquidity Pool Registry, donc ajouter le support d'un nouveau DEX ne nécessite pas de modifier le code du Rebalancer.
 
+### Les Jardins Accordent une Allowance au Rebalancer
+
+À comprendre avant de connecter un Jardin à un Index : le Rebalancer ne demande pas au Jardin de négocier pour son propre compte. Il **extrait les tokens composants du Jardin** vers lui-même, les échange, puis les rend.
+
+Pour que cela fonctionne, le Jardin doit avoir au préalable autorisé le Rebalancer à déplacer ses tokens. Un Diamond ne peut pas appeler `approve` sur lui-même, donc le propriétaire du Jardin le fait explicitement via un facet Approve, qui accorde au Rebalancer une allowance illimitée sur chaque token composant. Ce facet est réservé au propriétaire et utilise `forceApprove`, il peut donc être relancé sans risque si le spender change ou si une configuration précédente était incomplète.
+
+La conséquence pratique : un Jardin connecté à un Index dispose d'une approbation permanente et illimitée pour le contrat Rebalancer sur ses tokens composants. C'est cette approbation qui rend le rééquilibrage groupé possible, et c'est pourquoi les protections propres au Rebalancer (plafond de perte de valeur, délai de récupération, routage piloté par les registres) comptent autant.
+
 ### Sous-graphes BLOK Capital
 Nous utilisons les sous-graphes du protocole The Graph pour interroger les événements on-chain, éliminant ainsi le besoin de services de données off-chain centralisés. Ces sous-graphes alimentent notre interface de gouvernance en indexant les événements clés tels que les propositions et les votes, et sont également utilisés dans nos contrats de registre. En indexant l'activité on-chain, les sous-graphes garantissent que toutes les interactions avec le protocole sont transparentes, vérifiables et facilement accessibles par la communauté. Cette approche est essentielle pour maintenir la confiance et la visibilité sur les opérations et décisions de gouvernance du protocole.
 

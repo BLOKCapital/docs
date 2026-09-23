@@ -30,6 +30,14 @@ Gardens that are connected to an Index rebalance in two steps. First, an intent 
 
 A separate Rebalancer contract batches this across every Garden that shares an Index type into one atomic transaction, rather than rebalancing each Garden individually. It's permissionless after a cooldown, anyone can trigger it, and it discovers pools entirely through the Liquidity Pool Registry, so adding support for a new DEX doesn't require changing the Rebalancer's code.
 
+### Gardens Grant the Rebalancer an Allowance
+
+Worth understanding before you connect a Garden to an Index: the Rebalancer doesn't instruct your Garden to trade on its own behalf. It **pulls the component tokens out of the Garden** into itself, swaps them, and returns them.
+
+For that to work, the Garden has to have approved the Rebalancer to move its tokens first. A Diamond can't call `approve` on itself, so the Garden owner does it explicitly through an Approve facet, which grants the Rebalancer an unlimited allowance on each component token. The facet is owner-only, and it uses `forceApprove`, so it can safely be re-run if the spender ever changes or a previous setup was incomplete.
+
+The practical consequence: an Index-connected Garden has standing, unlimited approval for the Rebalancer contract on its component tokens. That approval is what makes batched rebalancing possible, and it's why the Rebalancer's own guardrails (a value-loss cap, a cooldown, registry-driven routing) matter as much as they do.
+
 ### BLOK Capital Subgraphs
 We leverage The Graph protocol’s subgraphs to query on-chain events, eliminating the need for centralized off-chain data services. These subgraphs power our governance interface by indexing key events such as proposals and votes, and are also used in our registry contracts. By indexing on-chain activity, subgraphs ensure that all protocol interactions are transparent, verifiable, and easily accessible by the community. This approach is critical to maintaining trust and visibility into protocol operations and governance decisions.
 

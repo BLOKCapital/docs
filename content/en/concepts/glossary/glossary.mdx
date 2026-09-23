@@ -40,8 +40,9 @@ position: 1
 | Index Calculation Strategy | Pluggable contract that computes asset weights (e.g., MarketCapWeighted). |
 | Rebalance | Process of adjusting Garden holdings to match target Index allocations. |
 | Rebalance Intent | A pending rebalance containing current values, target values, and weights for all components. |
-| Rebalance Interval | Minimum time (1 hour) between consecutive rebalances. |
-| Swap Call | Individual swap instruction from CRE containing selector, encoded data, output token, and minimum output. |
+| Rebalance Interval | Minimum time (24 hours) between consecutive rebalances. |
+| Intent Interval | Minimum time (11 minutes) between rebalance intent creations. Kept longer than the 10-minute intent expiry so a live intent cannot be overwritten. |
+| Swap Call | Individual swap instruction supplied by the caller, containing selector, encoded data, output token, minimum output and a deadline. |
 | Component Weights | Normalized allocation percentages for Index components (scaled to 1e18). |
 | Market Cap Weighted | Strategy that weights components proportionally to their market cap. |
 

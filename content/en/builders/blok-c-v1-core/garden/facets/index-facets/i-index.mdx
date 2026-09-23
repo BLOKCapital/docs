@@ -1,19 +1,21 @@
 ---
 title: IIndex.sol
-description: This interface defines the essential data structures passed between the off-chain Centralized Relayer Engine (CRE) and the on-chain protocol.
+description: This interface defines the essential data structures a caller passes in to rebalance a garden, and the pending intent the protocol checks them against.
 position: 2
 ---
 ## Core Concept: Swap Instructions & Intents
 
-To execute a rebalance, the CRE must provide an array of `SwapStep` instructions. The protocol compares the outcome of these steps against the locked `PendingIntent`.
+To execute a rebalance, the caller must provide an array of `SwapStep` instructions. The protocol compares the outcome of these steps against the locked `PendingIntent`.
+
+Both `rebalanceIntent()` and `rebalance()` are permissionless: anyone can call them once the cooldowns have passed. Earlier versions of these docs described this as the job of an off-chain relayer engine, and in practice an automated caller is what usually triggers it, but nothing in the interface privileges that caller over any other.
 
 ## Crucial Builder Snippet: The Execution Types
 
 ```solidity
-/// @notice A single swap step provided by the CRE to rebalance the garden.
+/// @notice A single swap step used to rebalance the garden.
 struct SwapStep {
     bytes32 dexId; // Resolved to a selector on-chain (e.g., keccak256("UNISWAP_V3"))
-    SwapInstruction instruction; // Contains tokens, pools, and amounts
+    SwapInstruction instruction; // Contains tokens, pools, amounts and a deadline
 }
 
 /// @notice Pending rebalance intent data (slimmed for gas efficiency)
@@ -24,3 +26,10 @@ struct PendingIntent {
     uint256[] targetValues; // Desired USD value per token
 }
 ```
+
+<Admonition kind="warning" title="Set the deadline explicitly">
+The nested `SwapInstruction` carries a `deadline`. Passing `0` is not a safe
+"no deadline": each facet substitutes `block.timestamp + 30 minutes`, which is
+always in the future for the executing transaction, so a `0` deadline provides
+no protection. Pass a real timestamp if you want one to apply.
+</Admonition>

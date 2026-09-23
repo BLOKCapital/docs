@@ -16,11 +16,13 @@ Los Builders deben entender estos umbrales codificados. Por ejemplo, una ruta de
 ```solidity
 // Rebalancing Parameters
 uint256 internal constant BALANCE_THRESHOLD_BPS = 200; // 2% tolerance per asset
-uint256 internal constant REBALANCE_INTERVAL = 1 hours; // Minimum cooldown
+uint256 internal constant REBALANCE_INTERVAL = 1 days; // Minimum cooldown
 uint256 internal constant MAX_VALUE_LOSS_BPS = 50;     // 0.5% max portfolio loss
 uint256 internal constant INTENT_EXPIRY = 10 minutes;
+uint256 internal constant INTENT_INTERVAL = 11 minutes; // Must exceed INTENT_EXPIRY
+uint256 internal constant STORAGE_LAYOUT_VERSION = 2;
 
-// Diamond Storage Layout
+// Diamond Storage Layout (v2)
 struct Layout {
     address indexAddress;
     uint256 lastRebalanceTimestamp;
@@ -28,5 +30,22 @@ struct Layout {
     bool rebalancing; // Custom reentrancy guard
     PendingIntent pendingIntent;
     uint256 lastIntentBlock; // Flash loan protection
+
+    // Añadidos en v2: configurados en la instalación, no constantes de compilación
+    address indexFactory;
+    address indexComponentRegistry;
+    address poolRegistry;
 }
 ```
+
+Dos detalles que vale la pena destacar.
+
+El **período de enfriamiento del rebalanceo es de un día completo**, no de una hora. Como cada ejecución puede perder como máximo un 0,5 % del valor de la cartera, un intervalo diario es lo que acota la extracción en el peor caso al activar repetidamente un rebalanceo permissionless.
+
+`INTENT_INTERVAL` **debe mantenerse estrictamente mayor que** `INTENT_EXPIRY`. Si ambos fueran iguales, una nueva intención podría sobrescribir una pendiente aún válida exactamente en el límite de expiración, lo que permitiría a alguien hacer griefing o front-running de un rebalanceo en curso.
+
+## Las direcciones de los registros pasaron al almacenamiento (v2)
+
+Las versiones anteriores codificaban las direcciones de IndexFactory, IndexComponentRegistry y LiquidityPoolRegistry como constantes de compilación en esta librería. Ahora viven en la disposición del almacenamiento, establecidas por quien despliega en el momento de la instalación.
+
+La razón es práctica: volver a desplegar un componente del protocolo ya no exige recompilar y volver a aplicar el cut a cada facet que lo referenciaba. Si estás leyendo un despliegue más antiguo, espera encontrar esas direcciones incrustadas en el bytecode en lugar de poder leerlas del almacenamiento.
