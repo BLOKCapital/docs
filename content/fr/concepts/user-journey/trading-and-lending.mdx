@@ -1,0 +1,58 @@
+---
+title: Trading et Prêt
+description: 'Échanger des tokens, alimenter et retirer du prêt, et retirer des USDC d''un Jardin.'
+position: 3
+---
+
+Ce sont les actions que vous effectuez dans un Jardin autogéré. Un Jardin connecté à un Index se rééquilibre de lui-même et restreint certaines de ces actions tant qu'il est connecté.
+
+## Échanger des tokens
+
+1. Ouvrez un Jardin et sélectionnez **Swap**.
+2. Choisissez le token à échanger et le token à recevoir, puis saisissez le montant.
+3. L'application vérifie votre solde disponible et demande une cotation.
+4. Le montant estimé que vous recevrez s'affiche.
+5. Vérifiez le taux de change et le slippage, et ajustez le slippage si nécessaire.
+6. Sélectionnez **Confirmer le Swap** et approuvez la transaction dans votre portefeuille.
+7. L'application soumet le swap et affiche son statut jusqu'à confirmation.
+8. Les soldes du Jardin se rafraîchissent et le swap terminé s'affiche.
+
+**Si aucune route n'est disponible.** Si l'application ne trouve pas de route ou de cotation valide, elle affiche une erreur. Changez les tokens ou le montant et demandez une nouvelle cotation.
+
+**Si le swap échoue.** Si la transaction échoue ou si vous la refusez, l'application affiche le statut d'échec et vous pouvez réessayer.
+
+## Alimenter le prêt
+
+1. Ouvrez un Jardin et sélectionnez **Prêt**. Les options disponibles sont listées.
+2. Sélectionnez un actif et saisissez le montant à fournir.
+3. L'application vérifie le solde du Jardin.
+4. Vérifiez les détails et sélectionnez **Fournir**.
+5. Approuvez la transaction dans votre portefeuille.
+6. L'application la soumet, affiche son statut, puis rafraîchit et affiche votre position.
+
+## Retirer du prêt
+
+1. Ouvrez un Jardin et sélectionnez **Prêt**. Vos positions actuelles sont listées.
+2. Sélectionnez une position, puis sélectionnez **Retirer**.
+3. Saisissez le montant du retrait. L'application le valide.
+4. Vérifiez les détails et confirmez.
+5. Approuvez la transaction dans votre portefeuille.
+6. L'application soumet le retrait, affiche son statut, puis rafraîchit à la fois le solde du Jardin et la position de prêt.
+
+## Retirer des USDC d'un Jardin
+
+1. Ouvrez un Jardin et sélectionnez **Retirer**.
+2. L'application vérifie d'abord si un retrait est possible depuis ce Jardin.
+3. Sélectionnez USDC, puis saisissez un montant ou choisissez un pourcentage.
+4. L'application valide le montant.
+5. Vérifiez les détails et confirmez.
+6. Approuvez la transaction dans votre portefeuille.
+7. L'application soumet le retrait et affiche son statut.
+8. Une fois confirmé, les USDC sont transférés vers votre portefeuille et le solde du Jardin se rafraîchit.
+
+<Admonition kind="info" title="Les retraits sont bloqués tant qu'un Index est connecté">
+Si le Jardin est connecté à un Index, l'application empêche le retrait et
+explique pourquoi. Déconnectez d'abord l'Index, ou choisissez une autre action.
+C'est imposé par les contrats, pas seulement par l'interface : on ne peut donc
+pas retirer les actifs sous les pieds d'un Jardin en pleine stratégie.
+</Admonition>

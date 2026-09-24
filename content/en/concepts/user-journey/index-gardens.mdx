@@ -1,0 +1,58 @@
+---
+title: Index Gardens
+description: 'Browsing available indexes, connecting a garden to one, rebalancing it, and disconnecting again.'
+position: 4
+---
+
+Connecting a garden to an Index hands the allocation decisions to the strategy. The garden then tracks the Index weights instead of you picking assets by hand.
+
+## Browsing available indexes
+
+1. Open the **Indexes** section. The available indexes load.
+2. Each one shows its components, its target asset weights, and information about the gardens connected to it.
+3. Select an index to see its detail.
+4. From there you can decide whether to connect it to a garden.
+
+## Connecting a garden to an index
+
+1. Open an index garden and select **Connect Index**.
+2. The available indexes are listed. Select one.
+3. The index components and target weights are displayed.
+4. Review them, then confirm the connection.
+5. Approve the transaction in your wallet.
+6. The application submits it and shows its status until confirmed.
+7. The connected index is shown, along with the garden's allocation and its drift from the targets.
+
+Drift is the gap between what the garden currently holds and what the Index says it should hold. It is what rebalancing closes.
+
+## Rebalancing
+
+1. Open an index-connected garden. The current allocation, the target allocation, and the current drift are shown.
+2. Select **Rebalance**.
+3. The application creates a rebalance intent, works out the required asset changes, and generates the swap steps.
+4. A preview is displayed.
+5. Review the swap steps and the expected resulting allocation.
+6. Confirm, then approve the transactions in your wallet.
+7. The application submits the rebalance and shows its status until confirmed.
+8. The garden allocation refreshes and the updated index balance is shown.
+
+**If the intent expires.** A rebalance intent is only valid for a short window. If it expires or becomes unavailable before execution, the application shows an error. Create a new intent and the application generates a fresh preview.
+
+<Admonition kind="info" title="Two different rebalancing paths">
+The flow above is the per-garden path, where you trigger your own rebalance and
+approve it. The protocol also runs a batched rebalancer that rebalances every
+garden tracking the same Index together, on a cooldown, without anyone needing
+to sign. See [The Batched Rebalancer](/en/builders/rebalancer) for how that
+works and why an index-connected garden grants it an allowance.
+</Admonition>
+
+## Disconnecting from an index
+
+1. Open an index-connected garden and select **Disconnect Index**.
+2. A confirmation message explains the consequences.
+3. Review them and confirm.
+4. Approve the transaction in your wallet.
+5. The application submits it and shows its status until confirmed.
+6. The index connection is removed and the garden details refresh.
+
+Once disconnected the garden stops tracking the Index and stops rebalancing, and the actions that were restricted while connected, such as withdrawing, become available again.

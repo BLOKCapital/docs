@@ -1,0 +1,58 @@
+---
+title: Trading y Préstamos
+description: 'Intercambiar tokens, suministrar y retirar de préstamos, y retirar USDC de un Jardín.'
+position: 3
+---
+
+Estas son las acciones que realizas dentro de un Jardín autogestionado. Un Jardín conectado a un Index se rebalancea por sí solo y restringe algunas de estas acciones mientras está conectado.
+
+## Intercambiar tokens
+
+1. Abre un Jardín y selecciona **Swap**.
+2. Elige el token a intercambiar y el token a recibir, e introduce el monto.
+3. La aplicación comprueba tu saldo disponible y solicita una cotización.
+4. Se muestra el monto estimado que recibirás.
+5. Revisa el tipo de cambio y el slippage, y ajusta el slippage si lo necesitas.
+6. Selecciona **Confirmar Swap** y aprueba la transacción en tu billetera.
+7. La aplicación envía el swap y muestra su estado hasta la confirmación.
+8. Los saldos del Jardín se actualizan y se muestra el swap completado.
+
+**Si no hay ruta disponible.** Si la aplicación no encuentra una ruta o cotización válida, muestra un error. Cambia los tokens o el monto y solicita una nueva cotización.
+
+**Si el swap falla.** Si la transacción falla o la rechazas, la aplicación muestra el estado de fallo y puedes intentarlo de nuevo.
+
+## Suministrar a préstamos
+
+1. Abre un Jardín y selecciona **Préstamos**. Se listan las opciones disponibles.
+2. Selecciona un activo e introduce el monto a suministrar.
+3. La aplicación comprueba el saldo del Jardín.
+4. Revisa los detalles y selecciona **Suministrar**.
+5. Aprueba la transacción en tu billetera.
+6. La aplicación la envía, muestra su estado y luego actualiza y muestra tu posición.
+
+## Retirar de préstamos
+
+1. Abre un Jardín y selecciona **Préstamos**. Se listan tus posiciones actuales.
+2. Selecciona una posición y luego selecciona **Retirar**.
+3. Introduce el monto del retiro. La aplicación lo valida.
+4. Revisa los detalles y confirma.
+5. Aprueba la transacción en tu billetera.
+6. La aplicación envía el retiro, muestra su estado y luego actualiza tanto el saldo del Jardín como la posición de préstamo.
+
+## Retirar USDC de un Jardín
+
+1. Abre un Jardín y selecciona **Retirar**.
+2. La aplicación comprueba primero si se puede retirar del Jardín.
+3. Selecciona USDC y luego introduce un monto o elige un porcentaje.
+4. La aplicación valida el monto.
+5. Revisa los detalles y confirma.
+6. Aprueba la transacción en tu billetera.
+7. La aplicación envía el retiro y muestra su estado.
+8. Una vez confirmado, el USDC se transfiere a tu billetera y el saldo del Jardín se actualiza.
+
+<Admonition kind="info" title="Los retiros están bloqueados mientras un Index esté conectado">
+Si el Jardín está conectado a un Index, la aplicación impide el retiro y explica
+por qué. Desconecta primero el Index, o elige otra acción. Esto lo imponen los
+contratos, no solo la interfaz, así que a un Jardín que está en medio de una
+estrategia no se le pueden sacar los activos por debajo.
+</Admonition>

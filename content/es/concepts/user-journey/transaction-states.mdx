@@ -1,0 +1,38 @@
+---
+title: Estados de Transacción
+description: 'La secuencia de estados que comparten todas las acciones on-chain de la aplicación, y qué significa cada estado.'
+position: 6
+---
+
+Casi todas las acciones de esta sección terminan en una transacción, y todas siguen la misma secuencia. En lugar de repetirla en cada página, aquí está una vez.
+
+## La secuencia
+
+1. Seleccionas una acción.
+2. La aplicación valida tu entrada.
+3. La aplicación te pide confirmar.
+4. Tu billetera muestra la solicitud de aprobación.
+5. La apruebas o la rechazas.
+6. La aplicación envía la transacción.
+7. La aplicación muestra un estado pendiente.
+8. La aplicación espera la confirmación de la blockchain.
+9. La aplicación muestra éxito o fallo.
+10. Los datos correspondientes se actualizan.
+
+## Los estados
+
+| Estado | Qué significa |
+| ------ | ------------- |
+| **Listo** | La entrada es válida y la acción puede enviarse. |
+| **Esperando confirmación** | La solicitud está en tu billetera, esperándote. |
+| **Rechazada** | Rechazaste la solicitud en tu billetera. No se envió nada. |
+| **Enviando** | La transacción se está enviando a la red. |
+| **Pendiente** | Enviada y esperando ser incluida en un bloque. |
+| **Exitosa** | Confirmada on-chain. La aplicación actualiza los datos afectados. |
+| **Fallida** | Enviada pero no tuvo éxito. |
+
+## Rechazada y fallida no son lo mismo
+
+**Rechazada** significa que nada llegó a la red, así que nada cambió y no pagaste gas. **Fallida** significa que la transacción se envió y luego revirtió, lo que sí cuesta gas aunque el cambio previsto no haya ocurrido.
+
+Esa distinción importa cuando algo va mal: un rechazo normalmente es solo un clic equivocado y es seguro reintentarlo de inmediato, mientras que un fallo significa que no se cumplió una condición, como superar un límite de slippage, un período de enfriamiento que no había pasado, o una allowance que no estaba establecida. Lee el motivo del fallo antes de reintentar, porque reintentar la misma transacción sin cambios normalmente fallará igual.

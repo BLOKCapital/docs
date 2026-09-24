@@ -1,0 +1,38 @@
+---
+title: Transaction States
+description: 'The status sequence shared by every on-chain action in the application, and what each state means.'
+position: 6
+---
+
+Almost every action in this section ends in a transaction, and they all follow the same sequence. Rather than repeat it on each page, here it is once.
+
+## The sequence
+
+1. You select an action.
+2. The application validates your input.
+3. The application asks you to confirm.
+4. Your wallet displays the approval request.
+5. You approve or reject it.
+6. The application submits the transaction.
+7. The application shows a pending status.
+8. The application waits for blockchain confirmation.
+9. The application shows success or failure.
+10. The relevant data refreshes.
+
+## The states
+
+| State | What it means |
+| ----- | ------------- |
+| **Ready** | Input is valid and the action can be submitted. |
+| **Awaiting confirmation** | The request is with your wallet, waiting for you. |
+| **Rejected** | You declined the request in your wallet. Nothing was submitted. |
+| **Submitting** | The transaction is being sent to the network. |
+| **Pending** | Submitted and waiting to be included in a block. |
+| **Successful** | Confirmed on chain. The application refreshes the affected data. |
+| **Failed** | Submitted but did not succeed. |
+
+## Rejected and failed are not the same
+
+**Rejected** means nothing reached the network, so nothing changed and you paid no gas. **Failed** means the transaction was submitted and then reverted, which does cost gas even though the intended change did not happen.
+
+That distinction matters when something goes wrong: a rejection is usually just a mis-click and safe to retry immediately, while a failure means a condition was not met, such as a slippage bound being exceeded, a cooldown not having passed, or an allowance not being in place. Read the failure reason before retrying, because retrying the same transaction unchanged will usually fail the same way.

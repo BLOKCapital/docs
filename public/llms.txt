@@ -16,7 +16,13 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 - [Proxy Contracts](https://docs.blokcapital.io/en/concepts/protocol-concepts/proxy-contracts.md): A proxy contract is a way to upgrade a smart contract system without changing the address users interact with.
 - [Rebalancer Network](https://docs.blokcapital.io/en/concepts/protocol-concepts/rebalancer-network.md): The Rebalancer is a single smart contract designed for highly efficient, gas-minimized index and yield management.
 - [Wealth Management](https://docs.blokcapital.io/en/concepts/protocol-concepts/wealth-management.md): Decentralized wealth management solves a long-standing problem in investing: getting structured portfolio management without giving up control of your assets.
+- [Creating and Funding Gardens](https://docs.blokcapital.io/en/concepts/user-journey/gardens.md): Creating a yield or index garden, what the garden details screen shows, and how to move assets in and out.
+- [Index Gardens](https://docs.blokcapital.io/en/concepts/user-journey/index-gardens.md): Browsing available indexes, connecting a garden to one, rebalancing it, and disconnecting again.
 - [User Journey](https://docs.blokcapital.io/en/concepts/user-journey.md): Sign in with Google. Create your smart wallet account (SWA). This is the account that will hold your assets and interact with the protocol.
+- [Performance, Governance and Settings](https://docs.blokcapital.io/en/concepts/user-journey/performance-and-governance.md): Reviewing portfolio performance, voting on proposals, and the account and legal sections.
+- [Signing In and the Dashboard](https://docs.blokcapital.io/en/concepts/user-journey/signing-in.md): How signing in works with Google or a wallet, what the dashboard loads, and how sessions end.
+- [Trading and Lending](https://docs.blokcapital.io/en/concepts/user-journey/trading-and-lending.md): Swapping tokens, supplying to and withdrawing from lending, and withdrawing USDC out of a garden.
+- [Transaction States](https://docs.blokcapital.io/en/concepts/user-journey/transaction-states.md): The status sequence shared by every on-chain action in the application, and what each state means.
 
 ## Smart Contracts
 

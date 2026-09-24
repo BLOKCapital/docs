@@ -1,0 +1,45 @@
+---
+title: Signing In and the Dashboard
+description: 'How signing in works with Google or a wallet, what the dashboard loads, and how sessions end.'
+position: 1
+---
+
+Signing in is what creates your smart wallet account, so it is the step everything else depends on. There are two ways in, and they converge on the same place.
+
+## Signing in with Google
+
+1. Open the application. The login screen appears.
+2. Select **Continue with Google**.
+3. The application opens the Google authentication flow.
+4. Select or enter your Google account.
+5. The application verifies the response and creates or restores your smart account.
+6. On a first login, the application registers you.
+7. The application creates your session and opens the dashboard.
+
+## Signing in with a wallet
+
+1. Open the application and select **Connect Wallet**.
+2. Choose a wallet from the list shown.
+3. Approve the connection request in your wallet.
+4. The application verifies the wallet session and creates or restores your smart account.
+5. The application opens the dashboard.
+
+## If signing in fails
+
+If authentication fails or you reject the request, the application shows an error and keeps you on the login screen. Close the message and try again, or switch to the other method.
+
+## The dashboard
+
+Once you are in, the dashboard loads in stages: your wallet balances, then your garden balances, then DeFi positions and recent activity. When it has everything it shows your total portfolio value alongside token balances and portfolio charts.
+
+To pull fresh data at any time, select **Refresh**. The application re-requests wallet and garden data and updates the balances in place.
+
+## Signing out
+
+1. Open the account menu and select **Logout**.
+2. The application clears your session, disconnects the wallet or authentication provider, and clears cached data.
+3. You are returned to the login screen.
+
+## Session expiry
+
+If you stay inactive past the configured period, the application detects it, shows a session-expiration message, and logs you out. Session and cached data are cleared and you are returned to the login screen, so nothing is left loaded on a machine you have walked away from.

@@ -1,0 +1,59 @@
+---
+title: Jardins d'Index
+description: 'Parcourir les index disponibles, connecter un Jardin à l''un d''eux, le rééquilibrer et le déconnecter.'
+position: 4
+---
+
+Connecter un Jardin à un Index confie les décisions d'allocation à la stratégie. Le Jardin suit alors les pondérations de l'Index au lieu que vous choisissiez les actifs à la main.
+
+## Parcourir les index disponibles
+
+1. Ouvrez la section **Index**. Les index disponibles se chargent.
+2. Chacun affiche ses composants, ses pondérations cibles par actif et des informations sur les Jardins qui y sont connectés.
+3. Sélectionnez un index pour voir son détail.
+4. À partir de là, vous pouvez décider de le connecter à un Jardin.
+
+## Connecter un Jardin à un index
+
+1. Ouvrez un Jardin d'Index et sélectionnez **Connecter l'Index**.
+2. Les index disponibles sont listés. Sélectionnez-en un.
+3. Les composants de l'index et leurs pondérations cibles s'affichent.
+4. Vérifiez-les, puis confirmez la connexion.
+5. Approuvez la transaction dans votre portefeuille.
+6. L'application la soumet et affiche son statut jusqu'à confirmation.
+7. L'index connecté s'affiche, ainsi que l'allocation du Jardin et son écart par rapport aux cibles.
+
+L'écart est la différence entre ce que le Jardin détient actuellement et ce que l'Index prévoit qu'il détienne. C'est ce que le rééquilibrage vient combler.
+
+## Rééquilibrer
+
+1. Ouvrez un Jardin connecté à un Index. L'allocation actuelle, l'allocation cible et l'écart actuel s'affichent.
+2. Sélectionnez **Rééquilibrer**.
+3. L'application crée une intention de rééquilibrage, calcule les changements d'actifs nécessaires et génère les étapes de swap.
+4. Un aperçu s'affiche.
+5. Vérifiez les étapes de swap et l'allocation attendue en résultat.
+6. Confirmez, puis approuvez les transactions dans votre portefeuille.
+7. L'application soumet le rééquilibrage et affiche son statut jusqu'à confirmation.
+8. L'allocation du Jardin se rafraîchit et le solde d'Index mis à jour s'affiche.
+
+**Si l'intention expire.** Une intention de rééquilibrage n'est valable que pendant une courte fenêtre. Si elle expire ou devient indisponible avant l'exécution, l'application affiche une erreur. Créez une nouvelle intention et l'application génère un nouvel aperçu.
+
+<Admonition kind="info" title="Deux chemins de rééquilibrage distincts">
+Le flux ci-dessus est le chemin par Jardin, où vous déclenchez votre propre
+rééquilibrage et l'approuvez. Le protocole exécute aussi un rééquilibreur par
+lots qui rééquilibre ensemble tous les Jardins suivant le même Index, avec un
+délai de récupération et sans que personne n'ait à signer. Voir
+[Le Rééquilibreur par Lots](/fr/builders/rebalancer) pour son fonctionnement et
+la raison pour laquelle un Jardin connecté à un Index lui accorde une allowance.
+</Admonition>
+
+## Déconnecter d'un index
+
+1. Ouvrez un Jardin connecté à un Index et sélectionnez **Déconnecter l'Index**.
+2. Un message de confirmation explique les conséquences.
+3. Vérifiez-les et confirmez.
+4. Approuvez la transaction dans votre portefeuille.
+5. L'application la soumet et affiche son statut jusqu'à confirmation.
+6. La connexion à l'index est supprimée et les détails du Jardin se rafraîchissent.
+
+Une fois déconnecté, le Jardin cesse de suivre l'Index et cesse de se rééquilibrer, et les actions qui étaient restreintes pendant la connexion, comme le retrait, redeviennent disponibles.

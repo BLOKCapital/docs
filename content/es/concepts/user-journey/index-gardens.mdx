@@ -1,0 +1,59 @@
+---
+title: Jardines de Index
+description: 'Explorar los índices disponibles, conectar un Jardín a uno, rebalancearlo y desconectarlo de nuevo.'
+position: 4
+---
+
+Conectar un Jardín a un Index delega las decisiones de asignación a la estrategia. El Jardín pasa entonces a seguir los pesos del Index en lugar de que tú elijas los activos a mano.
+
+## Explorar los índices disponibles
+
+1. Abre la sección **Índices**. Se cargan los índices disponibles.
+2. Cada uno muestra sus componentes, sus pesos objetivo por activo e información sobre los Jardines conectados a él.
+3. Selecciona un índice para ver su detalle.
+4. Desde ahí puedes decidir si conectarlo a un Jardín.
+
+## Conectar un Jardín a un índice
+
+1. Abre un Jardín de Index y selecciona **Conectar Index**.
+2. Se listan los índices disponibles. Selecciona uno.
+3. Se muestran los componentes del índice y sus pesos objetivo.
+4. Revísalos y confirma la conexión.
+5. Aprueba la transacción en tu billetera.
+6. La aplicación la envía y muestra su estado hasta la confirmación.
+7. Se muestra el índice conectado, junto con la asignación del Jardín y su desviación respecto a los objetivos.
+
+La desviación es la diferencia entre lo que el Jardín tiene ahora y lo que el Index dice que debería tener. Es lo que cierra el rebalanceo.
+
+## Rebalancear
+
+1. Abre un Jardín conectado a un Index. Se muestran la asignación actual, la asignación objetivo y la desviación actual.
+2. Selecciona **Rebalancear**.
+3. La aplicación crea una intención de rebalanceo, calcula los cambios de activos necesarios y genera los pasos de swap.
+4. Se muestra una previsualización.
+5. Revisa los pasos de swap y la asignación resultante esperada.
+6. Confirma y aprueba las transacciones en tu billetera.
+7. La aplicación envía el rebalanceo y muestra su estado hasta la confirmación.
+8. La asignación del Jardín se actualiza y se muestra el saldo actualizado del Index.
+
+**Si la intención expira.** Una intención de rebalanceo solo es válida durante una ventana corta. Si expira o deja de estar disponible antes de la ejecución, la aplicación muestra un error. Crea una nueva intención y la aplicación genera una previsualización nueva.
+
+<Admonition kind="info" title="Dos caminos de rebalanceo distintos">
+El flujo anterior es el camino por Jardín, donde tú activas tu propio rebalanceo
+y lo apruebas. El protocolo también ejecuta un rebalanceador por lotes que
+rebalancea a la vez todos los Jardines que siguen el mismo Index, con un período
+de enfriamiento y sin que nadie tenga que firmar. Consulta
+[El Rebalanceador por Lotes](/es/builders/rebalancer) para ver cómo funciona y
+por qué un Jardín conectado a un Index le otorga una allowance.
+</Admonition>
+
+## Desconectar de un índice
+
+1. Abre un Jardín conectado a un Index y selecciona **Desconectar Index**.
+2. Un mensaje de confirmación explica las consecuencias.
+3. Revísalas y confirma.
+4. Aprueba la transacción en tu billetera.
+5. La aplicación la envía y muestra su estado hasta la confirmación.
+6. Se elimina la conexión al índice y los detalles del Jardín se actualizan.
+
+Una vez desconectado, el Jardín deja de seguir el Index y deja de rebalancearse, y las acciones que estaban restringidas mientras estaba conectado, como retirar, vuelven a estar disponibles.

@@ -63,7 +63,7 @@ This approach:
 
 ## **What's Next**
 
-Ready to get started? Head over to our [User Journey](user-journey) to see how you can navigate and use BLOK Capital to its fullest potential.
+Ready to get started? Head over to our [User Journey](/en/concepts/user-journey) to see how you can navigate and use BLOK Capital to its fullest potential.
 
 
 ---
@@ -596,6 +596,134 @@ You connect your wallet and choose a garden type. Indexed Gardens follow predefi
 
 ---
 
+# Creating and Funding Gardens
+Source: https://docs.blokcapital.io/en/concepts/user-journey/gardens
+Section: Concepts
+
+A garden is your portfolio. You create one, fund it from your smart wallet, and then decide how it is managed. This page covers those first steps; how it is managed is covered in [Index Gardens](/en/concepts/user-journey/index-gardens) and [Trading and Lending](/en/concepts/user-journey/trading-and-lending).
+
+## Creating a yield garden
+
+1. Open the **Gardens** section. Your existing gardens are listed.
+2. Select **Create Garden**. The creation form appears.
+3. Select the yield garden type and enter the required information.
+4. Review the details, then select **Create Garden**.
+5. Approve the transaction in your wallet.
+6. The application submits the transaction and shows its status while it waits for confirmation.
+7. Once confirmed, the garden metadata is saved and the garden appears in your list.
+8. The application opens the new garden, ready for you to transfer assets in.
+
+**If creation fails.** If the transaction is rejected or fails, the application shows the reason and the garden is not added to your active list. Close the message and try again.
+
+## Creating an index garden
+
+The flow is the same shape, started from the **Index Gardens** section:
+
+1. Open **Index Gardens**. Existing index gardens are listed.
+2. Select **Create Garden** and confirm the index garden type.
+3. Enter the required information and review the details.
+4. Confirm, then approve the transaction in your wallet.
+5. The application submits the transaction and shows its status until confirmed.
+6. The garden metadata is saved and the new index garden appears.
+
+The difference is not the creation flow, it is what you can do afterwards: an index garden can be connected to an Index and rebalanced automatically.
+
+## The garden details screen
+
+Opening a garden loads its balance, holdings, transactions, and DeFi positions, then shows its performance. From there the available actions typically include:
+
+- Transfer assets in or out
+- Receive assets
+- Swap tokens
+- Supply to lending, or withdraw a lending position
+- Withdraw USDC
+- Connect an Index
+- View performance
+- Rename the garden, or copy its address
+
+## Transferring assets
+
+1. Open a garden and select **Transfer**.
+2. Choose the direction, the token, and the amount.
+3. The application validates the amount against your balance.
+4. Review the details and confirm.
+5. Approve the transaction in your wallet.
+6. The application submits the transfer, shows its status, then refreshes the garden balance.
+
+## Receiving assets
+
+1. From the dashboard or a garden, select **Receive**.
+2. The receiving address is displayed. Copy it, or use the QR code.
+3. Send assets to that address.
+4. Once the transaction confirms, the application detects the new balance and refreshes.
+
+Receiving does not require a transaction from you inside the application, so there is nothing to approve. The balance simply updates once the incoming transfer confirms on chain.
+
+
+---
+
+# Index Gardens
+Source: https://docs.blokcapital.io/en/concepts/user-journey/index-gardens
+Section: Concepts
+
+Connecting a garden to an Index hands the allocation decisions to the strategy. The garden then tracks the Index weights instead of you picking assets by hand.
+
+## Browsing available indexes
+
+1. Open the **Indexes** section. The available indexes load.
+2. Each one shows its components, its target asset weights, and information about the gardens connected to it.
+3. Select an index to see its detail.
+4. From there you can decide whether to connect it to a garden.
+
+## Connecting a garden to an index
+
+1. Open an index garden and select **Connect Index**.
+2. The available indexes are listed. Select one.
+3. The index components and target weights are displayed.
+4. Review them, then confirm the connection.
+5. Approve the transaction in your wallet.
+6. The application submits it and shows its status until confirmed.
+7. The connected index is shown, along with the garden's allocation and its drift from the targets.
+
+Drift is the gap between what the garden currently holds and what the Index says it should hold. It is what rebalancing closes.
+
+## Rebalancing
+
+1. Open an index-connected garden. The current allocation, the target allocation, and the current drift are shown.
+2. Select **Rebalance**.
+3. The application creates a rebalance intent, works out the required asset changes, and generates the swap steps.
+4. A preview is displayed.
+5. Review the swap steps and the expected resulting allocation.
+6. Confirm, then approve the transactions in your wallet.
+7. The application submits the rebalance and shows its status until confirmed.
+8. The garden allocation refreshes and the updated index balance is shown.
+
+**If the intent expires.** A rebalance intent is only valid for a short window. If it expires or becomes unavailable before execution, the application shows an error. Create a new intent and the application generates a fresh preview.
+
+**Two different rebalancing paths**
+
+
+The flow above is the per-garden path, where you trigger your own rebalance and
+approve it. The protocol also runs a batched rebalancer that rebalances every
+garden tracking the same Index together, on a cooldown, without anyone needing
+to sign. See [The Batched Rebalancer](/en/builders/rebalancer) for how that
+works and why an index-connected garden grants it an allowance.
+
+
+## Disconnecting from an index
+
+1. Open an index-connected garden and select **Disconnect Index**.
+2. A confirmation message explains the consequences.
+3. Review them and confirm.
+4. Approve the transaction in your wallet.
+5. The application submits it and shows its status until confirmed.
+6. The index connection is removed and the garden details refresh.
+
+Once disconnected the garden stops tracking the Index and stops rebalancing, and the actions that were restricted while connected, such as withdrawing, become available again.
+
+
+---
+
 # User Journey
 Source: https://docs.blokcapital.io/en/concepts/user-journey
 Section: Concepts
@@ -679,6 +807,214 @@ Important:
   - Swaps and fees
   - Risk and approvals
 - SWA analytics are also shown so you can track the health and activity of your smart wallet.
+
+---
+
+## Step-by-step flows
+
+The sections above describe the journey in order. The pages below break each part into the actual steps in the application, including what happens when something fails.
+
+- [Signing In and the Dashboard](/en/concepts/user-journey/signing-in) covers both login methods, what the dashboard loads, and how sessions end.
+- [Creating and Funding Gardens](/en/concepts/user-journey/gardens) covers creating a yield or index garden, the garden details screen, and moving assets in.
+- [Trading and Lending](/en/concepts/user-journey/trading-and-lending) covers swaps, lending, and withdrawing USDC.
+- [Index Gardens](/en/concepts/user-journey/index-gardens) covers browsing indexes, connecting, rebalancing, and disconnecting.
+- [Performance, Governance and Settings](/en/concepts/user-journey/performance-and-governance) covers performance charts, voting, and the account section.
+- [Transaction States](/en/concepts/user-journey/transaction-states) covers the status sequence every on-chain action shares.
+
+
+---
+
+# Performance, Governance and Settings
+Source: https://docs.blokcapital.io/en/concepts/user-journey/performance-and-governance
+Section: Concepts
+
+## Viewing portfolio performance
+
+1. Open the **Performance** section. Your gardens are listed.
+2. Select a garden, then select a time range.
+3. The application loads the historical data and displays portfolio value, asset allocation, profit and loss, and performance charts.
+4. Changing the garden or the time range reloads the data in place.
+
+## Voting on a proposal
+
+1. Open the **Governance** section. Active and completed proposals are listed.
+2. Filter or search, then select a proposal.
+3. The application shows the proposal details, the actions it proposes, and the current vote breakdown.
+4. The application checks whether you are eligible to vote.
+5. Select **Yes**, **No**, or **Abstain**, and review your selection.
+6. Confirm, then approve the transaction in your wallet.
+7. The application submits your vote and shows its status until confirmed.
+8. The proposal's vote count refreshes and the updated status is shown.
+
+Voting power comes from how much $BLOKC you hold. Note that contributor rewards still count while locked, so locked $BLOKC carries voting power from day one. See [Contributor Rewards](/en/resources/rewards-program) for how that works.
+
+### When you cannot vote
+
+The application checks the proposal status and your eligibility before letting you vote, and explains which of these applies:
+
+- The proposal is closed.
+- You have already voted on it.
+- You have no voting power.
+
+## Account settings
+
+1. Open **Settings**. The Account section is shown.
+2. Review your account information.
+3. Open the security or backup options.
+4. Complete the requested MFA or backup-factor step.
+5. The application verifies it and shows your updated account status.
+
+## About and legal
+
+Both live under **Settings**. The **About** tab shows application information. The **Legal** tab shows the available legal information.
+
+
+---
+
+# Signing In and the Dashboard
+Source: https://docs.blokcapital.io/en/concepts/user-journey/signing-in
+Section: Concepts
+
+Signing in is what creates your smart wallet account, so it is the step everything else depends on. There are two ways in, and they converge on the same place.
+
+## Signing in with Google
+
+1. Open the application. The login screen appears.
+2. Select **Continue with Google**.
+3. The application opens the Google authentication flow.
+4. Select or enter your Google account.
+5. The application verifies the response and creates or restores your smart account.
+6. On a first login, the application registers you.
+7. The application creates your session and opens the dashboard.
+
+## Signing in with a wallet
+
+1. Open the application and select **Connect Wallet**.
+2. Choose a wallet from the list shown.
+3. Approve the connection request in your wallet.
+4. The application verifies the wallet session and creates or restores your smart account.
+5. The application opens the dashboard.
+
+## If signing in fails
+
+If authentication fails or you reject the request, the application shows an error and keeps you on the login screen. Close the message and try again, or switch to the other method.
+
+## The dashboard
+
+Once you are in, the dashboard loads in stages: your wallet balances, then your garden balances, then DeFi positions and recent activity. When it has everything it shows your total portfolio value alongside token balances and portfolio charts.
+
+To pull fresh data at any time, select **Refresh**. The application re-requests wallet and garden data and updates the balances in place.
+
+## Signing out
+
+1. Open the account menu and select **Logout**.
+2. The application clears your session, disconnects the wallet or authentication provider, and clears cached data.
+3. You are returned to the login screen.
+
+## Session expiry
+
+If you stay inactive past the configured period, the application detects it, shows a session-expiration message, and logs you out. Session and cached data are cleared and you are returned to the login screen, so nothing is left loaded on a machine you have walked away from.
+
+
+---
+
+# Trading and Lending
+Source: https://docs.blokcapital.io/en/concepts/user-journey/trading-and-lending
+Section: Concepts
+
+These are the actions you take inside a self-managed garden. An index-connected garden rebalances itself instead, and restricts some of these while it is connected.
+
+## Swapping tokens
+
+1. Open a garden and select **Swap**.
+2. Choose the token to swap and the token to receive, then enter the amount.
+3. The application checks your available balance and requests a quote.
+4. The estimated amount you will receive is displayed.
+5. Review the exchange rate and slippage, and adjust the slippage if you need to.
+6. Select **Confirm Swap** and approve the transaction in your wallet.
+7. The application submits the swap and shows its status until confirmed.
+8. Garden balances refresh and the completed swap is shown.
+
+**If no route is available.** If the application cannot find a valid route or quote, it shows an error. Change the tokens or the amount and request a new quote.
+
+**If the swap fails.** If the transaction fails or you reject it, the application shows the failure status and you can try again.
+
+## Supplying to lending
+
+1. Open a garden and select **Lending**. The available options are listed.
+2. Select an asset and enter the amount to supply.
+3. The application checks the garden balance.
+4. Review the details and select **Supply**.
+5. Approve the transaction in your wallet.
+6. The application submits it, shows its status, then refreshes and displays your updated position.
+
+## Withdrawing from lending
+
+1. Open a garden and select **Lending**. Your current positions are listed.
+2. Select a position, then select **Withdraw**.
+3. Enter the withdrawal amount. The application validates it.
+4. Review the details and confirm.
+5. Approve the transaction in your wallet.
+6. The application submits the withdrawal, shows its status, then refreshes both the garden balance and the lending position.
+
+## Withdrawing USDC from a garden
+
+1. Open a garden and select **Withdraw**.
+2. The application first checks whether the garden can be withdrawn from.
+3. Select USDC, then enter an amount or pick a percentage.
+4. The application validates the amount.
+5. Review the details and confirm.
+6. Approve the transaction in your wallet.
+7. The application submits the withdrawal and shows its status.
+8. Once confirmed, the USDC is transferred to your wallet and the garden balance refreshes.
+
+**Withdrawals are blocked while an Index is connected**
+
+
+If the garden is connected to an Index, the application prevents the withdrawal
+and explains why. Disconnect the Index first, or choose a different action. This
+is enforced by the contracts, not just the interface, so a garden that is
+mid-strategy cannot have assets pulled out from under it.
+
+
+---
+
+# Transaction States
+Source: https://docs.blokcapital.io/en/concepts/user-journey/transaction-states
+Section: Concepts
+
+Almost every action in this section ends in a transaction, and they all follow the same sequence. Rather than repeat it on each page, here it is once.
+
+## The sequence
+
+1. You select an action.
+2. The application validates your input.
+3. The application asks you to confirm.
+4. Your wallet displays the approval request.
+5. You approve or reject it.
+6. The application submits the transaction.
+7. The application shows a pending status.
+8. The application waits for blockchain confirmation.
+9. The application shows success or failure.
+10. The relevant data refreshes.
+
+## The states
+
+| State | What it means |
+| ----- | ------------- |
+| **Ready** | Input is valid and the action can be submitted. |
+| **Awaiting confirmation** | The request is with your wallet, waiting for you. |
+| **Rejected** | You declined the request in your wallet. Nothing was submitted. |
+| **Submitting** | The transaction is being sent to the network. |
+| **Pending** | Submitted and waiting to be included in a block. |
+| **Successful** | Confirmed on chain. The application refreshes the affected data. |
+| **Failed** | Submitted but did not succeed. |
+
+## Rejected and failed are not the same
+
+**Rejected** means nothing reached the network, so nothing changed and you paid no gas. **Failed** means the transaction was submitted and then reverted, which does cost gas even though the intended change did not happen.
+
+That distinction matters when something goes wrong: a rejection is usually just a mis-click and safe to retry immediately, while a failure means a condition was not met, such as a slippage bound being exceeded, a cooldown not having passed, or an allowance not being in place. Read the failure reason before retrying, because retrying the same transaction unchanged will usually fail the same way.
 
 
 ---

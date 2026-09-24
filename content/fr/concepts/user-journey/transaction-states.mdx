@@ -1,0 +1,38 @@
+---
+title: États de Transaction
+description: 'La séquence de statuts partagée par toutes les actions on-chain de l''application, et ce que signifie chaque état.'
+position: 6
+---
+
+Presque toutes les actions de cette section se terminent par une transaction, et elles suivent toutes la même séquence. Plutôt que de la répéter sur chaque page, la voici une fois.
+
+## La séquence
+
+1. Vous sélectionnez une action.
+2. L'application valide votre saisie.
+3. L'application vous demande de confirmer.
+4. Votre portefeuille affiche la demande d'approbation.
+5. Vous l'approuvez ou la refusez.
+6. L'application soumet la transaction.
+7. L'application affiche un statut en attente.
+8. L'application attend la confirmation de la blockchain.
+9. L'application affiche un succès ou un échec.
+10. Les données concernées se rafraîchissent.
+
+## Les états
+
+| État | Ce que cela signifie |
+| ---- | -------------------- |
+| **Prêt** | La saisie est valide et l'action peut être soumise. |
+| **En attente de confirmation** | La demande est dans votre portefeuille et vous attend. |
+| **Refusée** | Vous avez refusé la demande dans votre portefeuille. Rien n'a été soumis. |
+| **Soumission** | La transaction est en cours d'envoi au réseau. |
+| **En attente** | Soumise et en attente d'inclusion dans un bloc. |
+| **Réussie** | Confirmée on-chain. L'application rafraîchit les données concernées. |
+| **Échouée** | Soumise mais sans succès. |
+
+## Refusée et échouée ne sont pas la même chose
+
+**Refusée** signifie que rien n'a atteint le réseau : rien n'a changé et vous n'avez pas payé de gas. **Échouée** signifie que la transaction a été soumise puis a échoué, ce qui coûte du gas même si le changement prévu n'a pas eu lieu.
+
+Cette distinction compte quand quelque chose ne va pas : un refus est généralement un simple clic malheureux, que l'on peut réessayer immédiatement sans risque, alors qu'un échec signifie qu'une condition n'était pas remplie, comme une limite de slippage dépassée, un délai de récupération non écoulé, ou une allowance absente. Lisez la raison de l'échec avant de réessayer, car réessayer la même transaction sans rien changer échouera généralement de la même façon.

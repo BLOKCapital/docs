@@ -1,0 +1,58 @@
+---
+title: Trading and Lending
+description: 'Swapping tokens, supplying to and withdrawing from lending, and withdrawing USDC out of a garden.'
+position: 3
+---
+
+These are the actions you take inside a self-managed garden. An index-connected garden rebalances itself instead, and restricts some of these while it is connected.
+
+## Swapping tokens
+
+1. Open a garden and select **Swap**.
+2. Choose the token to swap and the token to receive, then enter the amount.
+3. The application checks your available balance and requests a quote.
+4. The estimated amount you will receive is displayed.
+5. Review the exchange rate and slippage, and adjust the slippage if you need to.
+6. Select **Confirm Swap** and approve the transaction in your wallet.
+7. The application submits the swap and shows its status until confirmed.
+8. Garden balances refresh and the completed swap is shown.
+
+**If no route is available.** If the application cannot find a valid route or quote, it shows an error. Change the tokens or the amount and request a new quote.
+
+**If the swap fails.** If the transaction fails or you reject it, the application shows the failure status and you can try again.
+
+## Supplying to lending
+
+1. Open a garden and select **Lending**. The available options are listed.
+2. Select an asset and enter the amount to supply.
+3. The application checks the garden balance.
+4. Review the details and select **Supply**.
+5. Approve the transaction in your wallet.
+6. The application submits it, shows its status, then refreshes and displays your updated position.
+
+## Withdrawing from lending
+
+1. Open a garden and select **Lending**. Your current positions are listed.
+2. Select a position, then select **Withdraw**.
+3. Enter the withdrawal amount. The application validates it.
+4. Review the details and confirm.
+5. Approve the transaction in your wallet.
+6. The application submits the withdrawal, shows its status, then refreshes both the garden balance and the lending position.
+
+## Withdrawing USDC from a garden
+
+1. Open a garden and select **Withdraw**.
+2. The application first checks whether the garden can be withdrawn from.
+3. Select USDC, then enter an amount or pick a percentage.
+4. The application validates the amount.
+5. Review the details and confirm.
+6. Approve the transaction in your wallet.
+7. The application submits the withdrawal and shows its status.
+8. Once confirmed, the USDC is transferred to your wallet and the garden balance refreshes.
+
+<Admonition kind="info" title="Withdrawals are blocked while an Index is connected">
+If the garden is connected to an Index, the application prevents the withdrawal
+and explains why. Disconnect the Index first, or choose a different action. This
+is enforced by the contracts, not just the interface, so a garden that is
+mid-strategy cannot have assets pulled out from under it.
+</Admonition>
