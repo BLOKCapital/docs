@@ -48,8 +48,11 @@ export function Nav({
           </span>
         </Link>
 
-        {/* Section tabs */}
-        <nav aria-label="Sections" className="hidden flex-1 md:block">
+        {/* Section tabs. Held back to `lg` so they appear only once the
+            hamburger is gone: showing both at once overflowed the header
+            through the whole 768–1100px band. Below `lg` the scrolling row
+            at the foot of the header carries the sections instead. */}
+        <nav aria-label="Sections" className="hidden flex-1 lg:block">
           <ul className="flex items-center gap-1">
             {SECTIONS.map((s) => {
               const active = isActive(s.slug);
@@ -91,18 +94,36 @@ export function Nav({
             href={EXTERNAL.site}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden items-center gap-1 pl-1 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink lg:inline-flex"
+            className="hidden items-center gap-1 pl-1 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink xl:inline-flex"
           >
             blokcapital.io
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden className="opacity-60">
               <path d="M2 8 L8 2 M3.5 2 L8 2 L8 6.5" stroke="currentColor" strokeWidth="1.1" fill="none" />
             </svg>
           </a>
+
+          {/* The one conversion affordance in the docs: it points at the app,
+              not at another doc, so it is the only filled control in the header.
+              Kept visible at every width because campaign traffic lands on
+              phones, with a shorter label there. */}
+          <a
+            href={EXTERNAL.app}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full bg-moss-deep px-3.5 text-[13px] font-semibold text-paper shadow-sm transition-colors hover:bg-ink"
+          >
+            <span className="sm:hidden">{t.waitlistShort}</span>
+            <span className="hidden sm:inline">{t.waitlist}</span>
+            <svg width="11" height="11" viewBox="0 0 10 10" aria-hidden className="opacity-80">
+              <path d="M1.5 5 H8 M5.2 2 L8 5 L5.2 8" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
         </div>
       </div>
 
-      {/* Mobile section tabs. The edge fade signals that the row scrolls. */}
-      <nav aria-label="Sections" className="relative border-t border-ink/10 md:hidden">
+      {/* Compact section tabs, shown wherever the full row is hidden. The edge
+          fade signals that the row scrolls. */}
+      <nav aria-label="Sections" className="relative border-t border-ink/10 lg:hidden">
         <ul className="flex items-center gap-1 overflow-x-auto px-4 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SECTIONS.map((s) => {
             const active = isActive(s.slug);

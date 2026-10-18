@@ -138,6 +138,13 @@ export type UIStrings = {
   enlargeImage: string;
   /** Shown in the locale menu for a page with no translation yet. */
   notTranslated: string;
+  /**
+   * Header call to action pointing at the app. `waitlistShort` is the phone
+   * label — the full phrase does not fit beside the search and locale controls
+   * at narrow widths, and truncating a CTA reads worse than shortening it.
+   */
+  waitlist: string;
+  waitlistShort: string;
   notFound: { title: string; body: string; cta: string };
   /** [singular, plural] — selected by `plural()` below. */
   results: [string, string];
@@ -185,6 +192,8 @@ export const UI: Record<Locale, UIStrings> = {
     copied: "Copied",
     enlargeImage: "Enlarge image",
     notTranslated: "Not translated yet",
+    waitlist: "Join the waitlist",
+    waitlistShort: "Join",
     notFound: {
       title: "Page not found",
       body: "This page may have moved, or it doesn’t exist in this language yet.",
@@ -234,6 +243,8 @@ export const UI: Record<Locale, UIStrings> = {
     copied: "Copiado",
     enlargeImage: "Ampliar imagen",
     notTranslated: "Aún no traducido",
+    waitlist: "Únete a la lista de espera",
+    waitlistShort: "Únete",
     notFound: {
       title: "Página no encontrada",
       body: "Es posible que esta página se haya movido o que aún no exista en este idioma.",
@@ -283,6 +294,8 @@ export const UI: Record<Locale, UIStrings> = {
     copied: "Copié",
     enlargeImage: "Agrandir l’image",
     notTranslated: "Pas encore traduit",
+    waitlist: "Rejoindre la liste d'attente",
+    waitlistShort: "Rejoindre",
     notFound: {
       title: "Page introuvable",
       body: "Cette page a peut-être été déplacée, ou elle n’existe pas encore dans cette langue.",
@@ -331,6 +344,8 @@ export const EXTERNAL = {
   telegram: "https://t.me/BLOKCapital",
   x: "https://x.com/blok_cap",
   site: "https://blokcapital.io",
+  /** The product itself. Header CTA target for the registration campaign. */
+  app: "https://blokc.app",
 } as const;
 
 export function isLocale(value: string): value is Locale {
