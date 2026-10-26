@@ -1,0 +1,72 @@
+---
+title: Why Build on BLOK Capital
+description: 'What you can build on the protocol, what the infrastructure gives you for free, the trade-offs, and what you need to know before you start.'
+position: 2
+---
+
+A Garden is a user's portfolio, and it is not a single fixed contract. It is an EIP-2535 Diamond: a thin router assembled from pluggable modules called facets, which can be added or replaced after the Garden is already deployed and holding funds.
+
+That shapes what building here means. You are usually not deploying a separate product that talks to the protocol from the outside. You are writing a module that becomes part of it, installable by every Garden that exists.
+
+## What you can build
+
+| | Start here |
+| --- | --- |
+| **A DeFi integration facet** for a venue the protocol does not support yet | [Creating a New Diamond Facet](/en/builders/Guides/Facets) |
+| **An index weighting strategy**, for example equal-weight or volatility-weighted | [Indices Layer](/en/smart-contracts/indices-layer) |
+| **An index product**, your own basket of components | [Indices Layer](/en/smart-contracts/indices-layer) |
+| **Read-only tooling**: analytics, dashboards, tax reporting | [Loupe introspection](/en/builders/blok-c-v1-core/garden/facets/base-facets/loupe) |
+
+That last row is the one thing on this list that needs no approval from anyone. Every Garden publishes the facets and function selectors it has installed, so you can inspect any Garden on chain and build on what you read.
+
+## What you get for free
+
+The reason to build here rather than from scratch is everything you do not have to write:
+
+- **Onboarding.** Users arrive through Google sign-in with a smart wallet, no seed phrase. You inherit that, including the ERC-4337 plumbing behind it.
+- **Portfolio accounting.** Balances, holdings, valuation and performance already work across every Garden.
+- **The rebalancer.** Index-connected Gardens rebalance in batches, with pooled swaps and pro-rata redistribution. See [The Batched Rebalancer](/en/builders/rebalancer).
+- **The safety rails.** A 0.5% cap on value loss per rebalance, flash-loan protection, reentrancy guards, and automated storage-collision tests you inherit by writing a facet at all.
+
+You write the integration. The infrastructure around it is done.
+
+## What it costs you
+
+Three trade-offs worth knowing before you invest a week in this.
+
+- **Shipping is gated by governance.** A facet reaches a Garden only after DAO governance registers it and allows it for that Garden type. That review is deliberate, since facets execute inside contracts holding user funds, but it means you cannot ship on your own schedule. Budget for it.
+- **Facets must be stateless.** No state variables, no inheriting from anything that has them. All state goes through namespaced storage libraries.
+- **Storage library names are permanent.** The name is the storage key, so renaming a deployed one orphans the data in every Garden using it. There is no undo.
+
+## Before you start
+
+**Required.** Without these you will fight the architecture rather than use it:
+
+- **Solidity**, `^0.8.31` in this repo
+- **Foundry**: `forge`, `cast`, `anvil`
+- **The EIP-2535 Diamond pattern** and how `delegatecall` routes a call to a facet
+- **Namespaced storage (EIP-7201)** and why every facet needs its own slot
+
+Those last two are where new facet authors actually come unstuck. Your facet's code executes against the **Garden's** storage, not its own. Until that is instinct rather than a fact you have read, the bugs will be confusing ones.
+
+**Helpful**, depending on what you are building:
+
+- ERC-20 and ERC-721, since Garden ownership is an NFT
+- ERC-4337 account abstraction, for how users arrive
+- Chainlink price feeds, which index valuation depends on
+- Deep knowledge of whichever protocol you are integrating
+
+**Not needed.** Frontend skills, and running your own node.
+
+## The cohort sessions
+
+The team recorded a series that covers this ground in order, and it is the fastest way to get the architecture into your head. Session 2 is the EIP-2535 author explaining his own standard.
+
+1. [Proxies](https://www.youtube.com/watch?v=1jUhr7f3RHk)
+2. [The Diamond Proxy ERC-2535](https://www.youtube.com/watch?v=YhmIebvrVFQ), by Nick Mudge
+3. [Diamond Proxy ERC-2535 Facets](https://www.youtube.com/watch?v=BKVqhT2cADo), by Vansh Sahay
+4. [Factory & Registry Contracts](https://www.youtube.com/watch?v=SGE5a_CyY8k), by Jayesh Yadav
+
+## Next
+
+[Quickstart](/en/builders/quickstart) gets the contracts building and testing locally in a few commands. Read [Security Considerations](/en/builders/security-considerations) before you write anything that touches funds.

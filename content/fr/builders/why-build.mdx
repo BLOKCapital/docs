@@ -1,0 +1,72 @@
+---
+title: Pourquoi Construire sur BLOK Capital
+description: 'Ce que vous pouvez construire sur le protocole, ce que l''infrastructure vous offre, les compromis, et ce qu''il faut savoir avant de commencer.'
+position: 2
+---
+
+Un Jardin est le portefeuille d'un utilisateur, et ce n'est pas un contrat unique et figé. C'est un Diamond EIP-2535 : un routeur léger assemblé à partir de modules enfichables appelés facets, qui peuvent être ajoutés ou remplacés alors que le Jardin est déjà déployé et détient des fonds.
+
+Cela détermine ce que signifie construire ici. En général, vous ne déployez pas un produit distinct qui dialogue avec le protocole depuis l'extérieur. Vous écrivez un module qui en devient une partie, installable par chaque Jardin existant.
+
+## Ce que vous pouvez construire
+
+| | Commencez ici |
+| --- | --- |
+| **Un facet d'intégration DeFi** pour un venue que le protocole ne prend pas encore en charge | [Créer un Nouveau Facet Diamond](/fr/builders/Guides/Facets) |
+| **Une stratégie de pondération d'Index**, par exemple equal-weight ou pondérée par la volatilité | [Couche Index](/fr/smart-contracts/indices-layer) |
+| **Un produit Index**, votre propre panier de composants | [Couche Index](/fr/smart-contracts/indices-layer) |
+| **Des outils en lecture seule** : analytique, tableaux de bord, déclarations fiscales | [Introspection Loupe](/fr/builders/blok-c-v1-core/garden/facets/base-facets/loupe) |
+
+Cette dernière ligne est la seule de cette liste qui ne nécessite l'approbation de personne. Chaque Jardin publie les facets et les sélecteurs de fonction qu'il a installés : vous pouvez donc inspecter n'importe quel Jardin on-chain et construire à partir de ce que vous y lisez.
+
+## Ce que vous obtenez gratuitement
+
+La raison de construire ici plutôt que de partir de zéro, c'est tout ce que vous n'avez pas à écrire :
+
+- **L'onboarding.** Les utilisateurs arrivent via Google avec un portefeuille intelligent, sans phrase de récupération. Vous héritez de cela, y compris de la plomberie ERC-4337 derrière.
+- **La comptabilité du portefeuille.** Soldes, avoirs, valorisation et performance fonctionnent déjà sur tous les Jardins.
+- **Le rééquilibreur.** Les Jardins connectés à un Index se rééquilibrent par lots, avec des swaps mutualisés et une redistribution au prorata. Voir [Le Rééquilibreur par Lots](/fr/builders/rebalancer).
+- **Les garde-fous.** Un plafond de 0,5 % de perte de valeur par rééquilibrage, une protection contre les flash loans, des verrous de réentrance, et des tests automatisés de collision de stockage dont vous héritez du simple fait d'écrire un facet.
+
+Vous écrivez l'intégration. L'infrastructure autour est déjà faite.
+
+## Ce que cela vous coûte
+
+Trois compromis à connaître avant d'y investir une semaine.
+
+- **La mise en production passe par la gouvernance.** Un facet n'atteint un Jardin qu'après que la gouvernance de la DAO l'a enregistré et autorisé pour ce type de Jardin. Cette revue est voulue, puisque les facets s'exécutent dans des contrats qui détiennent des fonds d'utilisateurs, mais cela signifie que vous ne livrez pas selon votre propre calendrier. Prévoyez-le.
+- **Les facets doivent être sans état.** Pas de variables d'état, pas d'héritage d'un contrat qui en possède. Tout l'état passe par des librairies de stockage à espace de noms.
+- **Les noms des librairies de stockage sont définitifs.** Le nom est la clé de stockage : renommer une librairie déjà déployée orpheline les données dans tous les Jardins qui l'utilisent. Il n'y a pas de retour en arrière.
+
+## Avant de commencer
+
+**Indispensable.** Sans cela, vous lutterez contre l'architecture au lieu de l'utiliser :
+
+- **Solidity**, `^0.8.31` dans ce dépôt
+- **Foundry** : `forge`, `cast`, `anvil`
+- **Le pattern Diamond EIP-2535** et la façon dont `delegatecall` route un appel vers un facet
+- **Le stockage à espace de noms (EIP-7201)** et pourquoi chaque facet a besoin de son propre emplacement
+
+Ces deux derniers points sont là où les nouveaux auteurs de facets trébuchent réellement. Le code de votre facet s'exécute contre le stockage **du Jardin**, pas le sien. Tant que ce n'est pas un réflexe mais seulement une information lue, les bugs seront déroutants.
+
+**Utile**, selon ce que vous construisez :
+
+- ERC-20 et ERC-721, puisque la propriété d'un Jardin est un NFT
+- L'abstraction de compte ERC-4337, pour comprendre comment les utilisateurs arrivent
+- Les price feeds Chainlink, dont dépend la valorisation de l'Index
+- Une connaissance approfondie du protocole que vous intégrez
+
+**Pas nécessaire.** Des compétences frontend, ou faire tourner votre propre nœud.
+
+## Les sessions du cohort
+
+L'équipe a enregistré une série qui couvre ce terrain dans l'ordre, et c'est le moyen le plus rapide de s'approprier l'architecture. La session 2 est l'auteur d'EIP-2535 expliquant son propre standard.
+
+1. [Proxies](https://www.youtube.com/watch?v=1jUhr7f3RHk)
+2. [Le Diamond Proxy ERC-2535](https://www.youtube.com/watch?v=YhmIebvrVFQ), par Nick Mudge
+3. [Les Facets du Diamond Proxy ERC-2535](https://www.youtube.com/watch?v=BKVqhT2cADo), par Vansh Sahay
+4. [Contrats Factory et Registry](https://www.youtube.com/watch?v=SGE5a_CyY8k), par Jayesh Yadav
+
+## Ensuite
+
+[Démarrage Rapide](/fr/builders/quickstart) fait compiler et tester les contrats en local en quelques commandes. Lisez les [Considérations de Sécurité](/fr/builders/security-considerations) avant d'écrire quoi que ce soit qui touche aux fonds.

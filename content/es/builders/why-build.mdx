@@ -1,0 +1,72 @@
+---
+title: Por Qué Construir sobre BLOK Capital
+description: 'Qué puedes construir sobre el protocolo, qué te da gratis la infraestructura, las contrapartidas y qué necesitas saber antes de empezar.'
+position: 2
+---
+
+Un Jardín es el portafolio de un usuario, y no es un único contrato fijo. Es un Diamond EIP-2535: un enrutador ligero ensamblado a partir de módulos enchufables llamados facets, que pueden añadirse o reemplazarse cuando el Jardín ya está desplegado y custodiando fondos.
+
+Eso define lo que significa construir aquí. Normalmente no estás desplegando un producto aparte que habla con el protocolo desde fuera. Estás escribiendo un módulo que pasa a formar parte de él, instalable por cualquier Jardín que exista.
+
+## Qué puedes construir
+
+| | Empieza aquí |
+| --- | --- |
+| **Un facet de integración DeFi** para un venue que el protocolo aún no soporta | [Crear un Nuevo Facet de Diamond](/es/builders/Guides/Facets) |
+| **Una estrategia de ponderación de Index**, por ejemplo equal-weight o ponderada por volatilidad | [Capa de Índices](/es/smart-contracts/indices-layer) |
+| **Un producto de Index**, tu propia cesta de componentes | [Capa de Índices](/es/smart-contracts/indices-layer) |
+| **Herramientas de solo lectura**: analítica, paneles, informes fiscales | [Introspección Loupe](/es/builders/blok-c-v1-core/garden/facets/base-facets/loupe) |
+
+Esa última fila es lo único de esta lista que no necesita la aprobación de nadie. Cada Jardín publica los facets y los selectores de función que tiene instalados, así que puedes inspeccionar cualquier Jardín on-chain y construir sobre lo que leas.
+
+## Qué obtienes gratis
+
+La razón para construir aquí en lugar de desde cero es todo lo que no tienes que escribir:
+
+- **Onboarding.** Los usuarios entran con Google y una billetera inteligente, sin frase semilla. Heredas eso, incluida la fontanería ERC-4337 que hay detrás.
+- **Contabilidad del portafolio.** Saldos, holdings, valoración y rendimiento ya funcionan en todos los Jardines.
+- **El rebalanceador.** Los Jardines conectados a un Index se rebalancean por lotes, con swaps agrupados y redistribución a prorrata. Consulta [El Rebalanceador por Lotes](/es/builders/rebalancer).
+- **Las protecciones.** Un límite del 0,5% de pérdida de valor por rebalanceo, protección contra flash loans, guardas de reentrada y pruebas automatizadas de colisión de almacenamiento que heredas por el solo hecho de escribir un facet.
+
+Tú escribes la integración. La infraestructura que la rodea ya está hecha.
+
+## Qué te cuesta
+
+Tres contrapartidas que conviene conocer antes de invertir una semana en esto.
+
+- **Publicar depende de la gobernanza.** Un facet llega a un Jardín solo después de que la gobernanza de la DAO lo registre y lo permita para ese tipo de Jardín. Esa revisión es intencional, ya que los facets se ejecutan dentro de contratos que custodian fondos de usuarios, pero significa que no puedes publicar según tu propio calendario. Cuéntalo en tus plazos.
+- **Los facets deben ser stateless.** Sin variables de estado, sin heredar de nada que las tenga. Todo el estado pasa por librerías de almacenamiento con espacio de nombres.
+- **Los nombres de las librerías de almacenamiento son permanentes.** El nombre es la clave de almacenamiento, así que renombrar una ya desplegada deja huérfanos los datos en todos los Jardines que la usan. No hay vuelta atrás.
+
+## Antes de empezar
+
+**Imprescindible.** Sin esto, pelearás contra la arquitectura en lugar de usarla:
+
+- **Solidity**, `^0.8.31` en este repositorio
+- **Foundry**: `forge`, `cast`, `anvil`
+- **El patrón Diamond EIP-2535** y cómo `delegatecall` enruta una llamada hacia un facet
+- **Almacenamiento con espacio de nombres (EIP-7201)** y por qué cada facet necesita su propio slot
+
+Esos dos últimos puntos son donde realmente tropiezan los nuevos autores de facets. El código de tu facet se ejecuta contra el almacenamiento **del Jardín**, no contra el suyo propio. Hasta que eso sea instinto y no solo un dato que has leído, los errores serán confusos.
+
+**Útil**, según lo que vayas a construir:
+
+- ERC-20 y ERC-721, ya que la propiedad de un Jardín es un NFT
+- Abstracción de cuentas ERC-4337, para entender cómo llegan los usuarios
+- Price feeds de Chainlink, de los que depende la valoración del Index
+- Conocimiento profundo del protocolo que vayas a integrar
+
+**No necesario.** Habilidades de frontend, ni ejecutar tu propio nodo.
+
+## Las sesiones del cohort
+
+El equipo grabó una serie que cubre esta materia en orden, y es la vía más rápida para meterte la arquitectura en la cabeza. La sesión 2 es el autor de EIP-2535 explicando su propio estándar.
+
+1. [Proxies](https://www.youtube.com/watch?v=1jUhr7f3RHk)
+2. [El Diamond Proxy ERC-2535](https://www.youtube.com/watch?v=YhmIebvrVFQ), por Nick Mudge
+3. [Facets del Diamond Proxy ERC-2535](https://www.youtube.com/watch?v=BKVqhT2cADo), por Vansh Sahay
+4. [Contratos de Factory y Registry](https://www.youtube.com/watch?v=SGE5a_CyY8k), por Jayesh Yadav
+
+## Siguiente
+
+[Inicio Rápido](/es/builders/quickstart) pone los contratos a compilar y probar localmente en unos pocos comandos. Lee [Consideraciones de Seguridad](/es/builders/security-considerations) antes de escribir cualquier cosa que toque fondos.

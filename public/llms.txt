@@ -54,6 +54,7 @@ This file helps AI assistants and answer engines discover and cite the BLOK Capi
 - [Quickstart](https://docs.blokcapital.io/en/builders/quickstart.md): Get the BLOK Capital contracts building and testing locally, and know where to go next.
 - [The Batched Rebalancer](https://docs.blokcapital.io/en/builders/rebalancer.md): How the Rebalancer contract rebalances many Gardens at once: batch sizing, rebalance rounds, the pooled swap model, and the guards around it.
 - [Security Considerations](https://docs.blokcapital.io/en/builders/security-considerations.md): What to watch for when writing or reviewing a facet: access control, reentrancy, storage safety, and the upgrade path.
+- [Why Build on BLOK Capital](https://docs.blokcapital.io/en/builders/why-build.md): What you can build on the protocol, what the infrastructure gives you for free, the trade-offs, and what you need to know before you start.
 
 ## Resources
 

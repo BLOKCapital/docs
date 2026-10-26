@@ -1,7 +1,7 @@
 ---
 title: The Batched Rebalancer
 description: 'How the Rebalancer contract rebalances many Gardens at once: batch sizing, rebalance rounds, the pooled swap model, and the guards around it.'
-position: 5
+position: 6
 ---
 
 Rebalancing a Garden one at a time works, but it scales badly: a thousand Gardens tracking the same Index means a thousand separate sets of swaps, each paying its own gas and its own slippage. The Rebalancer contract exists to do the whole group together instead.
